@@ -44,7 +44,7 @@ You can get devices using IDs or names using the following methods:
 This will return a reference to the device. If it doesn't exist, an exeption
 will raise.
 
-See below for supported types.
+Go back to [the home for the list of supported types](/README.md).
 
 ### Getting all devices of a type
 
@@ -63,11 +63,4 @@ Then, one can flush the read or write with:
 
 * `flushRead()`
 * `flushWrite()`
-
-## Supported devices 
-
-* Dynamixel
-* Dynaban
-* Force sensor
-* IMU
 

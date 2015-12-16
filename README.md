@@ -6,4 +6,14 @@ with the supported devices.
 ## Documentation
 
 * [Getting started](/Docs/getting_started.md)
+* Supported buses
+    * Serial
+* Supported protocol
+    * Dynamixel V1
+    * Dynamixel V2
+* Supported devices
+    * Dynamixel
+    * Dynaban
+    * IMU
+    * Force sensor
 * [The `rhal.json` configuration](/Docs/configuration.md)
