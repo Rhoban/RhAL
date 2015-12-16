@@ -10,6 +10,7 @@ Here is an example:
         "port": "/dev/ttyACM0",
         "baudrate": "1000000"
     },
+    "protocol": "dynamixelV1",
     "devices": [
         {
             "name": "pan",
