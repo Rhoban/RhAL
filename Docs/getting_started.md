@@ -24,7 +24,7 @@ manager.scan();
 
 And access all devices you want to:
 
-`̀``c++
+```c++
 auto servos = manager.getAll<RhAL::Device::Dynamixel>();
 for (auto &servo : servos) {
     std::cout << "* Servo " << servo->getId() << std::endl;
