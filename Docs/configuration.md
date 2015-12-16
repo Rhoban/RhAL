@@ -10,7 +10,7 @@ Here is an example:
         "port": "/dev/ttyACM0",
         "baudrate": "1000000"
     },
-    "devices:" [
+    "devices": [
         {
             "name": "pan",
             "id": 123,
@@ -30,3 +30,23 @@ Here is an example:
     ]
 }
 ```
+
+## Writing the configuration
+
+You can write the configuration using the [manager](getting_started.md):
+
+```c++
+// Scan for all available devices on the bus
+manager.scan();
+// Write the configuration
+manager.writeConfiguration("rhal.json");
+```
+
+## Loading the configuration
+
+Configuration can be read to instanciate the manager:
+
+```c++
+auto manager = RhAL::Manager::loadConfiguration("rhal.json");
+```
+
