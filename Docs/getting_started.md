@@ -12,7 +12,7 @@ int main()
     RhAL::Protocol::DynamixelV1 protocol(bus);
     RhAL::Manager manager(protocol);
 }
-``̀`
+```
 
 Note: you can also use a [`rhal.json` configuration file](configuration.md)
 
