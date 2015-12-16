@@ -9,8 +9,8 @@ with the supported devices.
 * Supported buses
     * Serial
 * Supported protocol
-    * Dynamixel V1
-    * Dynamixel V2
+    * [Dynamixel V1](/Docs/dynamixel_v1.md)
+    * [Dynamixel V2](/Docs/dynamixel_v2.md)
 * Supported devices
     * Dynamixel
     * Dynaban
