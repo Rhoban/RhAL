@@ -18,7 +18,7 @@ Note: you can also use a [`rhal.json` configuration file](configuration.md)
 
 You can then scan for available devices:
 
-``̀`c++
+```c++
 manager.scan();
 ```
 
