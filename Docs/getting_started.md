@@ -27,12 +27,44 @@ And access all devices you want to:
 ```c++
 auto servos = manager.getAll<RhAL::Device::Dynamixel>();
 for (auto &servo : servos) {
-    std::cout << "* Servo " << servo->getId() << std::endl;
-    std::cout << "  Angle: " << servo->getAngle() << std::endl;
+    std::cout << "* Servo " << servo.getId() << std::endl;
+    std::cout << "  Angle: " << servo.getAngle() << std::endl;
 }
 ```
 
-## Supported devices
+## Manager methods
+
+### Getting a device
+
+You can get devices using IDs or names using the following methods:
+
+* `Type &get<Type>(int id)`
+* `Type &get<Type>(std::string name)`
+
+This will return a reference to the device. If it doesn't exist, an exeption
+will raise.
+
+See below for supported types.
+
+### Getting all devices of a type
+
+You can also get all devices of a specific types using:
+
+* `std::vector<Type> getAll<Type>()`
+
+### Using grouped read/write
+
+You can use grouped read and write, enabling it with:
+
+* `enableGroupedWrite(bool enable, int startAddress, int endAddress)`
+* `enableGroupedRead(bool enable, int startAddress, int endAddress)`
+
+Then, one can flush the read or write with:
+
+* `flushRead()`
+* `flushWrite()`
+
+## Supported devices 
 
 * Dynamixel
 * Dynaban
