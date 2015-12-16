@@ -32,6 +32,13 @@ for (auto &servo : servos) {
 }
 ```
 
+Another example, if you want to set the angle of the servo `32` to `pi`:
+
+```c++
+auto servo = manger.get<RhAL::Device::Dynamixel>(32);
+servo.setAngle(32);
+```
+
 ## Manager methods
 
 ### Getting a device
