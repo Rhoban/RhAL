@@ -17,4 +17,4 @@ with the supported devices.
     * IMU
     * Force sensor
 * [The `rhal.json` configuration](/Docs/configuration.md)
-* The `rhal` command line tool
+* [The `rhal` command line tool](/Docs/command_line.md)
