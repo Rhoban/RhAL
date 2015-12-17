@@ -8,8 +8,8 @@ the manager:
 
 int main()
 {
-    RhAL::Bus::SerialBus bus("/dev/ttyACM0", 1000000);
-    RhAL::Protocol::DynamixelV1 protocol(bus);
+    RhAL::SerialBus bus("/dev/ttyACM0", 1000000);
+    RhAL::DynamixelV1 protocol(bus);
     RhAL::Manager manager(protocol);
 }
 ```
