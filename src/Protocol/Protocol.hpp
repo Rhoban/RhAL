@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <stdint.h>
 #include <types.h>
 #include <Bus/Bus.hpp>
@@ -72,7 +73,7 @@ namespace RhAL
 
         protected:
             // Bus used for communication
-            uBus &bus;
+            Bus &bus;
 
             // State for decoding protocol state maching
             unsigned int state;

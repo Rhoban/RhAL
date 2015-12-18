@@ -1,12 +1,14 @@
 #include <stdexcept>
 #include "Protocol.hpp"
 
+using namespace std;
+
 namespace RhAL
 {
     uint8_t Protocol::readByte(id_t id, addr_t address)
     {
         uint8_t byte;
-        if (readData(id, address, &byte, 1)&ResponseOK) {
+        if (readData(id, address, &byte, 1)&ResponseOK) {
             return byte;
         } else {
             throw runtime_error("Read error");
@@ -22,7 +24,7 @@ namespace RhAL
     {
         uint8_t bytes[2];
         if (readData(id, address, bytes, 2)&ResponseOK) {
-            return (bytes[1]<<8)|(bytes[0];
+            return (bytes[1]<<8)|(bytes[0]);
         } else {
             throw runtime_error("Read error");
         }

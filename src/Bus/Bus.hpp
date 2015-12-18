@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <stdint.h>
 
 namespace RhAL
