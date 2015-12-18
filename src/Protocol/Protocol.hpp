@@ -30,17 +30,6 @@ namespace RhAL
     {
         public:
             /**
-             * Sends a command that contains data to id
-             */
-            virtual void sendCommand(id_t id, uint8_t *data, size_t size)=0;
-
-            /**
-             * Receives a response from the bus and fills the buffer data
-             */
-            virtual ResponseState receiveResponse(id_t id, uint8_t *data, 
-                    size_t size);
-
-            /**
              * Write size bytes of data on device with id at given address
              */
             virtual void writeData(id_t id, addr_t address, 
@@ -87,16 +76,30 @@ namespace RhAL
 
             // State for decoding protocol state maching
             unsigned int state;
+            
+            /**
+             * Sends a command that contains data to id.
+             * Returns the size of the excepted response.
+             */
+            virtual size_t sendCommand(id_t id, uint8_t *data, size_t size)=0;
+
+            /**
+             * Receives a response from the bus and fills the buffer data
+             */
+            virtual ResponseState receiveResponse(id_t id, uint8_t *data, 
+                    size_t size);
+
+            /**
+             * Sends a command and gets its response
+             */
+            virtual ResponseState sendCommandResponse(id_t id, uint8_t *commandData,
+                    size_t commandSize, uint8_t *responseData, size_t responseSize);
  
             /**
              * Receiving a byte on the bus, this should take a step in the frame
              * decoding, populating the given buffer
-             *
-             * If there is an error, it will raise an exception. Possible errors 
-             * are:
-             * - Bad checksum
-             * - Bad response size
              */
-            virtual void receiveByte(uint8_t byte, uint8_t *buffer, size_t &size)=0;
+            virtual ResponseState processResponse(id_t id, uint8_t *data, 
+                    size_t size);
     };
 }
