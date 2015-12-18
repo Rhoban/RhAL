@@ -100,6 +100,6 @@ namespace RhAL
              * decoding, populating the given buffer
              */
             virtual ResponseState processResponse(id_t id, uint8_t *data, 
-                    size_t size);
+                    size_t size)=0;
     };
 }
