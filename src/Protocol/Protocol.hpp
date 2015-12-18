@@ -24,12 +24,15 @@ namespace RhAL
         ResponseQuiet=32,
         ResponseBadChecksum=64,
         ResponseDeviceBadInstruction=128,
-        ResponseDeviceBadChecksum=256
+        ResponseDeviceBadChecksum=256,
+        ResponseBadSize=512
     };        
 
     class Protocol
     {
         public:
+            Protocol(Bus &bus);
+
             /**
              * Write size bytes of data on device with id at given address
              */
@@ -74,33 +77,5 @@ namespace RhAL
         protected:
             // Bus used for communication
             Bus &bus;
-
-            // State for decoding protocol state maching
-            unsigned int state;
-            
-            /**
-             * Sends a command that contains data to id.
-             * Returns the size of the excepted response.
-             */
-            virtual size_t sendCommand(id_t id, uint8_t *data, size_t size)=0;
-
-            /**
-             * Receives a response from the bus and fills the buffer data
-             */
-            virtual ResponseState receiveResponse(id_t id, uint8_t *data, 
-                    size_t size)=0;
-
-            /**
-             * Sends a command and gets its response
-             */
-            virtual ResponseState sendCommandResponse(id_t id, uint8_t *commandData,
-                    size_t commandSize, uint8_t *responseData, size_t responseSize);
- 
-            /**
-             * Receiving a byte on the bus, this should take a step in the frame
-             * decoding, populating the given buffer
-             */
-            virtual ResponseState processResponse(id_t id, uint8_t *data, 
-                    size_t size)=0;
     };
 }

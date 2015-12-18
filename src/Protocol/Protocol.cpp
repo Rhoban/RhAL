@@ -5,6 +5,11 @@ using namespace std;
 
 namespace RhAL
 {
+    Protocol::Protocol(Bus &bus)
+        : bus(bus)
+    {
+    }
+
     uint8_t Protocol::readByte(id_t id, addr_t address)
     {
         uint8_t byte;
@@ -37,13 +42,5 @@ namespace RhAL
         bytes[1] = (word>>8)&0xff;
 
         writeData(id, address, bytes, 2);
-    }
-
-    ResponseState Protocol::sendCommandResponse(id_t id, uint8_t *commandData,
-            size_t commandSize, uint8_t *responseData, size_t responseSize)
-    {
-        sendCommand(id, commandData, commandSize);
-
-        return receiveResponse(id, responseData, responseSize);
     }
 }
