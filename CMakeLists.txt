@@ -26,6 +26,7 @@ include_directories("${VENDORS_DIRECTORY}/serial/include")
 
 set (SOURCES
     Bus/Bus.cpp
+    Bus/SerialBus.cpp
     Protocol/Protocol.cpp
     )
 
@@ -35,3 +36,7 @@ foreach (SOURCE ${SOURCES})
 endforeach ()
 
 add_library (_rhal ${ALL_SOURCES})
+target_link_libraries (_rhal serial)
+
+add_executable (rhal ${SOURCES_DIRECTORY}/rhal.cpp)
+target_link_libraries (rhal _rhal)

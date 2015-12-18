@@ -19,12 +19,12 @@ namespace RhAL
              *
              * Returns true if data are available, false else.
              */
-            virtual bool waitForData(size_t size, unsigned int timeout)=0;
+            virtual bool waitForData(unsigned int timeout)=0;
 
             /**
              * Reads size bytes to the buffer
              */
-            virtual void readData(uint8_t *data, size_t size)=0;
+            virtual size_t readData(uint8_t *data, size_t size)=0;
 
             /**
              * Flushes the I/O buffers
