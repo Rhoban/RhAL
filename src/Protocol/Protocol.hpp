@@ -62,17 +62,17 @@ namespace RhAL
              * Perform a synchronized read across devices
              */
             virtual std::vector<ResponseState> syncRead(std::vector<id_t> ids, addr_t address,
-                    std::vector<uint8_t*> datas, size_t size);
+                    std::vector<uint8_t*> datas, size_t size)=0;
             
             /**
              * Performs a synchronized write across devices
              */
             virtual void syncWrite(std::vector<id_t> ids, addr_t address,
-                    std::vector<uint8_t*> datas, size_t size);
+                    std::vector<uint8_t*> datas, size_t size)=0;
 
         protected:
             // Bus used for communication
-            Bus &bus;
+            uBus &bus;
 
             // State for decoding protocol state maching
             unsigned int state;
@@ -87,7 +87,7 @@ namespace RhAL
              * Receives a response from the bus and fills the buffer data
              */
             virtual ResponseState receiveResponse(id_t id, uint8_t *data, 
-                    size_t size);
+                    size_t size)=0;
 
             /**
              * Sends a command and gets its response
