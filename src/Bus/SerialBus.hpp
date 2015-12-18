@@ -13,6 +13,7 @@ namespace RhAL
             
             bool sendData(uint8_t *data, size_t size);
             bool waitForData(unsigned int timeout);
+            size_t available();
             size_t readData(uint8_t *data, size_t size);
             void flush();
 

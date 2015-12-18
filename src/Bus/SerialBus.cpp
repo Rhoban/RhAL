@@ -17,6 +17,11 @@ namespace RhAL
         return serial.waitReadable(timeout);
     }
 
+    size_t SerialBus::available()
+    {
+        return serial.available();
+    }
+
     size_t SerialBus::readData(uint8_t *data, size_t size)
     {
         return serial.read(data, size);

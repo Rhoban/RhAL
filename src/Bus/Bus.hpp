@@ -8,6 +8,8 @@ namespace RhAL
     class Bus
     {
         public:
+            virtual ~Bus();
+
             /**
              * Sends data to the bus.
              */
@@ -30,5 +32,10 @@ namespace RhAL
              * Flushes the I/O buffers
              */
             virtual void flush()=0;
+
+            /**
+             * How many bytes are available to read?
+             */
+            virtual size_t available()=0;
     };
 }

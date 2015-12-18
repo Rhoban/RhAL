@@ -29,6 +29,8 @@ set (SOURCES
     Bus/SerialBus.cpp
     Protocol/Protocol.cpp
     Protocol/DynamixelV1.cpp
+
+    utils.cpp
     )
 
 foreach (SOURCE ${SOURCES})

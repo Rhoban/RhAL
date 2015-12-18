@@ -2,4 +2,7 @@
 
 namespace RhAL
 {
+    Bus::~Bus()
+    {
+    }
 }
