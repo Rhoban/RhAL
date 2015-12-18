@@ -17,11 +17,11 @@ namespace RhAL
 
             /**
              * Wait for size bytes to be available on the bus, expiring
-             * after timeout (milliseconds).
+             * after timeout.
              *
              * Returns true if data are available, false else.
              */
-            virtual bool waitForData(unsigned int timeout)=0;
+            virtual bool waitForData(double timeout)=0;
 
             /**
              * Reads size bytes to the buffer

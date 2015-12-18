@@ -12,7 +12,7 @@ namespace RhAL
             SerialBus(std::string port, unsigned int baudrate);
             
             bool sendData(uint8_t *data, size_t size);
-            bool waitForData(unsigned int timeout);
+            bool waitForData(double timeout);
             size_t available();
             size_t readData(uint8_t *data, size_t size);
             void flush();

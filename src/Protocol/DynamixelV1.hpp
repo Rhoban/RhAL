@@ -30,39 +30,78 @@ namespace RhAL
                 Packet(id_t id, size_t parameters);
                 virtual ~Packet();
 
+                /**
+                 * Append data to the buffer
+                 */
                 void append(uint8_t byte);
                 void append(uint8_t *data, size_t size);
-                void setError(uint8_t error);
-                uint8_t getError();
-                uint8_t computeChecksum();
-                void prepare();
-                size_t getSize();
-                uint8_t *getParameters();
 
-                size_t position;
+                /**
+                 * Sets the status packet error
+                 */
+                void setError(uint8_t error);
+
+                /**
+                 * Gets the status packet error
+                 */
+                uint8_t getError();
+
+                /**
+                 * Compute the checksum
+                 */
+                uint8_t computeChecksum();
+
+                /**
+                 * Prepare the packet for the network (adds headers and checksum in
+                 * the buffer)
+                 */
+                void prepare();
+
+                /**
+                 * Gets the total size of the packet (including header and checksum)
+                 */
+                size_t getSize();
+
+                /**
+                 * Gets a pointer to the parameters
+                 */
+                uint8_t *getParameters();
+                
+                /**
+                 * Buffer and number of parameters
+                 */
                 uint8_t *buffer;
                 size_t parameters;
+
+            protected:
+                size_t position;
         };
 
         public:
             DynamixelV1(Bus &bus);
 
+            /**
+             * Implementations from Protocol
+             */
             void writeData(id_t id, addr_t address, 
                     uint8_t *data, size_t size);
-
             ResponseState readData(id_t id, addr_t address, 
                     uint8_t *data, size_t size);
-            
             bool ping(id_t id);
-
             std::vector<ResponseState> syncRead(std::vector<id_t> ids, addr_t address,
                     std::vector<uint8_t*> datas, size_t size);
-            
             void syncWrite(std::vector<id_t> ids, addr_t address,
                     std::vector<uint8_t*> datas, size_t size);
 
         protected:
+            /**
+             * This sends a packet over the bus
+             */
             void sendPacket(Packet &packet);
-            ResponseState receivePacket(Packet* &response);
+
+            /**
+             * Waits to receive a packet over the bus
+             */
+            ResponseState receivePacket(Packet* &response, double timeout = 0.001);
     };
 }

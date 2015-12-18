@@ -165,17 +165,15 @@ namespace RhAL
         bus.sendData(packet.buffer, packet.getSize());
     }
 
-    ResponseState DynamixelV1::receivePacket(Packet* &response)
+    ResponseState DynamixelV1::receivePacket(Packet* &response, double timeout)
     {
         response = NULL;
-        double timeout = 0.0025;
         double start = getTime();
-        int position = 0;
+        size_t position = 0;
         id_t id;
 
         while (getTime()-start <= timeout) {
-            unsigned int t = timeout-(getTime()-start);
-            if (t < 1) t = 1;
+            double t = timeout-(getTime()-start);
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];
@@ -232,6 +230,8 @@ namespace RhAL
                     position++;
                 }
             }
+
+            return ResponseQuiet;
         }
     }
 }

@@ -12,7 +12,7 @@ namespace RhAL
         return serial.write(data, size)==size;
     }
 
-    bool SerialBus::waitForData(unsigned int timeout)
+    bool SerialBus::waitForData(double timeout)
     {
         return serial.waitReadable(timeout);
     }
