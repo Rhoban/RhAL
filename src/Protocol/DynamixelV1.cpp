@@ -187,7 +187,7 @@ namespace RhAL
                             }
                             break;
                         case 2:
-                            if (id != byte) {
+                            if (byte != id) {
                                 return ResponseBadId;
                             }
                             break;
