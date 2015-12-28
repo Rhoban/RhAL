@@ -26,7 +26,8 @@ namespace RhAL
         ResponseDeviceBadInstruction=128,
         ResponseDeviceBadChecksum=256,
         ResponseBadSize=512,
-        ResponseBadProtocol=1024
+        ResponseBadProtocol=1024,
+        ResponseBadId=2048
     };        
 
     class Protocol

@@ -111,7 +111,7 @@ namespace RhAL
         sendPacket(packet);
 
         Packet *response;
-        auto code = receivePacket(response);
+        auto code = receivePacket(response, id);
         if (code & ResponseOK) {
             memcpy(data, response->getParameters(), size);
             delete response;
@@ -125,7 +125,7 @@ namespace RhAL
         sendPacket(packet);
 
         Packet *response;
-        auto code = receivePacket(response);
+        auto code = receivePacket(response, id);
         if (code & ResponseOK) {
             delete response;
             return true;
@@ -165,12 +165,11 @@ namespace RhAL
         bus.sendData(packet.buffer, packet.getSize());
     }
 
-    ResponseState DynamixelV1::receivePacket(Packet* &response, double timeout)
+    ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id, double timeout)
     {
         response = NULL;
         double start = getTime();
         size_t position = 0;
-        id_t id;
 
         while (getTime()-start <= timeout) {
             double t = timeout-(getTime()-start);
@@ -188,7 +187,9 @@ namespace RhAL
                             }
                             break;
                         case 2:
-                            id = byte;
+                            if (id != byte) {
+                                return ResponseBadId;
+                            }
                             break;
                         case 3:
                             if (byte < 2) {
