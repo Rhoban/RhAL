@@ -1,118 +1,47 @@
 #pragma once
 
 #include <unordered_map>
-#include <string>
 #include <stdexcept>
 #include "json.hpp"
+#include "Parameter.hpp"
 
 namespace RhAL {
 
 /**
- * Parameter
- *
- * Device named parameter
- * expected to be used with types
- * bool, float and string
- */
-template <typename T>
-struct Parameter
-{
-    const std::string name;
-    const T defaultValue;
-    T value;
-
-    /**
-     * Initialization with parameter 
-     * name and default value
-     */
-    inline Parameter(const std::string& name, const T& value) :
-        name(name),
-        defaultValue(value),
-        value(value)
-    {
-    }
-};
-
-/**
- * ParametersContainer
+ * ParametersList
  *
  * Container for boolean, float 
- * and string parameters
+ * and string parameter pointers.
+ * Pointer are neither allocated or
+ * freed by the container.
  */
-class ParametersContainer
+class ParametersList
 {
     public:
 
         /**
          * Typedef for container
          */
-        typedef std::unordered_map<std::string, Parameter<bool>*> 
+        typedef std::unordered_map<std::string, ParameterBool*> 
             ContainerBool;
-        typedef std::unordered_map<std::string, Parameter<double>*> 
+        typedef std::unordered_map<std::string, ParameterNumber*> 
             ContainerNumber;
-        typedef std::unordered_map<std::string, Parameter<std::string>*> 
+        typedef std::unordered_map<std::string, ParameterStr*> 
             ContainerStr;
 
         /**
          * Initialization
          */
-        inline ParametersContainer() :
+        inline ParametersList() :
             _paramsBool(),
             _paramsNumber(),
             _paramsStr()
         {
         }
-
-        /**
-         * Parameters desallocation
-         */
-        inline ~ParametersContainer()
-        {
-            for (auto& it : _paramsBool) {
-                delete it.second;
-                it.second = nullptr;
-            }
-            for (auto& it : _paramsNumber) {
-                delete it.second;
-                it.second = nullptr;
-            }
-            for (auto& it : _paramsStr) {
-                delete it.second;
-                it.second = nullptr;
-            }
-        }
-
-        /**
-         * Copy contructor
-         */
-        inline ParametersContainer(const ParametersContainer& container) :
-            _paramsBool(),
-            _paramsNumber(),
-            _paramsStr()
-        {
-            for (auto& it : container._paramsBool) {
-                _paramsBool[it.first] = new Parameter<bool>(*(it.second));
-                _paramsBool[it.first]->value = it.second->value;
-            }
-            for (auto& it : container._paramsNumber) {
-                _paramsNumber[it.first] = new Parameter<double>(*(it.second));
-                _paramsNumber[it.first]->value = it.second->value;
-            }
-            for (auto& it : container._paramsStr) {
-                _paramsStr[it.first] = new Parameter<std::string>(*(it.second));
-                _paramsStr[it.first]->value = it.second->value;
-            }
-        }
-
-        /**
-         * Deleted assignment operator
-         */
-        ParametersContainer& operator=(
-            const ParametersContainer&) const = delete;
 
         /**
          * Return true if given parameter name 
-         * is already declared
+         * is already contained
          */
         inline bool exists(const std::string& name) const
         {
@@ -123,76 +52,121 @@ class ParametersContainer
         }
 
         /**
-         * Create new boolean, number and
-         * string named parameters with given default value.
-         * Throw std::logic_error if given name is already declared.
+         * Add a new boolean, number and
+         * string named parameters pointer to 
+         * the internal container
+         * Throw std::logic_error if parameter name 
+         * is already contained.
          */
-        inline void addBool(const std::string& name, bool value)
+        inline void add(ParameterBool* param)
         {
-            if (exists(name)) {
+            if (param == nullptr) {
                 throw std::logic_error(
-                    "ParametersContainer bool name already exists: " + name);
+                    "ParametersList null pointer");
             }
-            _paramsBool[name] = new Parameter<bool>(name, value);
+            if (exists(param->name)) {
+                throw std::logic_error(
+                    "ParametersContainer bool name already exists: " 
+                    + param->name);
+            }
+            _paramsBool[param->name] = param;
         }
-        inline void addNumber(const std::string& name, double value)
+        inline void add(ParameterNumber* param)
         {
-            if (exists(name)) {
-                throw std::logic_error(
-                    "ParametersContainer number name already exists: " + name);
+            if (param == nullptr) {
+                throw std::logic_error("ParametersList null pointer");
             }
-            _paramsNumber[name] = new Parameter<double>(name, value);
+            if (exists(param->name)) {
+                throw std::logic_error(
+                    "ParametersContainer number name already exists: " 
+                    + param->name);
+            }
+            _paramsNumber[param->name] = param;
         }
-        inline void addStr(const std::string& name, const std::string& value)
+        inline void add(ParameterStr* param)
         {
-            if (exists(name)) {
-                throw std::logic_error(
-                    "ParametersContainer str name already exists: " + name);
+            if (param == nullptr) {
+                throw std::logic_error("ParametersList null pointer");
             }
-            _paramsStr[name] = new Parameter<std::string>(name, value);
+            if (exists(param->name)) {
+                throw std::logic_error(
+                    "ParametersContainer string name already exists: " 
+                    + param->name);
+            }
+            _paramsStr[param->name] = param;
         }
 
         /**
          * Access to given parameter by its name.
          * Throw std::logic_error if asked name does not exists
          */
-        Parameter<bool>& getBool(const std::string& name)
+        inline const ParameterBool& getBool(const std::string& name) const
         {
             if (_paramsBool.count(name) == 0) {
                 throw std::logic_error(
-                    "ParametersContainer bool name does not exist: " + name);
+                    "ParametersContainer bool name does not exist: " 
+                    + name);
             }
             return *(_paramsBool.at(name));
         }
-        Parameter<double>& getNumber(const std::string& name)
+        inline ParameterBool& getBool(const std::string& name)
+        {
+            if (_paramsBool.count(name) == 0) {
+                throw std::logic_error(
+                    "ParametersContainer bool name does not exist: " 
+                    + name);
+            }
+            return *(_paramsBool.at(name));
+        }
+        inline const ParameterNumber& getNumber(const std::string& name) const
         {
             if (_paramsNumber.count(name) == 0) {
                 throw std::logic_error(
-                    "ParametersContainer number name does not exist: " + name);
+                    "ParametersContainer number name does not exist: " 
+                    + name);
             }
             return *(_paramsNumber.at(name));
         }
-        Parameter<std::string>& getStr(const std::string& name)
+        inline ParameterNumber& getNumber(const std::string& name)
+        {
+            if (_paramsNumber.count(name) == 0) {
+                throw std::logic_error(
+                    "ParametersContainer number name does not exist: " 
+                    + name);
+            }
+            return *(_paramsNumber.at(name));
+        }
+        inline const ParameterStr& getStr(const std::string& name) const
         {
             if (_paramsStr.count(name) == 0) {
                 throw std::logic_error(
-                    "ParametersContainer str name does not exist: " + name);
+                    "ParametersContainer str name does not exist: " 
+                    + name);
+            }
+            return *(_paramsStr.at(name));
+        }
+        inline ParameterStr& getStr(const std::string& name)
+        {
+            if (_paramsStr.count(name) == 0) {
+                throw std::logic_error(
+                    "ParametersContainer str name does not exist: " 
+                    + name);
             }
             return *(_paramsStr.at(name));
         }
 
         /**
-         * Direct access to parameter container
+         * Direct access to Parameter container
          */
-        const ContainerBool& containerBool() const
+        inline const ContainerBool& containerBool() const
         {
             return _paramsBool;
         }
-        const ContainerNumber& containerNumber() const
+        inline const ContainerNumber& containerNumber() const
         {
             return _paramsNumber;
         }
-        const ContainerStr& containerStr() const
+        inline const ContainerStr& containerStr() const
         {
             return _paramsStr;
         }
@@ -201,7 +175,7 @@ class ParametersContainer
          * Export and return all contained 
          * parameters into a json object
          */
-        nlohmann::json saveJSON() const
+        inline nlohmann::json saveJSON() const
         {
             nlohmann::json j;
             for (const auto& it : _paramsBool) {
@@ -221,7 +195,7 @@ class ParametersContainer
          * Import parameters from given json object.
          * Throw std::runtime_error if given json is malformated.
          */
-        void loadJSON(const nlohmann::json& j)
+        inline void loadJSON(const nlohmann::json& j)
         {
             if (!j.is_object()) {
                 throw std::runtime_error(
@@ -266,7 +240,7 @@ class ParametersContainer
     private:
 
         /**
-         * Container indexed by parameter names
+         * Container indexed by Parameter names
          */
         ContainerBool _paramsBool;
         ContainerNumber _paramsNumber;

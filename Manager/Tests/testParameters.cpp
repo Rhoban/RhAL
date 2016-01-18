@@ -1,10 +1,11 @@
 #include <iostream>
 #include "tests.h"
-#include "Parameters.hpp"
+#include "Parameter.hpp"
+#include "ParametersList.hpp"
 
 int main()
 {
-    RhAL::ParametersContainer params;
+    RhAL::ParametersList params;
 
     //Test insersion and retrieval
     assertEquals(params.exists("testBool"), false);
@@ -14,9 +15,12 @@ int main()
     assertEquals(params.containerNumber().size(), (size_t)0);
     assertEquals(params.containerStr().size(), (size_t)0);
 
-    params.addBool("testBool", false);
-    params.addNumber("testNumber", 42.0);
-    params.addStr("testStr", "is a test");
+    RhAL::ParameterBool p1("testBool", false);
+    RhAL::ParameterNumber p2("testNumber", 42.0);
+    RhAL::ParameterStr p3("testStr", "is a test");
+    params.add(&p1);
+    params.add(&p2);
+    params.add(&p3);
 
     assertEquals(params.exists("testBool"), true);
     assertEquals(params.exists("testNumber"), true);
@@ -35,11 +39,14 @@ int main()
     assertEquals(params.getStr("testStr").defaultValue, "is a test");
     assertEquals(params.getStr("testStr").value, "is a test");
 
+    //Test modification
+    p2.value = 3.0;
+    assertEquals(params.getNumber("testNumber").value, 3.0);
     params.getNumber("testNumber").value = 2.0;
     assertEquals(params.getNumber("testNumber").value, 2.0);
 
     //Test copy constructor
-    RhAL::ParametersContainer params2 = params;
+    RhAL::ParametersList params2 = params;
     assertEquals(params2.getBool("testBool").name, "testBool");
     assertEquals(params2.getBool("testBool").value, false);
     assertEquals(params2.getBool("testBool").defaultValue, false);

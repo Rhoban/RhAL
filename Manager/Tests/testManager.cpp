@@ -10,6 +10,7 @@ int main()
         RhAL::ExampleDevice2
     > manager;
 
+    /*
     assertEquals(manager.devAll().size(), (size_t)0);
     assertEquals(manager.devExistsById(1), false);
     assertEquals(manager.devExistsByName("test2"), false);
@@ -51,6 +52,21 @@ int main()
     assertEquals(e2.name(), "test2");
     assertEquals(e3.id(), (RhAL::id_t)1);
     assertEquals(e4.id(), (RhAL::id_t)2);
+    */
+
+    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test1", 1);
+    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test2", 2);
+    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test3", 3);
+    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test4", 4);
+    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test5", 5);
+    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test6", 6);
+
+    //manager.devByName<RhAL::ExampleDevice1>("Dev1Test2").
+    manager.flushRead();
+    manager.flushRead();
+    manager.flushRead();
+    manager.flushRead();
+    manager.flushRead();
 
     return 0;
 }

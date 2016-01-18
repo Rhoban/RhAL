@@ -4,6 +4,7 @@
 #include <string>
 #include <stdexcept>
 #include "types.h"
+#include "CallManager.hpp"
 
 namespace RhAL {
 
@@ -58,11 +59,12 @@ class BaseManager
 
         /**
          * Add and initialize a new Device with given
-         * name and id.
+         * name, id and manager pointer instance.
          * Throw std::logic_error if given name or id
          * is already contained.
          */
-        inline void devAdd(const std::string& name, id_t id)
+        inline void devAdd(const std::string& name, id_t id, 
+            CallManager* manager)
         {
             if (
                 _devicesByName.count(name) != 0 ||
@@ -75,6 +77,10 @@ class BaseManager
             T* dev = new T(name, id);
             _devicesByName[name] = dev;
             _devicesById[id] = dev;
+            //Inject Manager pointer dependancy
+            dev->setManager(manager);
+            //Run Parameters and Registers initialization
+            dev->init();
         }
 
         /**

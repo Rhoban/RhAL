@@ -1,7 +1,9 @@
 #pragma once
 
-#include "BaseManager.hpp"
-#include "Device.hpp"
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include "AggregateManager.hpp"
 
 namespace RhAL {
 
@@ -10,284 +12,285 @@ namespace RhAL {
  *
  * Main interface class for lowlevel
  * hardware device communication.
+ * All suported derived Device types are given
+ * by the variadic template parameters.
  */
 template <typename ... Types> 
-class Manager : public ImplManager<Types>...
+class Manager : public AggregateManager<Types...>
 {
     public:
 
         /**
-         * Add and initialize a new derived Device 
-         * of given template type with given name and id.
-         * Throw std::logic_error if given name or id
-         * is already contained.
+         * Initialization
          */
-        template <typename T>
-        inline void devAdd(const std::string& name, id_t id)
+        Manager() :
+            AggregateManager<Types...>(),
+            _sortedRegisters(),
+            _readCycleCount(0)
         {
-            if (devExistsByName(name) || devExistsById(id)) {
-                throw std::logic_error(
-                    "Manager device name or id already added: " 
-                    + name);
-            } else {
-                ImplManager<T>::devAdd(name, id);
+        }
+
+        /**
+         *
+         */
+        inline void flushRead()
+        {
+            std::cout << "---------- Start flushRead" << std::endl;
+            for (size_t i=0;i<_sortedRegisters.size();i++) {
+                if (isNeedRead(_sortedRegisters[i])) {
+                    //std::cout << _sortedRegisters[i]->name << " " << _sortedRegisters[i]->id << " " << _sortedRegisters[i]->addr << std::endl;
+                    std::cout 
+                        << "id=" << _sortedRegisters[i]->id
+                        << " addr=" << _sortedRegisters[i]->addr
+                        << " len=" << _sortedRegisters[i]->length 
+                        << " name=" << _sortedRegisters[i]->name << std::endl;
+                }
             }
+            std::vector<BatchedRegisters> container = computeBatchedRegisters(
+                [this](const Register* reg) -> bool {
+                    return this->isNeedRead(reg);
+                });
+
+            for (size_t i=0;i<container.size();i++) {
+                std::cout << "Batched: addr=" << container[i].addr << " len=" << container[i].length << " IDS:";
+                for (size_t j=0;j<container[i].regs.size();j++) {
+                    std::cout << container[i].regs[j]->name << "(" << container[i].regs[j]->id << "), ";
+                }
+                std::cout << std::endl;
+            }
+
+
+            CallManager::swapDataBuffers();
+            _readCycleCount++;
         }
 
         /**
-         * Return a derived Device of given 
-         * template type by its id or name.
-         * Throw std::logic_error if asked Device
-         * with given type is not found.
+         *
          */
-        template <typename T>
-        inline const T& devById(id_t id) const
+        inline void flushWrite()
         {
-            return ImplManager<T>::devById(id);
-        }
-        template <typename T>
-        inline T& devById(id_t id)
-        {
-            return ImplManager<T>::devById(id);
-        }
-        template <typename T>
-        inline const T& devByName(const std::string& name) const
-        {
-            return ImplManager<T>::devByName(name);
-        }
-        template <typename T>
-        inline T& devByName(const std::string& name)
-        {
-            return ImplManager<T>::devByName(name);
-        }
-
-        /**
-         * Return a Device with given id or name 
-         * (all derived types are searched).
-         * Throw std::logic_error if asked Device
-         * with given type is not found.
-         */
-        inline const Device& devById(id_t id) const
-        {
-            return Impl<Types...>::runById(this, id);
-        }
-        inline Device& devById(id_t id)
-        {
-            return Impl<Types...>::runById(this, id);
-        }
-        inline const Device& devByName(const std::string& name) const
-        {
-            return Impl<Types...>::runByName(this, name);
-        }
-        inline Device& devByName(const std::string& name)
-        {
-            return Impl<Types...>::runByName(this, name);
         }
         
         /**
-         * Return true if a device of given template type T 
-         * is already contained with given name or id
+         * Inherit.
+         * Call when a register is declared 
+         * to the Device. Use to build up
+         * in Manager the set of all sorted 
+         * Register pointers.
+         * Register are given by its Device id
+         * and its name
          */
-        template <typename T>
-        inline bool devExistsById(id_t id) const
+        inline virtual void onNewRegister(
+            id_t id, const std::string& name) override
         {
-            return ImplManager<T>::devExistsById(id);
-        }
-        template <typename T>
-        inline bool devExistsByName(const std::string& name) const
-        {
-            return ImplManager<T>::devExistsByName(name);
-        }
-
-        /**
-         * Return true if a device is already contained with
-         * given name or id for all Device types
-         */
-        inline bool devExistsById(id_t id) const
-        {
-            return Impl<Types...>::runExistsById(this, id);
-        }
-        inline bool devExistsByName(const std::string& name) const
-        {
-            return Impl<Types...>::runExistsByName(this, name);
-        }
-
-        /**
-         * Return a Vector of pointer to all contained 
-         * derived Device of given template type.
-         * Note that this method is not greatly efficient.
-         */
-        template <typename T>
-        inline std::vector<const T*> devAll() const
-        {
-            std::vector<const T*> ptrs;
-            for (const auto& it : ImplManager<T>::devContainer()) {
-                ptrs.push_back(it.second);
-            }
-            return ptrs;
-        }
-
-        /**
-         * Return a Vector of pointer to all contained
-         * Device for all types.
-         * Note that this method is not greatly efficient.
-         */
-        inline std::vector<const Device*> devAll() const
-        {
-            std::vector<const Device*> ptrs;
-            Impl<Types...>::runList(this, ptrs);
-            return ptrs;
+            //Retrieve the nex register and 
+            //add the pointer to the container
+            _sortedRegisters.push_back(
+                &(this->devById(id)
+                .registersList()
+                .get(name)));
+            //Re sort the container by id and then by address
+            std::sort(_sortedRegisters.begin(), _sortedRegisters.end(),
+                [](const Register* pt1, const Register* pt2) -> bool
+                {
+                    if (pt1->id == pt2->id) {
+                        return pt1->addr < pt2->addr;
+                    } else {
+                        return pt1->id < pt2->id;
+                    }
+                });
         }
 
     private:
 
         /**
-         * Implementation of iteration over contained
-         * types using template variadic parameters and
-         * specialization of structure
+         * Internal structure 
+         * for a batch of registers
          */
-        //Structure declaration
-        template <typename ... Ts>
-        struct Impl;
-        //Final case single element
-        template <typename T>
-        struct Impl<T> {
-            //Get by Id
-            inline static const Device& runById(
-                const Manager<Types...>* ptr, id_t id)
-            {
-                if (!ptr->devExistsById<T>(id)) {
-                    throw std::logic_error(
-                        "Manager Device id not found: " 
-                        + std::to_string(id));
-                }
-                return ptr->devById<T>(id);
-            }
-            inline static Device& runById(
-                Manager<Types...>* ptr, id_t id)
-            {
-                if (!ptr->devExistsById<T>(id)) {
-                    throw std::logic_error(
-                        "Manager Device id not found: " 
-                        + std::to_string(id));
-                }
-                return ptr->devById<T>(id);
-            }
-            //Get by Name
-            inline static const Device& runByName(
-                const Manager<Types...>* ptr, const std::string& name)
-            {
-                if (!ptr->devExistsByName<T>(name)) {
-                    throw std::logic_error(
-                        "Manager Device name not found: " 
-                        + name);
-                }
-                return ptr->devByName<T>(name);
-            }
-            inline static Device& runByName(
-                Manager<Types...>* ptr, const std::string& name)
-            {
-                if (!ptr->devExistsByName<T>(name)) {
-                    throw std::logic_error(
-                        "Manager Device name not found: " 
-                        + name);
-                }
-                return ptr->devByName<T>(name);
-            }
-            //Exists by Id
-            inline static bool runExistsById(
-                const Manager<Types...>* ptr, id_t id)
-            {
-                return ptr->devExistsById<T>(id);
-            }
-            //Exists by Name
-            inline static bool runExistsByName(
-                const Manager<Types...>* ptr, const std::string& name)
-            {
-                return ptr->devExistsByName<T>(name);
-            }
-            //List
-            inline static void runList(
-                const Manager<Types...>* ptr, 
-                std::vector<const Device*>& vect)
-            {
-                for (const auto& it : ptr->ImplManager<T>::devContainer()) {
-                    vect.push_back(it.second);
-                }
-            }
+        struct BatchedRegisters {
+            //Start address
+            addr_t addr;
+            //Batch length
+            size_t length;
+            //Container of 
+            //registers batched
+            std::vector<Register*> regs;
         };
-        //General iteration case
-        template <typename T, typename ... Ts>
-        struct Impl<T, Ts...> {
-            //Get by Id
-            inline static const Device& runById(
-                const Manager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return ptr->devById<T>(id);
-                } else {
-                    return Impl<Ts...>::runById(ptr, id);
-                }
+        
+        /**
+         * Container of all Register pointers
+         * sorted by their id and then by address 
+         * for fast packets batching
+         */
+        std::vector<Register*> _sortedRegisters;
+
+        /**
+         * Count all readFlush() calls
+         */
+        unsigned long _readCycleCount;
+
+        /**
+         * Return true if given Register pointer
+         * is mark has to be read or write
+         */
+        inline bool isNeedRead(const Register* reg) const
+        {
+            if (CallManager::_bufferMode) {
+                return 
+                    reg->_needRead2 || 
+                    (reg->periodPackedRead > 0 &&
+                    (_readCycleCount % reg->periodPackedRead == 0));
+            } else {
+                return
+                    reg->_needRead1 || 
+                    (reg->periodPackedRead > 0 &&
+                    (_readCycleCount % reg->periodPackedRead == 0));
             }
-            inline static Device& runById(
-                Manager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return ptr->devById<T>(id);
-                } else {
-                    return Impl<Ts...>::runById(ptr, id);
-                }
+        }
+        inline bool isNeedWrite(const Register* reg) const
+        {
+            if (CallManager::_bufferMode) {
+                return reg->_needWrite2;
+            } else {
+                return reg->_needWrite1;
             }
-            //Get by Name
-            inline static const Device& runByName(
-                const Manager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return ptr->devByName<T>(name);
-                } else {
-                    return Impl<Ts...>::runByName(ptr, name);
-                }
+        }
+
+        /**
+         * Reset given Register pointer for
+         * read or write operation.
+         * Set timestamp with given timepoint.
+         */
+        inline void resetRegForRead(Register* reg, 
+            const TimePoint& timestamp)
+        {
+            if (CallManager::_bufferMode) {
+                reg->_needRead2 = false;
+                reg->_lastDevRead2 = timestamp;
+            } else {
+                reg->_needRead1 = false;
+                reg->_lastDevRead1 = timestamp;
             }
-            inline static Device& runByName(
-                Manager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return ptr->devByName<T>(name);
-                } else {
-                    return Impl<Ts...>::runByName(ptr, name);
-                }
+        }
+        inline void resetRegForWrite(Register* reg)
+        {
+            if (CallManager::_bufferMode) {
+                reg->_needWrite2 = false;
+            } else {
+                reg->_needWrite1 = false;
             }
-            //Exists by Id
-            inline static bool runExistsById(
-                const Manager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return true;
-                } else {
-                    return Impl<Ts...>::runExistsById(ptr, id);
-                }
+        }
+
+        /**
+         * Iterate over all registers and batch them 
+         * into compatible groups (address and length).
+         * A register is selected for batching if
+         * given predicate function selectRegister()
+         * return true.
+         */
+        std::vector<BatchedRegisters> computeBatchedRegisters(
+            std::function<bool(const Register*)> selectRegister)
+        {
+            //Batched registers container
+            std::vector<BatchedRegisters> container;
+
+            //Initialize the for the first register
+            BatchedRegisters tmpBatch;
+            if (_sortedRegisters.size() > 0) {
+                tmpBatch.addr = _sortedRegisters.front()->addr;
+                tmpBatch.length = _sortedRegisters.front()->length;
+                tmpBatch.regs = {_sortedRegisters.front()};
             }
-            //Exists by Name
-            inline static bool runExistsByName(
-                const Manager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return true;
-                } else {
-                    return Impl<Ts...>::runExistsByName(ptr, name);
+
+            //Merge the given temporary batch to 
+            //final batches by merging by id
+            auto mergeById = [&container](const BatchedRegisters& tmpBatch) {
+                bool found = false;
+                //Already added final batch are iterated
+                //to find if the current batch can be merge
+                //with another batch by id with constant address 
+                //and length.
+                for (size_t j=0;j<container.size();j++) {
+                    if (container[j].addr == tmpBatch.addr && container[j].length == tmpBatch.length) {
+                        for (size_t k=0;k<tmpBatch.regs.size();k++) {
+                            container[j].regs.push_back(tmpBatch.regs[k]);
+                        }
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            //List
-            inline static void runList(
-                const Manager<Types...>* ptr, 
-                std::vector<const Device*>& vect)
-            {
-                for (const auto& it : ptr->ImplManager<T>::devContainer()) {
-                    vect.push_back(it.second);
+                //If no compatible final batch are 
+                //found a new one is created
+                if (!found) {
+                    container.push_back(tmpBatch);
                 }
-                Impl<Ts...>::runList(ptr, vect);
+            };
+
+            //Iterate over all sorted Registers 
+            //by id and then by address
+            size_t index = 1;
+            while (index < _sortedRegisters.size()) {
+                Register* reg = _sortedRegisters[index];
+                //Select batched registers according to
+                //the given predicate function
+                if (selectRegister(reg)) {
+                    bool isContigious = 
+                        (tmpBatch.addr + tmpBatch.length == reg->addr) &&
+                        (reg->id == tmpBatch.regs.front()->id);
+                    if (isContigious) {
+                        //If the register is contigious to current
+                        //batch, it is added to it.
+                        //Registers are first batched by address
+                        //with id constant.
+                        tmpBatch.length += reg->length;
+                        tmpBatch.regs.push_back(reg);
+                    } else {
+                        //If the register is not contiguous,
+                        //the temporaty batch is added to
+                        //the final container.
+                        mergeById(tmpBatch);
+                        //And a new temporary batch is initialize
+                        tmpBatch.addr = reg->addr;
+                        tmpBatch.length = reg->length;
+                        tmpBatch.regs = {reg};
+                    }
+                }
+                index++;
             }
-        };
+            //Merge the last batch
+            mergeById(tmpBatch);
+
+            return container;
+        }
+
+        /**
+         *
+         */
+        inline void writeBatch(BatchedRegisters& batch)
+        {
+            for (size_t i=0;i<batch.regs.size();i++) {
+                batch.regs[i].doConvIn(CallManager::_bufferMode);
+            }
+            if (batch.regs.size() == 1) {
+            } else {
+            }
+            for (size_t i=0;i<batch.regs.size();i++) {
+                resetRegForWrite(batch.regs[i]);
+            }
+        }
+        inline void readBatch(BatchedRegisters& batch)
+        {
+            TimePoint timestamp;
+            if (batch.regs.size() == 1) {
+                timestamp = getCurrentTimePoint();
+            } else {
+                timestamp = getCurrentTimePoint();
+            }
+            for (size_t i=0;i<batch.regs.size();i++) {
+                resetRegForRead(batch.regs[i], timestamp);
+                batch.regs[i].doConvIn(CallManager::_bufferMode);
+            }
+        }
 };
 
 }

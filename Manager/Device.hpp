@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
 #include <string>
-#include <stdexcept>
 #include "types.h"
-#include "Parameters.hpp"
+#include "Parameter.hpp"
+#include "ParametersList.hpp"
 #include "Register.hpp"
+#include "RegistersList.hpp"
+#include "CallManager.hpp"
 
 namespace RhAL {
 
@@ -14,61 +14,71 @@ namespace RhAL {
  * Device
  *
  * Base class for hardware devices.
- * Hold parameters and registers.
+ * Hold parameters and registers pointer
+ * contained in derived class.
+ *
+ * All parameters and registers are expected to
+ * be declared in the constructor of the
+ * derived Device class.
  */
 class Device
 {
     public:
 
         /**
-         * Typedef for registers container
-         */
-        typedef std::unordered_map<std::string, Register*> 
-            RegisterContainer;
-
-        /**
          * Initialization with 
          * device name and id
          */
         inline Device(const std::string& name, id_t id) :
+            _registersList(id),
+            _parametersList(),
             _name(name),
             _id(id),
-            _registers(),
-            _params()
+            _manager(nullptr)
         {
         }
 
         /**
-         * Free all allocated registers
+         * Virtual destructor
          */
         inline virtual ~Device()
         {
-            for (auto& reg : _registers) {
-                delete reg.second;
-                reg.second = nullptr;
-            }
         }
 
         /**
-         * Call Device derived implementation and
-         * initialize all registers and parameters.
-         * Throw std::logic_error if init() has already
-         * been called.
+         * Copy constructor and 
+         * assignement are forbidden
+         */
+        Device(const Device&) = delete;
+        Device& operator=(const Device&) = delete;
+
+        /**
+         * Set the Manager pointer
+         */
+        inline void setManager(CallManager* manager)
+        {
+            if (manager == nullptr) {
+                throw std::logic_error(
+                    "Device null manager pointer: "
+                    + _name);
+            }
+            _manager = manager;
+            _registersList.setManager(_manager);
+        }
+
+        /**
+         * Run derived class registers and
+         * parameters initialization
          */
         inline void init()
         {
-            if (
-                _registers.size() != 0 ||
-                _params.containerBool().size() != 0 ||
-                _params.containerNumber().size() != 0 ||
-                _params.containerStr().size() != 0
-            ) {
+            if (_manager == nullptr) {
                 throw std::logic_error(
-                    "Device device already init: " 
+                    "Device null manager pointer: "
                     + _name);
             }
-            initParameters();
-            initRegisters();
+            //Call 
+            onInit();
         }
 
         /**
@@ -88,60 +98,58 @@ class Device
         }
 
         /**
-         * Return the device model number
-         * and textual name
+         * Read access to Registers and
+         * Parameters list
          */
-        virtual type_t typeNumber() const = 0;
-        virtual std::string typeName() const = 0;
-
+        const RegistersList& registersList() const
+        {
+            return _registersList;
+        }
+        const ParametersList& parametersList() const
+        {
+            return _parametersList;
+        }
+        
     protected:
-
-        /**
-         * Access to registers and 
-         * parameters container
-         */
-        inline const RegisterContainer& registers() const
-        {
-            return _registers;
-        }
-        inline RegisterContainer& registers()
-        {
-            return _registers;
-        }
-        inline const ParametersContainer& parameters() const
-        {
-            return _params;
-        }
-        inline ParametersContainer& parameters()
-        {
-            return _params;
-        }
-
-        /**
-         * Add given allocated register.
-         * Desallocation is done by Device destructor.
-         * std::logic_error is throw if given register name
-         * already exists.
-         */
-        inline void addRegister(Register* reg)
-        {
-            if (_registers.count(reg->name) != 0) {
-                throw std::logic_error(
-                    "Device register already added: " 
-                    + reg->name);
-            }
-            _registers[reg->name] = reg;
-        }
-
-        /**
-         * Initialize and declare all parameters
-         */
-        virtual void initParameters() = 0;
         
         /**
-         * Initialize and declare all registers
+         * Register pointers container
          */
-        virtual void initRegisters() = 0;
+        RegistersList _registersList;
+
+        /**
+         * Container of bool, number and 
+         * string device parameters
+         */
+        ParametersList _parametersList;
+        
+        /**
+         * Read/Write access to Registers and
+         * Parameters list
+         * (Used for friend Manager access)
+         */
+        RegistersList& registersList()
+        {
+            return _registersList;
+        }
+        ParametersList& parametersList()
+        {
+            return _parametersList;
+        }
+
+        /**
+         * Call during device initialization.
+         * Registers and Parameters are supposed
+         * to be declared here
+         */
+        virtual void onInit() = 0;
+
+        /**
+         * Manager has access to listed 
+         * Parameters and Registers
+         */
+        template <typename ... T>
+        friend class Manager;
 
     private:
 
@@ -156,15 +164,10 @@ class Device
         id_t _id;
 
         /**
-         * Allocated register container
+         * Pointer to the base class Manager
+         * that will be provided to RegistersList
          */
-        RegisterContainer _registers;
-
-        /**
-         * Container of bool, number and 
-         * string device parameters
-         */
-        ParametersContainer _params;
+        CallManager* _manager;
 };
 
 }

@@ -3,8 +3,18 @@
 #include "BaseManager.hpp"
 #include "Device.hpp"
 #include "Register.hpp"
+#include "Parameter.hpp"
 
 namespace RhAL {
+
+inline void convIn2(RhAL::data_t* buffer, float value)
+{
+    *(reinterpret_cast<float*>(buffer)) = value;
+}
+inline float convOut2(const RhAL::data_t* buffer)
+{
+   return  *(reinterpret_cast<const float*>(buffer));
+}
 
 /**
  * ExampleDevice2
@@ -20,46 +30,47 @@ class ExampleDevice2 : public Device
          * Initialization with name and id
          */
         inline ExampleDevice2(const std::string& name, id_t id) :
-            Device(name, id)
+            Device(name, id),
+            _pitch("pitch", 0x08, 4, convIn2, convOut2, 2),
+            _roll("roll", 0x0C, 4, convIn2, convOut2, 2),
+            _mode("mode", 0x10, 4, convIn2, convOut2, 0)
         {
         }
-        
-        /**
-         * Return the device model number
-         * and textual name
-         */
-        virtual type_t typeNumber() const override
+
+        inline void setMode(float mode)
         {
-            return 0x02;
+            _mode.writeValue(mode);
         }
-        virtual std::string typeName() const override
+        inline TimedValueFloat getPitch() const
         {
-            return "ExampleDevice2";
+            return _pitch.readValue();
+        }
+        inline TimedValueFloat getRoll() const
+        {
+            return _roll.readValue();
         }
 
     protected:
+
+        /**
+         * Inherit.
+         * Declare Registers and parameters
+         */
+        inline virtual void onInit() override
+        {
+            Device::_registersList.add(&_pitch);
+            Device::_registersList.add(&_roll);
+            Device::_registersList.add(&_mode);
+        }
         
-        /**
-         * Declare all parameters
-         */
-        virtual void initParameters() override
-        {
-            Device::parameters().addNumber("offset", 0.0);
-            Device::parameters().addStr("prefix", "");
-        }
-
-
-        /**
-         * Declare all registers
-         */
-        virtual void initRegisters() override
-        {
-            Device::addRegister(new Register("force", 0x02, 4, true));
-            Device::addRegister(new Register("enable", 0x08, 1, true));
-        }
-
     private:
 
+        /**
+         * Registers
+         */
+        TypedRegisterFloat _pitch;
+        TypedRegisterFloat _roll;
+        TypedRegisterFloat _mode;
 };
 
 /**
@@ -69,8 +80,16 @@ template <>
 class ImplManager<ExampleDevice2> : public BaseManager<ExampleDevice2>
 {
     public:
+        
+        inline static type_t typeNumber() 
+        {
+            return 2;
+        }
 
-    private:
+        inline static std::string typeName()
+        {
+            return "ExampleDevice2";
+        }
 };
 
 }

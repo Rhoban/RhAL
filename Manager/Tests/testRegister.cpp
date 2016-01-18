@@ -1,32 +1,55 @@
 #include "tests.h"
 #include "Register.hpp"
+#include "Manager.hpp"
+#include "ExampleDevice1.hpp"
+
+static void convIn(RhAL::data_t* buffer, long value)
+{
+    *(reinterpret_cast<long*>(buffer)) = value;
+}
+static long convOut(const RhAL::data_t* buffer)
+{
+   return  *(reinterpret_cast<const long*>(buffer));
+}
 
 int main()
 {
-    //Test initialization
-    RhAL::Register reg("regName", 0xFF, 4, false);
+    RhAL::Manager<RhAL::ExampleDevice1> manager;
+
+    //Test Register
+    RhAL::data_t buffer1[256];
+    RhAL::TypedRegisterBool reg("regName", 0xFF, 4, convIn, convOut, 0);
+    reg.init(1, &manager, buffer1);
+    assertEquals(reg.id, (RhAL::id_t)1);
     assertEquals(reg.name, "regName");
     assertEquals(reg.addr, (RhAL::addr_t)0xFF);
     assertEquals(reg.length, (size_t)4);
-    assertEquals(reg.lastRead, RhAL::TimePoint());
-    assertEquals(reg.lastWrite, RhAL::TimePoint());
-    assertEquals(reg.isFetched, false);
-    *((uint32_t*)reg.data) = (uint32_t)42;
-    assertEquals(*((uint32_t*)reg.data), (uint32_t)42);
+    assertEquals(reg.periodPackedRead, (unsigned int)0);
 
-    RhAL::Register reg2 = reg;
-    assertEquals(reg2.name, "regName");
-    assertEquals(reg2.addr, (RhAL::addr_t)0xFF);
+    assertEquals(reg.needRead(), false);
+    assertEquals(reg.needWrite(), false);
+    reg.askRead();
+    assertEquals(reg.needRead(), true);
+    assertEquals(reg.needWrite(), false);
+    reg.askWrite();
+    assertEquals(reg.needRead(), true);
+    assertEquals(reg.needWrite(), true);
+
+    //Test TypedRegister
+    RhAL::data_t buffer2[256];
+    RhAL::TypedRegisterInt reg2("reg2Name", 0x42, 4, convIn, convOut, 1);
+    assertEquals(reg2.name, "reg2Name");
+    assertEquals(reg2.addr, (RhAL::addr_t)0x42);
     assertEquals(reg2.length, (size_t)4);
-    assertEquals(reg2.lastRead, RhAL::TimePoint());
-    assertEquals(reg2.lastWrite, RhAL::TimePoint());
-    assertEquals(reg2.isFetched, false);
-    assertEquals(*((uint32_t*)reg2.data), (uint32_t)42);
-
-    //Test container insersion
-    std::vector<RhAL::Register> container;
-    container.push_back(reg);
-    container.push_back(reg);
+    assertEquals(reg2.periodPackedRead, (unsigned int)1);
+    
+    reg2.init(2, &manager, buffer2);
+    assertEquals(reg2.id, (RhAL::id_t)2);
+    assertEquals(reg2.needRead(), false);
+    assertEquals(reg2.needWrite(), false);
+    reg2.writeValue(4);
+    assertEquals(reg2.needRead(), false);
+    assertEquals(reg2.needWrite(), true);
 
     return 0;
 }

@@ -13,6 +13,18 @@ namespace std {
         (void)a;
         return "[non-printable]";
     }
+    /**
+     * Overload std::to_string for
+     * boolean types
+     */
+    template <>
+    string to_string(bool a) {
+        if (a) {
+            return "true";
+        } else {
+            return "false";
+        }
+    }
 }
 
 /**
