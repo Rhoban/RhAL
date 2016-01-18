@@ -1,6 +1,6 @@
-#include "ExampleDevice1.hpp"
+#include "Manager/ExampleDevice1.hpp"
 #include "tests.h"
-#include "Manager.hpp"
+#include "Manager/Manager.hpp"
 
 int main()
 {

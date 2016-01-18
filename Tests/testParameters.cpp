@@ -1,7 +1,7 @@
 #include <iostream>
 #include "tests.h"
-#include "Parameter.hpp"
-#include "ParametersList.hpp"
+#include "Manager/Parameter.hpp"
+#include "Manager/ParametersList.hpp"
 
 int main()
 {

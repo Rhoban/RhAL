@@ -48,7 +48,7 @@ inline TimePoint getTimePoint()
  */
 inline double getTimeDouble()
 {
-    TimePoint tp = getCurrentTimePoint();
+    TimePoint tp = getTimePoint();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         tp.time_since_epoch()).count()/1000000000.0;
 }

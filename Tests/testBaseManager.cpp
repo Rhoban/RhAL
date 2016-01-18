@@ -1,7 +1,7 @@
-#include "BaseManager.hpp"
-#include "Manager.hpp"
+#include "Manager/BaseManager.hpp"
+#include "Manager/Manager.hpp"
 #include "tests.h"
-#include "ExampleDevice1.hpp"
+#include "Manager/ExampleDevice1.hpp"
 
 int main()
 {
