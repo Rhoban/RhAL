@@ -1,6 +1,5 @@
 #include <stdexcept>
 #include <cstdio>
-#include "utils.h"
 #include <string.h>
 #include "DynamixelV1.hpp"
 
@@ -168,11 +167,11 @@ namespace RhAL
     ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id, double timeout)
     {
         response = NULL;
-        double start = getTime();
+        double start = getTimeDouble();
         size_t position = 0;
 
-        while (getTime()-start <= timeout) {
-            double t = timeout-(getTime()-start);
+        while (getTimeDouble()-start <= timeout) {
+            double t = timeout-(getTimeDouble()-start);
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];

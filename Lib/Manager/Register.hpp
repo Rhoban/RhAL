@@ -446,7 +446,7 @@ class TypedRegister : public Register
                 }
                 //Assign the value and timestamp
                 _valueWrite1 = aggregated;
-                _lastUserWrite = getCurrentTimePoint();
+                _lastUserWrite = getTimePoint();
                 //Mark as dirty
                 _needWrite1 = true;
             } else {
@@ -458,7 +458,7 @@ class TypedRegister : public Register
                 }
                 //Assign the value and timestamp
                 _valueWrite2 = aggregated;
-                _lastUserWrite = getCurrentTimePoint();
+                _lastUserWrite = getTimePoint();
                 //Mark as dirty
                 _needWrite2 = true;
             }

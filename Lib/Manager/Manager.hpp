@@ -282,9 +282,9 @@ class Manager : public AggregateManager<Types...>
         {
             TimePoint timestamp;
             if (batch.regs.size() == 1) {
-                timestamp = getCurrentTimePoint();
+                timestamp = getTimePoint();
             } else {
-                timestamp = getCurrentTimePoint();
+                timestamp = getTimePoint();
             }
             for (size_t i=0;i<batch.regs.size();i++) {
                 resetRegForRead(batch.regs[i], timestamp);

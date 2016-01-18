@@ -1,6 +1,5 @@
 #include <vector>
 #include <iostream>
-#include <Protocol/utils.h>
 #include <Bus/SerialBus.hpp>
 #include <Protocol/DynamixelV1.hpp>
 
@@ -12,9 +11,9 @@ int main()
     RhAL::SerialBus bus("/dev/ttyACM0", 1000000);
     RhAL::DynamixelV1 protocol(bus);
 
-    double start = getTime();
+    double start = getTimeDouble();
     int c = 0;
-    while (getTime()-start < 60.0) {
+    while (getTimeDouble()-start < 60.0) {
         c++;
         protocol.ping(241);
     }
