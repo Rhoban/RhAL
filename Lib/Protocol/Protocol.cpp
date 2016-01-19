@@ -9,6 +9,10 @@ namespace RhAL
         : bus(bus)
     {
     }
+            
+    Protocol::~Protocol()
+    {
+    }
 
     uint8_t Protocol::readByte(id_t id, addr_t address)
     {

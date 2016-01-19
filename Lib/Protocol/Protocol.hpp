@@ -36,6 +36,11 @@ namespace RhAL
             Protocol(Bus &bus);
 
             /**
+             * Virtual destructor
+             */
+            virtual ~Protocol();
+
+            /**
              * Write size bytes of data on device with id at given address
              */
             virtual void writeData(id_t id, addr_t address, 

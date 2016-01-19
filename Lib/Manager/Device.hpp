@@ -145,11 +145,14 @@ class Device
         virtual void onInit() = 0;
 
         /**
-         * Manager has access to listed 
+         * Manager and BaseManager 
+         * have access to listed 
          * Parameters and Registers
          */
         template <typename ... T>
         friend class Manager;
+        template <typename T>
+        friend class BaseManager;
 
     private:
 

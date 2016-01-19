@@ -3,8 +3,11 @@
 #include <unordered_map>
 #include <string>
 #include <stdexcept>
+#include <json.hpp>
 #include "types.h"
 #include "CallManager.hpp"
+#include "Parameter.hpp"
+#include "ParametersList.hpp"
 
 namespace RhAL {
 
@@ -32,6 +35,7 @@ class BaseManager
          * Initialization
          */
         inline BaseManager() :
+            _parametersList(),
             _devicesByName(),
             _devicesById()
         {
@@ -147,6 +151,53 @@ class BaseManager
         {
             return _devicesByName;
         }
+
+        /**
+         * Export and return the base container
+         * parameters and all devices parameters
+         * into a json object
+         */
+        inline nlohmann::json saveJSON() const
+        {
+            nlohmann::json j;
+            j["parameters"] = _parametersList.saveJSON();        
+            j["devices"] = nlohmann::json::array();
+            for (const auto& it : _devicesById) {
+                nlohmann::json obj = nlohmann::json::object();
+                obj["id"] = it.second->id();
+                obj["name"] = it.second->name();
+                obj["parameters"] = it.second
+                    ->parametersList().saveJSON();
+                j["devices"].push_back(obj);
+            }
+
+            return j;
+        }
+
+    protected:
+        
+        /**
+         * Container of bool, number and 
+         * string device parameters
+         */
+        ParametersList _parametersList;
+        
+        /**
+         * Read/Write access to Registers and
+         * Parameters list
+         * (Used for friend Manager access)
+         */
+        ParametersList& parametersList()
+        {
+            return _parametersList;
+        }
+
+        /**
+         * Manager has access to listed 
+         * Parameters and Registers
+         */
+        template <typename ... U>
+        friend class Manager;
 
     private:
 

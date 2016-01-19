@@ -3,7 +3,11 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <json.hpp>
 #include "AggregateManager.hpp"
+#include "Bus/SerialBus.hpp"
+#include "Protocol/Protocol.hpp"
+#include "Protocol/ProtocolFactory.hpp"
 
 namespace RhAL {
 
@@ -23,15 +27,81 @@ class Manager : public AggregateManager<Types...>
         /**
          * Initialization
          */
-        Manager() :
+        inline Manager() :
             AggregateManager<Types...>(),
             _sortedRegisters(),
-            _readCycleCount(0)
+            _readCycleCount(0),
+            _bus(nullptr),
+            _protocol(nullptr),
+            _parametersList(),
+            _paramBusPort("port", ""),
+            _paramBusBaudrate("baudrate", 1000000),
+            _paramProtocolName("protocol", "FakeProtocol")
+        {
+            //Registering all parameters
+            _parametersList.add(&_paramBusPort);
+            _parametersList.add(&_paramBusBaudrate);
+            _parametersList.add(&_paramProtocolName);
+        }
+
+        /**
+         * Bus and Protocol deallocation
+         */
+        inline ~Manager()
+        {
+            if (_protocol != nullptr) {
+                delete _protocol;
+                _protocol = nullptr;
+            }
+            if (_bus != nullptr) {
+                delete _bus;
+                _bus = nullptr;
+            }
+        }
+
+        /**
+         * TODO
+         */
+        inline void loadParameters(const std::string& filename)
+        {
+        }
+        inline void writeParameters(const std::string& filename)
         {
         }
 
         /**
-         *
+         * Reset and initialize the
+         * Bus and Protocol instance.
+         * (Need to be call before any flushRead() 
+         * or flushWrite() or after any bus/protocol 
+         * parameters update)
+         */
+        inline void initBus()
+        {
+            //Free existing instance
+            if (_protocol != nullptr) {
+                delete _protocol;
+                _protocol = nullptr;
+            }
+            if (_bus != nullptr) {
+                delete _bus;
+                _bus = nullptr;
+            }
+            //Allocate Bus and Protocol
+            if (_paramBusPort.value != "") {
+                _bus = new SerialBus(_paramBusPort.value, _paramBusBaudrate.value);
+            }
+            _protocol = ProtocolFactory(_paramProtocolName.value, *_bus);
+            //Check that Protocol implementation name is valid
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager invalid protocol name: " 
+                    + _paramProtocolName.value);
+            }
+        }
+
+        /**
+         * TODO
          */
         inline void flushRead()
         {
@@ -65,7 +135,7 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
-         *
+         * TODO
          */
         inline void flushWrite()
         {
@@ -101,6 +171,21 @@ class Manager : public AggregateManager<Types...>
                 });
         }
 
+        /**
+         * TODO
+         */
+        inline nlohmann::json saveJSON() const
+        {
+            nlohmann::json j = AggregateManager<Types...>::saveAggregatedJSON();
+            j["Manager"] = _parametersList.saveJSON();
+            return j;
+        }
+        /*
+        inline void loadJSON(const nlohmann::json& j)
+        {
+        }
+        */
+
     private:
 
         /**
@@ -128,6 +213,29 @@ class Manager : public AggregateManager<Types...>
          * Count all readFlush() calls
          */
         unsigned long _readCycleCount;
+
+        /**
+         * Serial bus and Protocol pointers
+         */
+        SerialBus* _bus;
+        Protocol* _protocol;
+        
+        /**
+         * Container of bool, number and 
+         * string device parameters
+         */
+        ParametersList _parametersList;
+
+        /**
+         * Bus and protocol parameters.
+         * BusPort: system path to serial device
+         * BusBaudrate: serial port baudrate
+         * ProtocolName: textual name for Protocol 
+         * (factory) instantiation
+         */
+        ParameterStr _paramBusPort;
+        ParameterNumber _paramBusBaudrate;
+        ParameterStr _paramProtocolName;
 
         /**
          * Return true if given Register pointer
@@ -264,7 +372,7 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
-         *
+         * TODO
          */
         inline void writeBatch(BatchedRegisters& batch)
         {

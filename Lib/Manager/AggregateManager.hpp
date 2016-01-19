@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <json.hpp>
 #include "CallManager.hpp"
 #include "BaseManager.hpp"
 #include "Device.hpp"
@@ -189,6 +191,20 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
             return ptrs;
         }
 
+    protected:
+        
+        /**
+         * Export and return all aggregated 
+         * derived Device container parameters
+         * into a json object
+         */
+        inline nlohmann::json saveAggregatedJSON() const
+        {
+            nlohmann::json j;
+            Impl<Types...>::runSaveJSON(this, j);
+            return j;
+        }
+
     private:
 
         /**
@@ -309,6 +325,14 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                     vect.push_back(it.second);
                 }
             }
+            //Save JSON
+            inline static void runSaveJSON(
+                const AggregateManager<Types...>* ptr, 
+                nlohmann::json& j)
+            {
+                j[ImplManager<T>::typeName()] = 
+                    ptr->ImplManager<T>::saveJSON();
+            }
         };
         //General iteration case
         template <typename T, typename ... Ts>
@@ -420,6 +444,15 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                     vect.push_back(it.second);
                 }
                 Impl<Ts...>::runList(ptr, vect);
+            }
+            //Save JSON
+            inline static void runSaveJSON(
+                const AggregateManager<Types...>* ptr, 
+                nlohmann::json& j)
+            {
+                j[ImplManager<T>::typeName()] = 
+                    ptr->ImplManager<T>::saveJSON();
+                Impl<Ts...>::runSaveJSON(ptr, j);
             }
         };
 };

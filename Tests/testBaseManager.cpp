@@ -27,6 +27,8 @@ int main()
     assertEquals(baseManager->devById(2).id(), (RhAL::id_t)2);
     assertEquals(baseManager->devByName("test2").id(), (RhAL::id_t)2);
 
+    std::cout << baseManager->saveJSON().dump(4) << std::endl;
+
     return 0;
 }
 

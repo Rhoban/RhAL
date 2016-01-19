@@ -3,6 +3,11 @@
 
 namespace RhAL
 {
+        
+FakeProtocol::FakeProtocol(Bus& bus) :
+    Protocol(bus)
+{
+}
 
 void FakeProtocol::writeData(
     id_t id, addr_t address, 

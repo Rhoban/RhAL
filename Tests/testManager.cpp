@@ -54,6 +54,8 @@ int main()
     assertEquals(e4.id(), (RhAL::id_t)2);
     */
 
+    manager.initBus();
+
     manager.devAdd<RhAL::ExampleDevice1>("Dev1Test1", 1);
     manager.devAdd<RhAL::ExampleDevice1>("Dev1Test2", 2);
     manager.devAdd<RhAL::ExampleDevice1>("Dev1Test3", 3);
@@ -67,6 +69,8 @@ int main()
     manager.flushRead();
     manager.flushRead();
     manager.flushRead();
+
+    std::cout << manager.saveJSON().dump(4) << std::endl;
 
     return 0;
 }

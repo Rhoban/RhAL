@@ -136,6 +136,10 @@ namespace RhAL
     std::vector<ResponseState> DynamixelV1::syncRead(std::vector<id_t> ids, addr_t address,
             std::vector<uint8_t*> datas, size_t size)
     {
+        (void)ids;
+        (void)address;
+        (void)datas;
+        (void)size;
         throw runtime_error("Sync read is not yet supported");
     }
 
