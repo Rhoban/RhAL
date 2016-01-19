@@ -11,7 +11,7 @@ FakeProtocol::FakeProtocol(Bus& bus) :
 
 void FakeProtocol::writeData(
     id_t id, addr_t address, 
-    uint8_t *data, size_t size) 
+    const uint8_t *data, size_t size) 
 {
     (void)data;
     std::cout << "WriteData id=" << id 
@@ -57,7 +57,7 @@ std::vector<ResponseState> FakeProtocol::syncRead(
 
 void FakeProtocol::syncWrite(
     const std::vector<id_t>& ids, addr_t address,
-    const std::vector<uint8_t*>& datas, size_t size) 
+    const std::vector<const uint8_t*>& datas, size_t size) 
 {
     (void)datas;
     std::cout << "SyncWrite ids={";

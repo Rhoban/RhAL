@@ -44,7 +44,7 @@ namespace RhAL
              * Write size bytes of data on device with id at given address
              */
             virtual void writeData(id_t id, addr_t address, 
-                    uint8_t *data, size_t size)=0;
+                    const uint8_t *data, size_t size)=0;
 
             /**
              * Reads size bytes of data on device with id at given address
@@ -81,7 +81,7 @@ namespace RhAL
              */
             virtual void syncWrite(
                     const std::vector<id_t>& ids, addr_t address,
-                    const std::vector<uint8_t*>& datas, size_t size)=0;
+                    const std::vector<const uint8_t*>& datas, size_t size)=0;
 
         protected:
             // Bus used for communication

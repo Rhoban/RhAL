@@ -34,7 +34,7 @@ namespace RhAL
                  * Append data to the buffer
                  */
                 void append(uint8_t byte);
-                void append(uint8_t *data, size_t size);
+                void append(const uint8_t *data, size_t size);
 
                 /**
                  * Sets the status packet error
@@ -84,7 +84,7 @@ namespace RhAL
              * Implementations from Protocol
              */
             void writeData(id_t id, addr_t address, 
-                    uint8_t *data, size_t size);
+                    const uint8_t *data, size_t size);
             ResponseState readData(id_t id, addr_t address, 
                     uint8_t *data, size_t size);
             bool ping(id_t id);
@@ -93,7 +93,7 @@ namespace RhAL
                     const std::vector<uint8_t*>& datas, size_t size);
             void syncWrite(
                     const std::vector<id_t>& ids, addr_t address,
-                    const std::vector<uint8_t*>& datas, size_t size);
+                    const std::vector<const uint8_t*>& datas, size_t size);
 
         protected:
             /**

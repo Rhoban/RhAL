@@ -41,7 +41,7 @@ namespace RhAL
         }
     }
 
-    void DynamixelV1::Packet::append(uint8_t *data, size_t size)
+    void DynamixelV1::Packet::append(const uint8_t *data, size_t size)
     {
         if (position+size <= parameters) {
             memcpy(buffer + 5 + position, data, size);
@@ -93,7 +93,7 @@ namespace RhAL
     }
 
     void DynamixelV1::writeData(id_t id, addr_t address, 
-            uint8_t *data, size_t size)
+            const uint8_t *data, size_t size)
     {
         Packet packet(id, CommandWrite, size+1);
         packet.append(address);
@@ -146,7 +146,7 @@ namespace RhAL
 
     void DynamixelV1::syncWrite(
             const std::vector<id_t>& ids, addr_t address,
-            const std::vector<uint8_t*>& datas, size_t size)
+            const std::vector<const uint8_t*>& datas, size_t size)
     {
         if (ids.size() != datas.size()) {
             throw runtime_error("ids and datas should have the same size() for syncWrite");

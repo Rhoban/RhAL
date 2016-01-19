@@ -18,7 +18,7 @@ class FakeProtocol : public Protocol
          */
         virtual void writeData(
             id_t id, addr_t address, 
-            uint8_t *data, size_t size) override;
+            const uint8_t *data, size_t size) override;
         virtual ResponseState readData(
             id_t id, addr_t address, 
             uint8_t *data, size_t size) override;
@@ -28,7 +28,7 @@ class FakeProtocol : public Protocol
             const std::vector<uint8_t*>& datas, size_t size) override;
         virtual void syncWrite(
             const std::vector<id_t>& ids, addr_t address,
-            const std::vector<uint8_t*>& datas, size_t size) override;
+            const std::vector<const uint8_t*>& datas, size_t size) override;
 };
 
 }
