@@ -105,10 +105,10 @@ class Manager : public AggregateManager<Types...>
          */
         inline void flushRead()
         {
+            /*
             std::cout << "---------- Start flushRead" << std::endl;
             for (size_t i=0;i<_sortedRegisters.size();i++) {
                 if (isNeedRead(_sortedRegisters[i])) {
-                    //std::cout << _sortedRegisters[i]->name << " " << _sortedRegisters[i]->id << " " << _sortedRegisters[i]->addr << std::endl;
                     std::cout 
                         << "id=" << _sortedRegisters[i]->id
                         << " addr=" << _sortedRegisters[i]->addr
@@ -116,11 +116,21 @@ class Manager : public AggregateManager<Types...>
                         << " name=" << _sortedRegisters[i]->name << std::endl;
                 }
             }
-            std::vector<BatchedRegisters> container = computeBatchedRegisters(
+            */
+            
+            //Compute Read batching
+            std::vector<BatchedRegisters> batchs = computeBatchedRegisters(
                 [this](const Register* reg) -> bool {
                     return this->isNeedRead(reg);
                 });
+            //Read all batchs
+            for (size_t i=0;i<batchs.size();i++) {
+                readBatch(batchs[i]);
+            }
+            //Increment Read counter
+            _readCycleCount++;
 
+            /*
             for (size_t i=0;i<container.size();i++) {
                 std::cout << "Batched: addr=" << container[i].addr << " len=" << container[i].length << " IDS:";
                 for (size_t j=0;j<container[i].regs.size();j++) {
@@ -128,10 +138,8 @@ class Manager : public AggregateManager<Types...>
                 }
                 std::cout << std::endl;
             }
+            */
 
-
-            CallManager::swapDataBuffers();
-            _readCycleCount++;
         }
 
         /**
@@ -139,6 +147,38 @@ class Manager : public AggregateManager<Types...>
          */
         inline void flushWrite()
         {
+            //Compute Write batching
+            std::vector<BatchedRegisters> batchs = computeBatchedRegisters(
+                [this](const Register* reg) -> bool {
+                    return this->isNeedWrite(reg);
+                });
+            //Send all batchs
+            for (size_t i=0;i<batchs.size();i++) {
+                writeBatch(batchs[i]);
+            }
+        }
+
+        /**
+         * Swap all Registers double buffers.
+         * (Has to be called before/after
+         * Read and Write operations)
+         * (This method must be called by 
+         * the same thread as flush*() methods)
+         */
+        inline void swapBuffers()
+        {
+            CallManager::swapDataBuffers();
+        }
+
+        /**
+         * Shorthand for flushRead(),
+         * flushWrite() then swapBuffers().
+         */
+        inline void flush()
+        {
+            flushRead();
+            flushWrite();
+            swapBuffers();
         }
         
         /**
@@ -372,31 +412,99 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
-         * TODO
+         * Actually Write and Read on the bus 
+         * given batched Registers
+         * TODO handle error.........XXX
          */
         inline void writeBatch(BatchedRegisters& batch)
         {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
+            //Converted and write the typed 
+            //value into the data buffer
             for (size_t i=0;i<batch.regs.size();i++) {
-                batch.regs[i].doConvIn(CallManager::_bufferMode);
+                batch.regs[i]->doConvIn(CallManager::_bufferMode);
             }
             if (batch.regs.size() == 1) {
+                //Write single register
+                _protocol->writeData(
+                    batch.regs.front()->id, 
+                    batch.addr, 
+                    batch.regs.front()->_dataBuffer, 
+                    batch.length);
             } else {
+                //Synch Write multiple registers
+                std::vector<id_t> ids;
+                std::vector<data_t*> datas;
+                for (size_t i=0;i<batch.regs.size();i++) {
+                    if (ids.size() == 0 || 
+                        batch.regs[i]->id != ids.back()
+                    ) {
+                        //Do not insert an id twice
+                        ids.push_back(batch.regs[i]->id);
+                    }
+                    datas.push_back(batch.regs[i]->_dataBuffer);
+                }
+                _protocol->syncWrite(
+                    ids, 
+                    batch.addr,
+                    datas,
+                    batch.length);
             }
+            //Reset dirty flags
             for (size_t i=0;i<batch.regs.size();i++) {
                 resetRegForWrite(batch.regs[i]);
             }
         }
         inline void readBatch(BatchedRegisters& batch)
         {
-            TimePoint timestamp;
-            if (batch.regs.size() == 1) {
-                timestamp = getTimePoint();
-            } else {
-                timestamp = getTimePoint();
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
             }
+            if (batch.regs.size() == 1) {
+                //Read single register
+                ResponseState state = _protocol->readData(
+                    batch.regs.front()->id, 
+                    batch.addr, 
+                    batch.regs.front()->_dataBuffer, 
+                    batch.length);
+                //Check for communication error
+                if (state != ResponseOK) {
+                    //TODO XXX XXX XXX handle response code
+                }
+            } else {
+                //Synch Read multiple registers
+                std::vector<id_t> ids;
+                std::vector<data_t*> datas;
+                for (size_t i=0;i<batch.regs.size();i++) {
+                    if (ids.size() == 0 || 
+                        batch.regs[i]->id != ids.back()
+                    ) {
+                        //Do not insert an id twice
+                        ids.push_back(batch.regs[i]->id);
+                    }
+                    datas.push_back(batch.regs[i]->_dataBuffer);
+                }
+                std::vector<ResponseState> states = _protocol->syncRead(
+                    ids, 
+                    batch.addr,
+                    datas,
+                    batch.length);
+                //Check for communication error
+                    //TODO XXX XXX XXX handle response code
+            }
+            //Retrieve the read timestamp
+            TimePoint timestamp = getTimePoint();
+            //Reset dirty flags, set read timestamp
+            //and convert the data buffer into typed value
             for (size_t i=0;i<batch.regs.size();i++) {
                 resetRegForRead(batch.regs[i], timestamp);
-                batch.regs[i].doConvIn(CallManager::_bufferMode);
+                batch.regs[i]->doConvOut(CallManager::_bufferMode);
             }
         }
 };

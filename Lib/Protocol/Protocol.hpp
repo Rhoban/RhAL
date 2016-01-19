@@ -72,14 +72,16 @@ namespace RhAL
             /**
              * Perform a synchronized read across devices
              */
-            virtual std::vector<ResponseState> syncRead(std::vector<id_t> ids, addr_t address,
-                    std::vector<uint8_t*> datas, size_t size)=0;
+            virtual std::vector<ResponseState> syncRead(
+                    const std::vector<id_t>& ids, addr_t address,
+                    const std::vector<uint8_t*>& datas, size_t size)=0;
             
             /**
              * Performs a synchronized write across devices
              */
-            virtual void syncWrite(std::vector<id_t> ids, addr_t address,
-                    std::vector<uint8_t*> datas, size_t size)=0;
+            virtual void syncWrite(
+                    const std::vector<id_t>& ids, addr_t address,
+                    const std::vector<uint8_t*>& datas, size_t size)=0;
 
         protected:
             // Bus used for communication

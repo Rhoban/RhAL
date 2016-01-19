@@ -24,11 +24,11 @@ class FakeProtocol : public Protocol
             uint8_t *data, size_t size) override;
         virtual bool ping(id_t id) override;
         virtual std::vector<ResponseState> syncRead(
-            std::vector<id_t> ids, addr_t address,
-            std::vector<uint8_t*> datas, size_t size) override;
+            const std::vector<id_t>& ids, addr_t address,
+            const std::vector<uint8_t*>& datas, size_t size) override;
         virtual void syncWrite(
-            std::vector<id_t> ids, addr_t address,
-            std::vector<uint8_t*> datas, size_t size) override;
+            const std::vector<id_t>& ids, addr_t address,
+            const std::vector<uint8_t*>& datas, size_t size) override;
 };
 
 }

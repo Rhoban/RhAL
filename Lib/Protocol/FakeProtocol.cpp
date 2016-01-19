@@ -39,8 +39,8 @@ bool FakeProtocol::ping(id_t id)
 }
 
 std::vector<ResponseState> FakeProtocol::syncRead(
-    std::vector<id_t> ids, addr_t address,
-    std::vector<uint8_t*> datas, size_t size) 
+    const std::vector<id_t>& ids, addr_t address,
+    const std::vector<uint8_t*>& datas, size_t size) 
 {
     (void)datas;
     std::vector<ResponseState> states;
@@ -56,8 +56,8 @@ std::vector<ResponseState> FakeProtocol::syncRead(
 }
 
 void FakeProtocol::syncWrite(
-    std::vector<id_t> ids, addr_t address,
-    std::vector<uint8_t*> datas, size_t size) 
+    const std::vector<id_t>& ids, addr_t address,
+    const std::vector<uint8_t*>& datas, size_t size) 
 {
     (void)datas;
     std::cout << "SyncWrite ids={";

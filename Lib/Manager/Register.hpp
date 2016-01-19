@@ -480,7 +480,6 @@ class TypedRegister : public Register
          */
         inline virtual void doConvIn(bool bufferMode)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
             if (bufferMode) {
                 funcConvIn(_dataBuffer, _valueWrite1);
             } else {
@@ -489,7 +488,6 @@ class TypedRegister : public Register
         }
         inline virtual void doConvOut(bool bufferMode)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
             if (bufferMode) {
                 _valueRead1 = funcConvOut(_dataBuffer);
             } else {

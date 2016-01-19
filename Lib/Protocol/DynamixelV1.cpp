@@ -133,8 +133,9 @@ namespace RhAL
         }
     }
 
-    std::vector<ResponseState> DynamixelV1::syncRead(std::vector<id_t> ids, addr_t address,
-            std::vector<uint8_t*> datas, size_t size)
+    std::vector<ResponseState> DynamixelV1::syncRead(
+            const std::vector<id_t>& ids, addr_t address,
+            const std::vector<uint8_t*>& datas, size_t size)
     {
         (void)ids;
         (void)address;
@@ -143,8 +144,9 @@ namespace RhAL
         throw runtime_error("Sync read is not yet supported");
     }
 
-    void DynamixelV1::syncWrite(std::vector<id_t> ids, addr_t address,
-            std::vector<uint8_t*> datas, size_t size)
+    void DynamixelV1::syncWrite(
+            const std::vector<id_t>& ids, addr_t address,
+            const std::vector<uint8_t*>& datas, size_t size)
     {
         if (ids.size() != datas.size()) {
             throw runtime_error("ids and datas should have the same size() for syncWrite");
