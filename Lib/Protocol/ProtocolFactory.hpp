@@ -3,7 +3,6 @@
 #include <string>
 #include "Bus/Bus.hpp"
 #include "Protocol/Protocol.hpp"
-#include "Protocol/DynamixelV1.hpp"
 
 namespace RhAL {
 

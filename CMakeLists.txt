@@ -37,6 +37,7 @@ set(LIB_SOURCES
     Bus/SerialBus.cpp
     Protocol/Protocol.cpp
     Protocol/DynamixelV1.cpp
+    Protocol/FakeProtocol.cpp
     Protocol/ProtocolFactory.cpp
 )
 # Prefix with lib directory path

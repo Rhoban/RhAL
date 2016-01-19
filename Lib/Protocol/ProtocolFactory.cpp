@@ -1,4 +1,6 @@
 #include "ProtocolFactory.hpp"
+#include "Protocol/DynamixelV1.hpp"
+#include "Protocol/FakeProtocol.hpp"
 
 namespace RhAL {
 
@@ -8,6 +10,8 @@ Protocol* ProtocolFactory(
 {
     if (name == "DynamixelV1") {
         return new DynamixelV1(bus);
+    } else if (name == "FakeProtocol") {
+        return new FakeProtocol(bus);
     } else {
         return nullptr;
     }
