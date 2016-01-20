@@ -174,6 +174,27 @@ class BaseManager
             return j;
         }
 
+        /**
+         * Import parameters from given json object.
+         * Devices listed in json not already present
+         * are added.
+         * All listed Devices are expected to exist.
+         * Throw std::runtime_error if given json is malformated.
+         */
+        inline void loadJSON(const nlohmann::json& j)
+        {
+            _parametersList.loadJSON(j.at("parameters"));
+            //Iterate over devices
+            for (size_t i=0;i<j.at("devices").size();i++) {
+                const nlohmann::json& dev = j.at("devices").at(i);
+                //Retrieve device id
+                id_t id = dev.at("id");
+                //Load parameters
+                _devicesById.at(id)->_parametersList
+                    .loadJSON(dev.at("parameters"));
+            }
+        }
+
     protected:
         
         /**

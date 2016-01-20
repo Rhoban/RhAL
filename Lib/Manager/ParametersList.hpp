@@ -197,6 +197,11 @@ class ParametersList
          */
         inline void loadJSON(const nlohmann::json& j)
         {
+            //Empty case
+            if (j.is_null()) {
+                return;
+            }
+            //Check json type
             if (!j.is_object()) {
                 throw std::runtime_error(
                     "ParametersContainer load parameters json not object");

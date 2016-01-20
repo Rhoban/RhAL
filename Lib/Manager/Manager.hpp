@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <functional>
 #include <json.hpp>
+#include <fstream>
 #include "AggregateManager.hpp"
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
@@ -57,16 +58,6 @@ class Manager : public AggregateManager<Types...>
                 delete _bus;
                 _bus = nullptr;
             }
-        }
-
-        /**
-         * TODO
-         */
-        inline void loadParameters(const std::string& filename)
-        {
-        }
-        inline void writeParameters(const std::string& filename)
-        {
         }
 
         /**
@@ -212,7 +203,52 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
-         * TODO
+         * Export all Parameters and Devices 
+         * configuration into given file 
+         * in JSON format
+         */
+        inline void writeConfig(const std::string& filename)
+        {
+            std::ofstream file;
+            file.open(filename);
+            if (!file.is_open()) {
+                std::runtime_error(
+                    "Manager unable to write file: " 
+                    + filename);
+            }
+            nlohmann::json j = saveJSON();
+            file << j.dump(4);
+            file.close();
+        }
+
+        /**
+         * Import all Parameters and Devices configurarion
+         * from given file in JSON format.
+         * Throw std::runtime_error if given config
+         * file is malformated
+         */
+        inline void readConfig(const std::string& filename)
+        {
+            std::ifstream file;
+            file.open(filename);
+            if (!file.is_open()) {
+                std::runtime_error(
+                    "Manager unable to read file: " 
+                    + filename);
+            }
+            std::string config;
+            std::string tmp;
+            while(std::getline(file, tmp)) {
+                config += tmp;
+            }
+            nlohmann::json j = nlohmann::json::parse(config); 
+            loadJSON(j);
+            file.close();
+        }
+
+        /**
+         * Export as json object all Parameters
+         * and derived Devices configurations.
          */
         inline nlohmann::json saveJSON() const
         {
@@ -220,11 +256,26 @@ class Manager : public AggregateManager<Types...>
             j["Manager"] = _parametersList.saveJSON();
             return j;
         }
-        /*
+
+        /**
+         * Import from given json object all
+         * Parameters and derived Devices configuration.
+         * Throw std::runtime_error if 
+         * given json is malformated.
+         */
         inline void loadJSON(const nlohmann::json& j)
         {
+            if (
+                !j.is_object() ||
+                j.size() != sizeof...(Types) + 1 ||
+                j.count("Manager") != 1
+            ) {
+                throw std::runtime_error(
+                    "Manager load parameters root json malformed");
+            }
+            AggregateManager<Types...>::loadAggregatedJSON(j);
+            _parametersList.loadJSON(j.at("Manager"));
         }
-        */
 
     private:
 

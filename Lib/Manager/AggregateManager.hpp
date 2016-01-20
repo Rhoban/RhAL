@@ -205,6 +205,16 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
             return j;
         }
 
+        /**
+         * Import parameters and Devices from given
+         * json object.
+         * Throw std::runtime_error if given json is malformated.
+         */
+        inline void loadAggregatedJSON(const nlohmann::json& j)
+        {
+            Impl<Types...>::runLoadJSON(this, j);
+        }
+
     private:
 
         /**
@@ -333,6 +343,24 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 j[ImplManager<T>::typeName()] = 
                     ptr->ImplManager<T>::saveJSON();
             }
+            //Load JSON
+            inline static void runLoadJSON(
+                AggregateManager<Types...>* ptr, 
+                const nlohmann::json& j)
+            {
+                if (j.count(ImplManager<T>::typeName()) != 1) {
+                    throw std::runtime_error(
+                        "AggregateManager load parameters no Device type: "
+                        + ImplManager<T>::typeName());
+                }
+                //Check json format and 
+                //add non existing devices
+                ptr->checkDevicesJSON<T>(
+                    j.at(ImplManager<T>::typeName()));
+                //Load parameters
+                ptr->ImplManager<T>::loadJSON(
+                    j.at(ImplManager<T>::typeName()));
+            }
         };
         //General iteration case
         template <typename T, typename ... Ts>
@@ -454,7 +482,103 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                     ptr->ImplManager<T>::saveJSON();
                 Impl<Ts...>::runSaveJSON(ptr, j);
             }
+            //Load JSON
+            inline static void runLoadJSON(
+                AggregateManager<Types...>* ptr, 
+                const nlohmann::json& j)
+            {
+                if (j.count(ImplManager<T>::typeName()) != 1) {
+                    throw std::runtime_error(
+                        "AggregateManager load parameters no Device type: "
+                        + ImplManager<T>::typeName());
+                }
+                //Check json format and 
+                //add non existing devices
+                ptr->checkDevicesJSON<T>(
+                    j.at(ImplManager<T>::typeName()));
+                //Load parameters
+                ptr->ImplManager<T>::loadJSON(
+                    j.at(ImplManager<T>::typeName()));
+                //Continue on other types
+                Impl<Ts...>::runLoadJSON(ptr, j);
+            }
         };
+
+        /**
+         * Check in given json object configuration
+         * of a derived (template) Device type that json
+         * is well formated and add or check
+         * listed devices
+         */
+        template <typename T>
+        inline void checkDevicesJSON(const nlohmann::json& j)
+        {
+            //Check json type
+            if (!j.is_object()) {
+                throw std::runtime_error(
+                    "AggregateManager load parameters json not object");
+            }
+            //Load BaseManager parameters
+            if (j.count("parameters") != 1) {
+                throw std::runtime_error(
+                    "AggregateManager load parameters no parameters key");
+            }
+            //Check device exists and type
+            if (j.count("devices") != 1) {
+                throw std::runtime_error(
+                    "AggregateManager load parameters no devices key");
+            }
+            if (!j.at("devices").is_array()) {
+                throw std::runtime_error(
+                    "AggregateManager load parameters devices not array");
+            }
+            //Check no other key exists
+            if (j.size() != 2) {
+                throw std::runtime_error(
+                    "AggregateManager load parameters json malformed");
+            }
+            //Iterate over devices
+            for (size_t i=0;i<j.at("devices").size();i++) {
+                const nlohmann::json& dev = j.at("devices").at(i);
+                //Check json formated
+                if (!dev.is_object()) {
+                    throw std::runtime_error(
+                        "AggregateManager load parameters device not object");
+                }
+                if (
+                    dev.count("id") != 1 || 
+                    dev.count("name") != 1 ||
+                    dev.count("parameters") != 1 ||
+                    !dev.at("id").is_number() ||
+                    !dev.at("name").is_string() ||
+                    dev.size() != 3
+                ) {
+                    throw std::runtime_error(
+                        "AggregateManager load parameters device json malformated");
+                }
+                //Retrieve device id and name
+                id_t id = dev.at("id");
+                std::string name = dev.at("name");
+                //Check device exist
+                bool isById = devExistsById(id);
+                bool isByName = devExistsByName(name);
+                bool isByIdTyped = devExistsById<T>(id);
+                bool isByNameTyped = devExistsByName<T>(name);
+                if (!isById && !isByName) {
+                    //Create it if not exist
+                    devAdd<T>(name, id);
+                } else if (
+                    //Else, device with same id/name exists in 
+                    //other derived type or there is an id/name mismatch
+                    (isById && !isByName) || (!isById && isByName) ||
+                    !isByIdTyped || !isByNameTyped
+                ) {
+                    throw std::runtime_error(
+                        "AggregateManager load parameters device id/name problem: "
+                        + name);
+                } 
+            }
+        }
 };
 
 }
