@@ -1,12 +1,41 @@
 #pragma once
 
+#include <unordered_map>
+#include <string>
 #include <vector>
 #include <json.hpp>
+#include <type_traits>
 #include "CallManager.hpp"
 #include "BaseManager.hpp"
 #include "Device.hpp"
 
 namespace RhAL {
+
+/**
+ * Trait type used to check at
+ * compile time if the specific 
+ * type T is listed in the variadic 
+ * type list Types. 
+ */
+//Trait structure is declared
+template <typename T, typename ... Types>
+struct is_type_in_pack : std::true_type {};
+//Specialization to iterate over Types pack
+template <typename T, typename U, typename ... Types>
+struct is_type_in_pack<T, U, Types...> : 
+    //Conditional inheritance
+    std::conditional<
+        //If type T and U are the same
+        std::is_same<T, U>::value,
+        //Inherit from true_type
+        std::true_type,
+        //Else inherit from recursive case
+        is_type_in_pack<T, Types...>
+    >::type {};
+//Final case if all types have been listed
+//without finding T
+template <typename T>
+struct is_type_in_pack<T> : std::false_type {};
 
 /**
  * AggregateManager
@@ -25,15 +54,52 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
         "AggregateManager empty variatic template types");
 
     public:
+        
+        /**
+         * Typedef for device container
+         */
+        typedef std::unordered_map<std::string, Device*> 
+            DevicesByName;
+        typedef std::unordered_map<id_t, Device*> 
+            DevicesById;
+
+        /**
+         * Typedef for devById/Name() methods return type. Theses
+         * template T methods return either a T& or a const T&
+         * where T is a derived Device type.
+         * Methods overload are selected whenether T is part
+         * (or not) of Types (variadic) list.
+         */
+        template <typename T>
+        using RefConstTypeInPack = typename std::enable_if<
+            is_type_in_pack<T, Types...>::value, 
+            const T&
+        >;
+        template <typename T>
+        using RefConstTypeNotInPack = typename std::enable_if<
+            !is_type_in_pack<T, Types...>::value, 
+            const T&
+        >;
+        template <typename T>
+        using RefTypeInPack = typename std::enable_if<
+            is_type_in_pack<T, Types...>::value, 
+            T&
+        >;
+        template <typename T>
+        using RefTypeNotInPack = typename std::enable_if<
+            !is_type_in_pack<T, Types...>::value, 
+            T&
+        >;
 
         /**
          * Add and initialize a new derived Device 
          * of given template type with given name and id.
+         * DevAdd() have to be called by Manager thread.
          * Throw std::logic_error if given name or id
          * is already contained.
          */
         template <typename T>
-        inline void devAdd(const std::string& name, id_t id)
+        inline void devAdd(id_t id, const std::string& name)
         {
             if (devExistsByName(name) || devExistsById(id)) {
                 throw std::logic_error(
@@ -43,8 +109,48 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 //Add and initialize the new device.
                 //Registers are supposed to be initialized
                 //in the constructor.
-                ImplManager<T>::devAdd(name, id, this);
+                ImplManager<T>::devAdd(name, id);
+                //Retrive added Device pointer
+                Device* dev = &(devById<T>(id));
+                //Add to AggregateManager container
+                //for fast id/name retrieving
+                _devicesById[id] = dev;
+                _devicesByName[name] = dev;
+                //Inject Manager pointer dependancy
+                dev->setManager(this);
+                //Run Parameters and Registers initialization
+                dev->init();
             }
+        }
+
+        /**
+         * Get access to a specific Manager
+         * of given template derived Device type.
+         */
+        template <typename T>
+        const ImplManager<T>& manager() const
+        {
+            return *this;
+        }
+        template <typename T>
+        ImplManager<T>& manager()
+        {
+            return *this;
+        }
+
+        /**
+         * Add and initialize a new Device 
+         * with given id. Name is generated.
+         * The type of the Device is defined 
+         * by given type model number.
+         * Throw std::logic_error if the Device
+         * id/name already exists or if given type
+         * is not supported by the manager
+         */
+        inline void devAddByTypeNumber(
+            id_t id, type_t type)
+        {
+            Impl<Types...>::runAddByType(this, id, type);
         }
 
         /**
@@ -88,29 +194,102 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
 
         /**
          * Return a derived Device of given 
-         * template type by its id or name.
+         * template type T by its id.
          * Throw std::logic_error if asked Device
          * with given type is not found.
+         *
+         * If given template type is one of declared
+         * derived Device type in Manager instantiation,
+         * direct access is done.
+         * Else, dynamic cast is tryed in case of
+         * given type T is a base class of actual
+         * derived Device type.
          */
+        //Return const T&
         template <typename T>
-        inline const T& devById(id_t id) const
+        inline typename RefConstTypeInPack<T>::type devById(id_t id) const
         {
             return ImplManager<T>::devById(id);
         }
+        //Return T&
         template <typename T>
-        inline T& devById(id_t id)
+        inline typename RefTypeInPack<T>::type devById(id_t id)
         {
             return ImplManager<T>::devById(id);
         }
+        //Return const T&
         template <typename T>
-        inline const T& devByName(const std::string& name) const
+        inline typename RefConstTypeNotInPack<T>::type devById(id_t id) const
+        {
+            if (_devicesById.count(id) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device id not found: " 
+                    + std::to_string(id));
+            }
+            return dynamic_cast<const T&>(*_devicesById.at(id));
+        }
+        //Return T&
+        template <typename T>
+        inline typename RefTypeNotInPack<T>::type devById(id_t id)
+        {
+            if (_devicesById.count(id) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device id not found: " 
+                    + std::to_string(id));
+            }
+            return dynamic_cast<T&>(*_devicesById.at(id));
+        }
+        
+        /**
+         * Return a derived Device of given 
+         * template type T by its name.
+         * Throw std::logic_error if asked Device
+         * with given type is not found.
+         *
+         * If given template type is one of declared
+         * derived Device type in Manager instantiation,
+         * direct access is done.
+         * Else, dynamic cast is tryed in case of
+         * given type T is a base class of actual
+         * derived Device type.
+         */
+        //Return const T&
+        template <typename T>
+        inline typename RefConstTypeInPack<T>::type devByName(
+            const std::string& name) const
         {
             return ImplManager<T>::devByName(name);
         }
+        //Return T&
         template <typename T>
-        inline T& devByName(const std::string& name)
+        inline typename RefTypeInPack<T>::type devByName(
+            const std::string& name)
         {
             return ImplManager<T>::devByName(name);
+        }
+        //Return const T&
+        template <typename T>
+        inline typename RefConstTypeNotInPack<T>::type devByName(
+            const std::string& name) const
+        {
+            if (_devicesByName.count(name) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device name not found: " 
+                    + name);
+            }
+            return dynamic_cast<const T&>(*_devicesByName.at(name));
+        }
+        //Return T&
+        template <typename T>
+        inline typename RefTypeNotInPack<T>::type devByName(
+            const std::string& name)
+        {
+            if (_devicesByName.count(name) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device name not found: " 
+                    + name);
+            }
+            return dynamic_cast<T&>(*_devicesByName.at(name));
         }
 
         /**
@@ -121,19 +300,39 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
          */
         inline const Device& devById(id_t id) const
         {
-            return Impl<Types...>::runById(this, id);
+            if (_devicesById.count(id) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device id not found: " 
+                    + std::to_string(id));
+            }
+            return *(_devicesById.at(id));
         }
         inline Device& devById(id_t id)
         {
-            return Impl<Types...>::runById(this, id);
+            if (_devicesById.count(id) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device id not found: " 
+                    + std::to_string(id));
+            }
+            return *(_devicesById.at(id));
         }
         inline const Device& devByName(const std::string& name) const
         {
-            return Impl<Types...>::runByName(this, name);
+            if (_devicesByName.count(name) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device name not found: " 
+                    + name);
+            }
+            return *(_devicesByName.at(name));
         }
         inline Device& devByName(const std::string& name)
         {
-            return Impl<Types...>::runByName(this, name);
+            if (_devicesByName.count(name) == 0) {
+                throw std::logic_error(
+                    "AggregateManager Device name not found: " 
+                    + name);
+            }
+            return *(_devicesByName.at(name));
         }
         
         /**
@@ -157,42 +356,42 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
          */
         inline bool devExistsById(id_t id) const
         {
-            return Impl<Types...>::runExistsById(this, id);
+            return (_devicesById.count(id) > 0);
         }
         inline bool devExistsByName(const std::string& name) const
         {
-            return Impl<Types...>::runExistsByName(this, name);
+            return (_devicesByName.count(name) > 0);
         }
 
         /**
-         * Return a Vector of pointer to all contained 
-         * derived Device of given template type.
-         * Note that this method is not greatly efficient.
+         * Access to internal map of derived Device pointers
+         * of given template type indexed by their name.
          */
         template <typename T>
-        inline std::vector<const T*> devAll() const
+        inline const typename ImplManager<T>::DevicesByName& devContainer() const
         {
-            std::vector<const T*> ptrs;
-            for (const auto& it : ImplManager<T>::devContainer()) {
-                ptrs.push_back(it.second);
-            }
-            return ptrs;
+            return ImplManager<T>::devContainer();
         }
 
         /**
-         * Return a Vector of pointer to all contained
-         * Device for all types.
-         * Note that this method is not greatly efficient.
+         * Access to internal map of pointers 
+         * to all contained Devices for all types.
+         * Device are indexed by their name.
          */
-        inline std::vector<const Device*> devAll() const
+        inline const DevicesByName& devContainer() const
         {
-            std::vector<const Device*> ptrs;
-            Impl<Types...>::runList(this, ptrs);
-            return ptrs;
+            return _devicesByName;
         }
 
     protected:
         
+        /**
+         * Device container indexed by
+         * their name and their id
+         */
+        DevicesByName _devicesByName;
+        DevicesById _devicesById;
+
         /**
          * Export and return all aggregated 
          * derived Device container parameters
@@ -228,6 +427,24 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
         //Final case single element
         template <typename T>
         struct Impl<T> {
+            //Add by type number
+            inline static void runAddByType(
+                AggregateManager<Types...>* ptr, 
+                id_t id, type_t type)
+            {
+                if (ImplManager<T>::typeNumber() == type) {
+                    std::string name = 
+                        ImplManager<T>::typeName() 
+                        + "_" 
+                        + std::to_string(
+                            ptr->ImplManager<T>::devContainer().size());
+                    ptr->devAdd<T>(id, name);
+                } else {
+                    throw std::logic_error(
+                        "AggregateManager add Device of type not supported: " 
+                        + std::to_string(id));
+                }
+            }
             //Type number by Id
             inline static type_t runTypeNumberById(
                 const AggregateManager<Types...>* ptr, id_t id)
@@ -272,69 +489,6 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 }
                 return ImplManager<T>::typeName();
             }
-            //Get by Id
-            inline static const Device& runById(
-                const AggregateManager<Types...>* ptr, id_t id)
-            {
-                if (!ptr->devExistsById<T>(id)) {
-                    throw std::logic_error(
-                        "AggregateManager Device id not found: " 
-                        + std::to_string(id));
-                }
-                return ptr->devById<T>(id);
-            }
-            inline static Device& runById(
-                AggregateManager<Types...>* ptr, id_t id)
-            {
-                if (!ptr->devExistsById<T>(id)) {
-                    throw std::logic_error(
-                        "AggregateManager Device id not found: " 
-                        + std::to_string(id));
-                }
-                return ptr->devById<T>(id);
-            }
-            //Get by Name
-            inline static const Device& runByName(
-                const AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                if (!ptr->devExistsByName<T>(name)) {
-                    throw std::logic_error(
-                        "AggregateManager Device name not found: " 
-                        + name);
-                }
-                return ptr->devByName<T>(name);
-            }
-            inline static Device& runByName(
-                AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                if (!ptr->devExistsByName<T>(name)) {
-                    throw std::logic_error(
-                        "AggregateManager Device name not found: " 
-                        + name);
-                }
-                return ptr->devByName<T>(name);
-            }
-            //Exists by Id
-            inline static bool runExistsById(
-                const AggregateManager<Types...>* ptr, id_t id)
-            {
-                return ptr->devExistsById<T>(id);
-            }
-            //Exists by Name
-            inline static bool runExistsByName(
-                const AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                return ptr->devExistsByName<T>(name);
-            }
-            //List
-            inline static void runList(
-                const AggregateManager<Types...>* ptr, 
-                std::vector<const Device*>& vect)
-            {
-                for (const auto& it : ptr->ImplManager<T>::devContainer()) {
-                    vect.push_back(it.second);
-                }
-            }
             //Save JSON
             inline static void runSaveJSON(
                 const AggregateManager<Types...>* ptr, 
@@ -365,6 +519,22 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
         //General iteration case
         template <typename T, typename ... Ts>
         struct Impl<T, Ts...> {
+            //Add by type number
+            inline static void runAddByType(
+                AggregateManager<Types...>* ptr, 
+                id_t id, type_t type)
+            {
+                if (ImplManager<T>::typeNumber() == type) {
+                    std::string name = 
+                        ImplManager<T>::typeName() 
+                        + "_" 
+                        + std::to_string(
+                            ptr->ImplManager<T>::devContainer().size());
+                    ptr->devAdd<T>(id, name);
+                } else {
+                    Impl<Ts...>::runAddByType(ptr, id, type);
+                }
+            }
             //Type number by Id
             inline static type_t runTypeNumberById(
                 const AggregateManager<Types...>* ptr, id_t id)
@@ -404,74 +574,6 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 } else {
                     return Impl<Ts...>::runTypeNameByName(ptr, name);
                 }
-            }
-            //Get by Id
-            inline static const Device& runById(
-                const AggregateManager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return ptr->devById<T>(id);
-                } else {
-                    return Impl<Ts...>::runById(ptr, id);
-                }
-            }
-            inline static Device& runById(
-                AggregateManager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return ptr->devById<T>(id);
-                } else {
-                    return Impl<Ts...>::runById(ptr, id);
-                }
-            }
-            //Get by Name
-            inline static const Device& runByName(
-                const AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return ptr->devByName<T>(name);
-                } else {
-                    return Impl<Ts...>::runByName(ptr, name);
-                }
-            }
-            inline static Device& runByName(
-                AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return ptr->devByName<T>(name);
-                } else {
-                    return Impl<Ts...>::runByName(ptr, name);
-                }
-            }
-            //Exists by Id
-            inline static bool runExistsById(
-                const AggregateManager<Types...>* ptr, id_t id)
-            {
-                if (ptr->devExistsById<T>(id)) {
-                    return true;
-                } else {
-                    return Impl<Ts...>::runExistsById(ptr, id);
-                }
-            }
-            //Exists by Name
-            inline static bool runExistsByName(
-                const AggregateManager<Types...>* ptr, const std::string& name)
-            {
-                if (ptr->devExistsByName<T>(name)) {
-                    return true;
-                } else {
-                    return Impl<Ts...>::runExistsByName(ptr, name);
-                }
-            }
-            //List
-            inline static void runList(
-                const AggregateManager<Types...>* ptr, 
-                std::vector<const Device*>& vect)
-            {
-                for (const auto& it : ptr->ImplManager<T>::devContainer()) {
-                    vect.push_back(it.second);
-                }
-                Impl<Ts...>::runList(ptr, vect);
             }
             //Save JSON
             inline static void runSaveJSON(
@@ -566,7 +668,7 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 bool isByNameTyped = devExistsByName<T>(name);
                 if (!isById && !isByName) {
                     //Create it if not exist
-                    devAdd<T>(name, id);
+                    devAdd<T>(id, name);
                 } else if (
                     //Else, device with same id/name exists in 
                     //other derived type or there is an id/name mismatch

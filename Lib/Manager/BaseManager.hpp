@@ -62,13 +62,13 @@ class BaseManager
         BaseManager& operator=(const BaseManager&) = delete;
 
         /**
-         * Add and initialize a new Device with given
-         * name, id and manager pointer instance.
+         * Add a new Device with given
+         * name and id.
+         * Only Manaegr thread must call this method.
          * Throw std::logic_error if given name or id
          * is already contained.
          */
-        inline void devAdd(const std::string& name, id_t id, 
-            CallManager* manager)
+        inline void devAdd(const std::string& name, id_t id)
         {
             if (
                 _devicesByName.count(name) != 0 ||
@@ -81,10 +81,6 @@ class BaseManager
             T* dev = new T(name, id);
             _devicesByName[name] = dev;
             _devicesById[id] = dev;
-            //Inject Manager pointer dependancy
-            dev->setManager(manager);
-            //Run Parameters and Registers initialization
-            dev->init();
         }
 
         /**

@@ -35,7 +35,7 @@ ResponseState FakeProtocol::readData(
 bool FakeProtocol::ping(id_t id) 
 {
     std::cout << "Ping id=" << id << std::endl;
-    return true;
+    return false;
 }
 
 std::vector<ResponseState> FakeProtocol::syncRead(

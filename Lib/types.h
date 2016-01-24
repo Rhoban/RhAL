@@ -10,6 +10,15 @@ namespace RhAL {
 typedef int id_t;
 
 /**
+ * Static lower and upper
+ * bound on Device id use to
+ * iterate over all possible Device
+ * while scanning
+ */
+constexpr id_t IdDevBegin = 1;
+constexpr id_t IdDevEnd = 253;
+
+/**
  * Device register address
  */
 typedef size_t addr_t;
@@ -21,9 +30,15 @@ typedef size_t addr_t;
 constexpr size_t AddrDevLen = 0xFF;
 
 /**
+ * Static register address of model 
+ * number on all Devices
+ */
+constexpr addr_t AddrDevTypeNumber = 0x00;
+
+/**
  * Device model number
  */
-typedef int type_t;
+typedef uint16_t type_t;
 
 /**
  * Raw data

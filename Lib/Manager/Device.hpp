@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <mutex>
 #include "types.h"
 #include "Parameter.hpp"
 #include "ParametersList.hpp"
@@ -34,8 +35,15 @@ class Device
             _parametersList(),
             _name(name),
             _id(id),
-            _manager(nullptr)
+            _manager(nullptr),
+            _isPresent(false),
+            _mutex()
         {
+            if (id < IdDevBegin || id > IdDevEnd) {
+                throw std::logic_error(
+                    "Device id is outside static range: " 
+                    + name);
+            }
         }
 
         /**
@@ -57,6 +65,7 @@ class Device
          */
         inline void setManager(CallManager* manager)
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             if (manager == nullptr) {
                 throw std::logic_error(
                     "Device null manager pointer: "
@@ -98,6 +107,17 @@ class Device
         }
 
         /**
+         * Return true if the device has 
+         * been see and is supposed 
+         * enable currently on the bus
+         */
+        inline bool isPresent() const
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _isPresent;
+        }
+
+        /**
          * Read access to Registers and
          * Parameters list
          */
@@ -113,20 +133,10 @@ class Device
     protected:
         
         /**
-         * Register pointers container
-         */
-        RegistersList _registersList;
-
-        /**
-         * Container of bool, number and 
-         * string device parameters
-         */
-        ParametersList _parametersList;
-        
-        /**
          * Read/Write access to Registers and
          * Parameters list
-         * (Used for friend Manager access)
+         * (Used for friend Manager access and
+         * derived Device)
          */
         RegistersList& registersList()
         {
@@ -135,6 +145,16 @@ class Device
         ParametersList& parametersList()
         {
             return _parametersList;
+        }
+
+        /**
+         * Set Device isPresent state.
+         * (Used for friend Manager access)
+         */
+        inline void setPresent(bool isPresent)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _isPresent = isPresent;
         }
 
         /**
@@ -155,7 +175,18 @@ class Device
         friend class BaseManager;
 
     private:
+        
+        /**
+         * Register pointers container
+         */
+        RegistersList _registersList;
 
+        /**
+         * Container of bool, number and 
+         * string device parameters
+         */
+        ParametersList _parametersList;
+        
         /**
          * Device unique name
          */
@@ -171,6 +202,18 @@ class Device
          * that will be provided to RegistersList
          */
         CallManager* _manager;
+
+        /**
+         * If true, the device has been see
+         * and is supposed enable currently
+         * on the bus
+         */
+        bool _isPresent;
+
+        /**
+         * Mutex protecting Device state access
+         */
+        mutable std::mutex _mutex;
 };
 
 }

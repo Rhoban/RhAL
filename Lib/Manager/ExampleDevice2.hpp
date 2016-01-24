@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include "BaseManager.hpp"
 #include "Device.hpp"
 #include "Register.hpp"
@@ -31,23 +32,48 @@ class ExampleDevice2 : public Device
          */
         inline ExampleDevice2(const std::string& name, id_t id) :
             Device(name, id),
-            _pitch("pitch", 0x08, 4, convIn2, convOut2, 2),
-            _roll("roll", 0x0C, 4, convIn2, convOut2, 2),
-            _mode("mode", 0x10, 4, convIn2, convOut2, 0)
+            //Registers configuration
+            _pitch("pitch", (addr_t)4, 4, convIn2, convOut2, 2),
+            _roll("roll", (addr_t)8, 4, convIn2, convOut2, 0, true, false),
+            _mode("mode", (addr_t)12, 4, convIn2, convOut2, 0, false, true)
         {
         }
 
-        inline void setMode(float mode)
+        /**
+         * Force immediate read of pitch and returned it
+         */
+        inline TimedValueFloat forcePitchRead()
         {
-            _mode.writeValue(mode);
-        }
-        inline TimedValueFloat getPitch() const
-        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _pitch.forceRead();
             return _pitch.readValue();
         }
-        inline TimedValueFloat getRoll() const
+
+        /**
+         * Return current pitch value
+         */
+        inline TimedValueFloat getPitch()
         {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _pitch.readValue();
+        }
+
+        /**
+         * Read roll (immediate roll)
+         */
+        inline TimedValueFloat getRoll()
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
             return _roll.readValue();
+        }
+        
+        /**
+         * Set mode (imediate write)
+         */
+        inline void setMode(float mode)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _mode.writeValue(mode);
         }
 
     protected:
@@ -58,9 +84,9 @@ class ExampleDevice2 : public Device
          */
         inline virtual void onInit() override
         {
-            Device::_registersList.add(&_pitch);
-            Device::_registersList.add(&_roll);
-            Device::_registersList.add(&_mode);
+            Device::registersList().add(&_pitch);
+            Device::registersList().add(&_roll);
+            Device::registersList().add(&_mode);
         }
         
     private:
@@ -71,6 +97,11 @@ class ExampleDevice2 : public Device
         TypedRegisterFloat _pitch;
         TypedRegisterFloat _roll;
         TypedRegisterFloat _mode;
+
+        /**
+         * Mutex protecting access
+         */
+        mutable std::mutex _mutex;
 };
 
 /**

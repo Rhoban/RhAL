@@ -5,6 +5,8 @@
 #include <functional>
 #include <json.hpp>
 #include <fstream>
+#include <mutex>
+#include <condition_variable>
 #include "AggregateManager.hpp"
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
@@ -32,6 +34,11 @@ class Manager : public AggregateManager<Types...>
             AggregateManager<Types...>(),
             _sortedRegisters(),
             _readCycleCount(0),
+            _managerWaitUser(),
+            _userWaitManager(),
+            _isManagerFlushing(false),
+            _cooperativeThreadCount(0),
+            _currentThreadWaiting(0),
             _bus(nullptr),
             _protocol(nullptr),
             _parametersList(),
@@ -43,6 +50,9 @@ class Manager : public AggregateManager<Types...>
             _parametersList.add(&_paramBusPort);
             _parametersList.add(&_paramBusBaudrate);
             _parametersList.add(&_paramProtocolName);
+            _parametersList.add(&this->_paramScheduleMode);
+            //Initialize the low level communication
+            initBus();
         }
 
         /**
@@ -61,115 +71,166 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
-         * Reset and initialize the
-         * Bus and Protocol instance.
-         * (Need to be call before any flushRead() 
-         * or flushWrite() or after any bus/protocol 
-         * parameters update)
+         * Add or remove one cooperative
+         * thread. At the beginning of each 
+         * main flush() operation, others 
+         * declared cooperative threads are waited
+         * until all have called waitNextFlush() method.
          */
-        inline void initBus()
+        inline void addCooperativeThread()
         {
-            //Free existing instance
-            if (_protocol != nullptr) {
-                delete _protocol;
-                _protocol = nullptr;
-            }
-            if (_bus != nullptr) {
-                delete _bus;
-                _bus = nullptr;
-            }
-            //Allocate Bus and Protocol
-            if (_paramBusPort.value != "") {
-                _bus = new SerialBus(_paramBusPort.value, _paramBusBaudrate.value);
-            }
-            _protocol = ProtocolFactory(_paramProtocolName.value, *_bus);
-            //Check that Protocol implementation name is valid
-            if (_protocol == nullptr) {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _cooperativeThreadCount++;
+        }
+        inline void removeCooperativeThread()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            if (_cooperativeThreadCount == 0) {
                 throw std::logic_error(
-                    "Manager invalid protocol name: " 
-                    + _paramProtocolName.value);
+                    "Manager cooperative threads add/remove mismatch");
             }
+            _cooperativeThreadCount--;
         }
 
         /**
-         * TODO
+         * Declared cooperative user threads 
+         * have to call this method at each end 
+         * of their cycle to wait the next Manager
+         * flush() operation.
          */
-        inline void flushRead()
+        inline void waitNextFlush()
         {
-            /*
-            std::cout << "---------- Start flushRead" << std::endl;
-            for (size_t i=0;i<_sortedRegisters.size();i++) {
-                if (isNeedRead(_sortedRegisters[i])) {
-                    std::cout 
-                        << "id=" << _sortedRegisters[i]->id
-                        << " addr=" << _sortedRegisters[i]->addr
-                        << " len=" << _sortedRegisters[i]->length 
-                        << " name=" << _sortedRegisters[i]->name << std::endl;
-                }
-            }
-            */
-            
-            //Compute Read batching
-            std::vector<BatchedRegisters> batchs = computeBatchedRegisters(
-                [this](const Register* reg) -> bool {
-                    return this->isNeedRead(reg);
-                });
-            //Read all batchs
-            for (size_t i=0;i<batchs.size();i++) {
-                readBatch(batchs[i]);
-            }
-            //Increment Read counter
-            _readCycleCount++;
-
-            /*
-            for (size_t i=0;i<container.size();i++) {
-                std::cout << "Batched: addr=" << container[i].addr << " len=" << container[i].length << " IDS:";
-                for (size_t j=0;j<container[i].regs.size();j++) {
-                    std::cout << container[i].regs[j]->name << "(" << container[i].regs[j]->id << "), ";
-                }
-                std::cout << std::endl;
-            }
-            */
-
+            //Lock the shared mutex
+            std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            //The lock is now acquired
+            //Increment current user in waitNextFlush()
+            _currentThreadWaiting++;
+            //Notify the Manager for a new thread waiting
+            _managerWaitUser.notify_all();
+            //Wait for the end of flush() barrier.
+            //(during wait, the shared mutex is released)
+            _userWaitManager.wait(lock, 
+                [this](){return !_isManagerFlushing;});
+            //The lock is re acquire. Decrease the number 
+            //of waiting thread.
+            _currentThreadWaiting--;
+            //Release the shared mutex
+            lock.unlock();
         }
 
         /**
-         * TODO
-         */
-        inline void flushWrite()
-        {
-            //Compute Write batching
-            std::vector<BatchedRegisters> batchs = computeBatchedRegisters(
-                [this](const Register* reg) -> bool {
-                    return this->isNeedWrite(reg);
-                });
-            //Send all batchs
-            for (size_t i=0;i<batchs.size();i++) {
-                writeBatch(batchs[i]);
-            }
-        }
-
-        /**
-         * Swap all Registers double buffers.
-         * (Has to be called before/after
-         * Read and Write operations)
-         * (This method must be called by 
-         * the same thread as flush*() methods)
-         */
-        inline void swapBuffers()
-        {
-            CallManager::swapDataBuffers();
-        }
-
-        /**
-         * Shorthand for flushRead(),
-         * flushWrite() then swapBuffers().
+         * Main Manager tick operation.
+         * This method have to be called in
+         * its own low level thread if other user
+         * thread are using the manager.
+         * Following operations are done:
+         * - Wait for all declared cooperative user 
+         *   thread for having called waitNextFlush().
+         *   Here, the only running thread is the Manager.
+         * - Apply to all registers read value from
+         *   last bus read.
+         * - Select all registers needed to be read or write.
+         *   Compute the batching of read and write operations.
+         * - Wake up all cooperative user threads leaving
+         *   waitNextFlush().
+         *   Here, all threads are running.
+         * - Perform all read operation.
+         * - Perform all write operations.
          */
         inline void flush()
         {
-            flushRead();
-            flushWrite();
-            swapBuffers();
+            //Wait for all cooperative user thread to have
+            //started to wait in waitNextFlush();
+            //(during wait, the shared mutex is released)
+            //(The lock is taken once condition is reached)
+            std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            _isManagerFlushing = true;
+            _managerWaitUser.wait(lock, 
+                [this](){
+                    return _currentThreadWaiting == _cooperativeThreadCount;
+                });
+            //Swap to apply last read change
+            swapRead();
+            //Select registers for read and write
+            //and compute operation batching
+            std::vector<BatchedRegisters> batchsRead = computeBatchedRegisters(
+                [this](const Register* reg) -> bool {
+                    return this->isNeedRead(reg);
+                });
+            std::vector<BatchedRegisters> batchsWrite = computeBatchedRegisters(
+                [this](const Register* reg) -> bool {
+                    return this->isNeedWrite(reg);
+                });
+            //Wake up cooperative user threads waiting
+            //in waitNextFlush()
+            _isManagerFlushing = false;
+            lock.unlock();
+            _userWaitManager.notify_all();
+            //Perform read operation on all batchs
+            for (size_t i=0;i<batchsRead.size();i++) {
+                readBatch(batchsRead[i]);
+            }
+            //Increment Read counter
+            _readCycleCount++;
+            //Perform write operation on all batchs
+            for (size_t i=0;i<batchsWrite.size();i++) {
+                writeBatch(batchsWrite[i]);
+            }
+        }
+
+        /**
+         * Ping all possible Device Id.
+         * New discovered Devices are added.
+         * All responding Devices are marked as present
+         * and all others are marked as non present.
+         * Throw std::logic_error is non supported
+         * Device type or id/name error are found.
+         */
+        inline void scan()
+        {
+            std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
+            //Mark all Device as not present
+            for (auto& it : this->_devicesByName) {
+                it.second->setPresent(false);
+            }
+            //Iterate over all possible Id
+            for (id_t i=IdDevBegin;i<=IdDevEnd;i++) {
+                //If the Device exist on the bus
+                if (_protocol->ping(i)) {
+                    //Retrieve the model number
+                    type_t type;
+                    bool isSuccess = retrieveTypeNumber(i, type);
+                    //Skip the Device if model number
+                    //can not be retrieved
+                    if (!isSuccess) {
+                        continue;
+                    }
+                    //Check if the Device is already known
+                    bool isExist = this->devExistsById(i);
+                    if (isExist && this->typeNumberById(i) != type) {
+                        //Throw exception if scanned Device id
+                        //is already known with a diferent type
+                        throw std::logic_error(
+                            "Manager scan type mismatch: " 
+                            + std::to_string(i));
+                    } else if (isExist) {
+                        //If no type problem mark 
+                        //the Device as present
+                        this->devById(i).setPresent(true);
+                    } else {
+                        //The Device is not yet present,
+                        //it is created
+                        this->devAddByTypeNumber(i, type);
+                        //Set it as present
+                        this->devById(i).setPresent(true);
+                    }
+                }
+            }
         }
         
         /**
@@ -180,10 +241,12 @@ class Manager : public AggregateManager<Types...>
          * Register pointers.
          * Register are given by its Device id
          * and its name
+         * (The user must not call it)
          */
         inline virtual void onNewRegister(
             id_t id, const std::string& name) override
         {
+            std::unique_lock<std::mutex> lock(CallManager::_mutex);
             //Retrieve the nex register and 
             //add the pointer to the container
             _sortedRegisters.push_back(
@@ -200,6 +263,67 @@ class Manager : public AggregateManager<Types...>
                         return pt1->id < pt2->id;
                     }
                 });
+        }
+        
+        /**
+         * Inherit
+         * Call the Manager to force the immediate 
+         * Read or Write of the Register given by its
+         * Device id and name.
+         */
+        inline virtual void forceRegisterRead(
+            id_t id, const std::string& name) override
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
+            //Retrieve Register pointer
+            Register* reg = &(AggregateManager<Types...>
+                ::devById(id)._registersList.get(name));
+            //Reset read flags
+            reg->readyForRead();
+            //Read single register
+            while (true) {
+                ResponseState state = _protocol->readData(
+                    reg->id, 
+                    reg->addr, 
+                    reg->_dataBufferRead, 
+                    reg->length);
+                //TODO check response
+                if (state == ResponseOK) {
+                    break;
+                }
+            }
+            //Retrieve the read timestamp
+            TimePoint timestamp = getTimePoint();
+            //Set swapping flags and set timestamp
+            reg->finishRead(timestamp);
+            //Do swapping
+            reg->swapRead();
+        }
+        inline virtual void forceRegisterWrite(
+            id_t id, const std::string& name) override
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
+            //Retrieve Register pointer
+            Register* reg = &(AggregateManager<Types...>
+                ::devById(id)._registersList.get(name));
+            //Export typed value into data buffer
+            reg->selectForWrite();
+            //Write the register
+            _protocol->writeData(
+                reg->id, 
+                reg->addr, 
+                reg->_dataBufferWrite, 
+                reg->length);
         }
 
         /**
@@ -252,6 +376,7 @@ class Manager : public AggregateManager<Types...>
          */
         inline nlohmann::json saveJSON() const
         {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
             nlohmann::json j = AggregateManager<Types...>::saveAggregatedJSON();
             j["Manager"] = _parametersList.saveJSON();
             return j;
@@ -265,6 +390,7 @@ class Manager : public AggregateManager<Types...>
          */
         inline void loadJSON(const nlohmann::json& j)
         {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (
                 !j.is_object() ||
                 j.size() != sizeof...(Types) + 1 ||
@@ -275,6 +401,8 @@ class Manager : public AggregateManager<Types...>
             }
             AggregateManager<Types...>::loadAggregatedJSON(j);
             _parametersList.loadJSON(j.at("Manager"));
+            //Reset low level communication (bus/protocol)
+            initBus();
         }
 
     private:
@@ -306,6 +434,38 @@ class Manager : public AggregateManager<Types...>
         unsigned long _readCycleCount;
 
         /**
+         * Condition variable for
+         * the Manager waiting that
+         * users call waitNextFlush()
+         * and for users waiting the end of
+         * flush() operation.
+         */
+        mutable std::condition_variable _managerWaitUser;
+        mutable std::condition_variable _userWaitManager;
+
+        /**
+         * If true, the Manager is flushing
+         * and all other cooperative user thread
+         * have to wait
+         */
+        bool _isManagerFlushing;
+
+        /**
+         * The number of current user cooperative
+         * threads waited for their cycle end
+         * (waitNextFlush()) at the beginning
+         * of flush().
+         */
+        unsigned int _cooperativeThreadCount;
+
+        /**
+         * The number of user cooperative
+         * threads currently waiting in 
+         * waitNextFlush() methods.
+         */
+        unsigned int _currentThreadWaiting;
+
+        /**
          * Serial bus and Protocol pointers
          */
         SerialBus* _bus;
@@ -327,6 +487,36 @@ class Manager : public AggregateManager<Types...>
         ParameterStr _paramBusPort;
         ParameterNumber _paramBusBaudrate;
         ParameterStr _paramProtocolName;
+        
+        /**
+         * Reset and initialize the
+         * Bus and Protocol instance.
+         * (Need to be called after any 
+         * bus/protocol parameters update)
+         */
+        inline void initBus()
+        {
+            //Free existing instance
+            if (_protocol != nullptr) {
+                delete _protocol;
+                _protocol = nullptr;
+            }
+            if (_bus != nullptr) {
+                delete _bus;
+                _bus = nullptr;
+            }
+            //Allocate Bus and Protocol
+            if (_paramBusPort.value != "") {
+                _bus = new SerialBus(_paramBusPort.value, _paramBusBaudrate.value);
+            }
+            _protocol = ProtocolFactory(_paramProtocolName.value, *_bus);
+            //Check that Protocol implementation name is valid
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager invalid protocol name: " 
+                    + _paramProtocolName.value);
+            }
+        }
 
         /**
          * Return true if given Register pointer
@@ -334,50 +524,20 @@ class Manager : public AggregateManager<Types...>
          */
         inline bool isNeedRead(const Register* reg) const
         {
-            if (CallManager::_bufferMode) {
-                return 
-                    reg->_needRead2 || 
-                    (reg->periodPackedRead > 0 &&
-                    (_readCycleCount % reg->periodPackedRead == 0));
-            } else {
-                return
-                    reg->_needRead1 || 
-                    (reg->periodPackedRead > 0 &&
-                    (_readCycleCount % reg->periodPackedRead == 0));
-            }
+            return 
+                reg->needRead() || 
+                (reg->periodPackedRead > 0 &&
+                (_readCycleCount % reg->periodPackedRead == 0));
         }
         inline bool isNeedWrite(const Register* reg) const
         {
-            if (CallManager::_bufferMode) {
-                return reg->_needWrite2;
-            } else {
-                return reg->_needWrite1;
+            bool isNeed = reg->needWrite();
+            //If selected for write, register
+            //is reset for write aggregation
+            if (isNeed) {
+                this->selectForWrite();
             }
-        }
-
-        /**
-         * Reset given Register pointer for
-         * read or write operation.
-         * Set timestamp with given timepoint.
-         */
-        inline void resetRegForRead(Register* reg, 
-            const TimePoint& timestamp)
-        {
-            if (CallManager::_bufferMode) {
-                reg->_needRead2 = false;
-                reg->_lastDevRead2 = timestamp;
-            } else {
-                reg->_needRead1 = false;
-                reg->_lastDevRead1 = timestamp;
-            }
-        }
-        inline void resetRegForWrite(Register* reg)
-        {
-            if (CallManager::_bufferMode) {
-                reg->_needWrite2 = false;
-            } else {
-                reg->_needWrite1 = false;
-            }
+            return isNeed;
         }
 
         /**
@@ -474,17 +634,12 @@ class Manager : public AggregateManager<Types...>
                 throw std::logic_error(
                     "Manager protocol not initialized");
             }
-            //Converted and write the typed 
-            //value into the data buffer
-            for (size_t i=0;i<batch.regs.size();i++) {
-                batch.regs[i]->doConvIn(CallManager::_bufferMode);
-            }
             if (batch.regs.size() == 1) {
                 //Write single register
                 _protocol->writeData(
                     batch.regs.front()->id, 
                     batch.addr, 
-                    batch.regs.front()->_dataBuffer, 
+                    batch.regs.front()->_dataBufferWrite, 
                     batch.length);
             } else {
                 //Synch Write multiple registers
@@ -497,17 +652,13 @@ class Manager : public AggregateManager<Types...>
                         //Do not insert an id twice
                         ids.push_back(batch.regs[i]->id);
                     }
-                    datas.push_back(batch.regs[i]->_dataBuffer);
+                    datas.push_back(batch.regs[i]->_dataBufferWrite);
                 }
                 _protocol->syncWrite(
                     ids, 
                     batch.addr,
                     datas,
                     batch.length);
-            }
-            //Reset dirty flags
-            for (size_t i=0;i<batch.regs.size();i++) {
-                resetRegForWrite(batch.regs[i]);
             }
         }
         inline void readBatch(BatchedRegisters& batch)
@@ -517,16 +668,21 @@ class Manager : public AggregateManager<Types...>
                 throw std::logic_error(
                     "Manager protocol not initialized");
             }
+            //Reset read flags for all registers
+            for (size_t i=0;i<batch.regs[i].size();i++) {
+                batch.regs[i]->readyForRead();
+            }
             if (batch.regs.size() == 1) {
                 //Read single register
                 ResponseState state = _protocol->readData(
                     batch.regs.front()->id, 
                     batch.addr, 
-                    batch.regs.front()->_dataBuffer, 
+                    batch.regs.front()->_dataBufferRead, 
                     batch.length);
                 //Check for communication error
                 if (state != ResponseOK) {
                     //TODO XXX XXX XXX handle response code
+                    //SetPresent Device if ok
                 }
             } else {
                 //Synch Read multiple registers
@@ -539,7 +695,7 @@ class Manager : public AggregateManager<Types...>
                         //Do not insert an id twice
                         ids.push_back(batch.regs[i]->id);
                     }
-                    datas.push_back(batch.regs[i]->_dataBuffer);
+                    datas.push_back(batch.regs[i]->_dataBufferRead);
                 }
                 std::vector<ResponseState> states = _protocol->syncRead(
                     ids, 
@@ -548,15 +704,49 @@ class Manager : public AggregateManager<Types...>
                     batch.length);
                 //Check for communication error
                     //TODO XXX XXX XXX handle response code
+                    //SetPresent Device if ok
             }
             //Retrieve the read timestamp
             TimePoint timestamp = getTimePoint();
-            //Reset dirty flags, set read timestamp
-            //and convert the data buffer into typed value
+            //For all registers, assign timestamp on
+            //Manager side and mark them for swapping
             for (size_t i=0;i<batch.regs.size();i++) {
-                resetRegForRead(batch.regs[i], timestamp);
-                batch.regs[i]->doConvOut(CallManager::_bufferMode);
+                batch.regs[i]->finishRead(timestamp);
             }
+        }
+
+        /**
+         * Iterate over all registers and
+         * swap then to apply read change if 
+         * needed.
+         * (No thread protection)
+         */
+        inline void swapRead()
+        {
+            for (size_t i=0;i<_sortedRegisters.size();i++) {
+                _sortedRegisters[i]->swapRead();
+            }
+        }
+
+        /**
+         * Try to read the Device model number
+         * from given id and assign into given type.
+         * True is returned if read is successful.
+         */
+        inline bool retrieveTypeNumber(id_t id, type_t& type)
+        {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
+            //Read at static memory address
+            data_t* pt = reinterpret_cast<data_t*>(&type);
+            ResponseState state = _protocol
+                ->readData(id, AddrDevTypeNumber, pt, 2);
+            //XXX Response state ?
+            //Check response state
+            return (state == ResponseOK);
         }
 };
 

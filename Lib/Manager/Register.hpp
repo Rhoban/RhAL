@@ -109,14 +109,14 @@ class Register
             periodPackedRead(periodPackedRead),
             isForceRead(isForceRead),
             isForceWrite(isForceWrite),
-            _dataBuffer(nullptr),
-            _lastDevRead1(),
-            _lastDevRead2(),
+            _dataBufferRead(nullptr),
+            _dataBufferWrite(nullptr),
+            _lastDevReadUser(),
+            _lastDevReadManager(),
             _lastUserWrite(),
-            _needRead1(false),
-            _needRead2(false),
-            _needWrite1(false),
-            _needWrite2(false),
+            _needRead(false),
+            _needWrite(false),
+            _needSwaping(false),
             _manager(nullptr),
             _mutex()
         {
@@ -134,94 +134,66 @@ class Register
 
         /**
          * Initialize the Register with the associated 
-         * Device id and the Manager pointer
+         * Device id, the Manager pointer and pointer to
+         * Device memory space buffer for read and write.
          */
-        inline void init(id_t tmpId, CallManager* manager, data_t* data)
+        inline void init(id_t tmpId, CallManager* manager, 
+            data_t* bufferRead, data_t* bufferWrite)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (manager == nullptr) {
                 throw std::logic_error(
                     "Register null manager pointer:" 
                     + name);
             }
-            if (data == nullptr) {
+            if (bufferRead == nullptr || bufferWrite == nullptr) {
                 throw std::logic_error(
-                    "Register null data pointer:" 
+                    "Register null buffer pointer:" 
                     + name);
             }
             id = tmpId;
             _manager = manager;
-            _dataBuffer = data;
+            _dataBufferRead = bufferRead;
+            _dataBufferWrite = bufferWrite;
         }
 
         /**
-         * Performe immediate Read or Write
+         * Perform immediate read or write 
          * operation on the bus
          */
-        /* TODO
         inline void forceRead()
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
-                    "Register null manager pointer: " 
+                    "Register null manager pointer:" 
                     + name);
             }
-            //Call the Manager with coordinate 
-            //of this Register
             _manager->forceRegisterRead(id, name);
         }
         inline void forceWrite()
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
-                    "Register null manager pointer: " 
+                    "Register null manager pointer:" 
                     + name);
             }
-            //Call the Manager with coordinate 
-            //of this Register
             _manager->forceRegisterWrite(id, name);
         }
-        */
 
         /**
          * Mark the register to be Read or Write
-         * at next flushRead() or flushWrite()
          */
         inline void askRead()
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-
-            std::unique_lock<std::mutex> lock(_mutex);
-            //Assign double buffered needRead
-            if (bufferMode) {
-                _needRead1 = true;
-            } else {
-                _needRead2 = true;
-            }
-            lock.unlock();
-            
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _needRead = true;
         }
         inline void askWrite()
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-
-            std::unique_lock<std::mutex> lock(_mutex);
-            //Assign double buffered needWrite
-            if (bufferMode) {
-                _needWrite1 = true;
-            } else {
-                _needWrite2 = true;
-            }
-            lock.unlock();
-            
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _needWrite = true;
         }
 
         /**
@@ -230,71 +202,54 @@ class Register
          */
         inline bool needRead() const
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-
-            std::unique_lock<std::mutex> lock(_mutex);
-            //Retrieve double buffered needRead
-            bool val;
-            if (bufferMode) {
-                val = _needRead1;
-            } else {
-                val = _needRead2;
-            }
-            lock.unlock();
-            
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
-
-            return val;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _needRead;
         }
         inline bool needWrite() const
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-
-            std::unique_lock<std::mutex> lock(_mutex);
-            //Retrieve double buffered needWrite
-            bool val;
-            if (bufferMode) {
-                val = _needWrite1;
-            } else {
-                val = _needWrite2;
-            }
-            lock.unlock();
-            
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
-
-            return val;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _needWrite;
         }
 
     protected:
 
         /**
          * Raw data buffer pointer in
-         * Device memory.
+         * Device memory for read and write 
+         * operation.
          */
-        data_t* _dataBuffer;
+        data_t* _dataBufferRead;
+        data_t* _dataBufferWrite;
 
         /**
-         * Double buffered Timestamp at last read 
-         * from device and last write from user
+         * Timestamp of last hardware read from device.
+         * ReadUser is timestamp of current register typed value.
+         * ReadManager is timestamp of (possibly newer) data
+         * in read buffer.
          */
-        TimePoint _lastDevRead1;
-        TimePoint _lastDevRead2;
+        TimePoint _lastDevReadUser;
+        TimePoint _lastDevReadManager;
+
+        /**
+         * Last user write timestamp
+         */
         TimePoint _lastUserWrite;
 
+        /**
+         * Dirty flags.
+         * If true, the Register need 
+         * to be selected for Read or Write 
+         * on the bus.
+         */
+        bool _needRead;
+        bool _needWrite;
 
         /**
-         * Double buffered dirty flags.
-         * If true, the Register need 
-         * to be Read or Write on the bus.
+         * If true, the data in read buffer are newer
+         * than current typed read value. 
+         * The Register has to be swap.
          */
-        bool _needRead1;
-        bool _needRead2;
-        bool _needWrite1;
-        bool _needWrite2;
+        bool _needSwaping;
 
         /**
          * Pointer to a base class 
@@ -303,19 +258,18 @@ class Register
         CallManager* _manager;
 
         /**
-         * Mutex protecting Register meta data
+         * Mutex protecting Register member
          */
-        mutable std::mutex _mutex;
+        mutable std::recursive_mutex _mutex;
 
         /**
          * Request conversion by derived TypedRegister
          * from typed written value to data buffer and from
          * data buffer to typed read value.
-         * Used given buffer mode for double buffered value.
          * No thread protection.
          */
-        virtual void doConvIn(bool bufferMode) = 0;
-        virtual void doConvOut(bool bufferMode) = 0;
+        virtual void doConvIn() = 0;
+        virtual void doConvOut() = 0;
 
         /**
          * Manager has access to 
@@ -323,6 +277,59 @@ class Register
          */
         template <typename ... T>
         friend class Manager;
+        
+        /**
+         * Mark the register as selected for write.
+         * Current write typed value is converted into
+         * the write data buffer.
+         * Set needWrite to false (reset aggregation).
+         * (Call by Manager)
+         */
+        inline void selectForWrite()
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            doConvIn();
+            _needWrite = false;
+        }
+
+        /**
+         * Mark the register as read operation
+         * has begins. Reset read dirty flag.
+         */
+        inline void readyForRead()
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _needRead = false;
+        }
+
+        /**
+         * Mark the register as read end and need
+         * swapping.
+         * Given timestamp is the date at read receive.
+         * (Call by manager so doesn't need for thread protection)
+         */
+        inline void finishRead(TimePoint timestamp)
+        {
+            _needSwaping = true;
+            _lastDevReadManager = timestamp;
+        }
+
+        /**
+         * If the register swap is needed,
+         * convert the read data buffer into
+         * typed read value and assign the new timestamp.
+         * (Call by Manager)
+         */
+        inline void swapRead()
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            if (!_needSwaping) {
+                return;
+            }
+            _needSwaping = false;
+            doConvOut();
+            _lastDevReadUser = _lastDevReadManager;
+        }
 };
 
 /**
@@ -372,10 +379,8 @@ class TypedRegister : public Register
                 periodPackedRead, forceRead, forceWrite),
             funcConvIn(funcConvIn),
             funcConvOut(funcConvOut),
-            _valueRead1(),
-            _valueRead2(),
-            _valueWrite1(),
-            _valueWrite2(),
+            _valueRead(),
+            _valueWrite(),
             _aggregationPolicy(AggregateLast)
         {
         }
@@ -386,7 +391,7 @@ class TypedRegister : public Register
          */
         inline void setAggregationPolicy(AggregationPolicy policy)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
             _aggregationPolicy = policy;
         }
 
@@ -395,77 +400,49 @@ class TypedRegister : public Register
          * the hardware. The returned timestamp
          * is the time when data are received from the bus.
          */
-        inline TimedValue<T> readValue() const
+        inline TimedValue<T> readValue()
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-            
-            std::unique_lock<std::mutex> lock(_mutex);
-            //Retrieve last read value and TimePoint
-            TimePoint timestamp;
-            T value;
-            if (bufferMode) {
-                timestamp = _lastDevRead1;
-                value = _valueRead1;
-            } else {
-                timestamp = _lastDevRead2;
-                value = _valueRead2;
+            //Do immediate read on the bus
+            //is the register is configured to forceWrite
+            //or given Manager send mode
+            if (isForceRead || !_manager->isScheduleMode()) {
+                forceRead();
             }
-            lock.unlock();
-
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
-            
-            return TimedValue<T>(timestamp, value);
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return TimedValue<T>(_lastDevReadUser, _valueRead);
         }
 
         /**
-         * Set the current contained
-         * typed value. 
-         * The register is marked to
-         * be written.
-         * If the register configuration
-         * is set as immediate Write or if
-         * the manager is in immediante send mode,
-         * the register Write operation
-         * is immediatly done on the bus.
+         * Set the current contained typed value. 
+         * If the register is written multiple times
+         * between write operations, values are aggregated
+         * according with current aggregation policy.
+         * The register is marked to be written.
          */
         inline void writeValue(T val)
         {
-            //Wait for double buffer swapping
-            bool bufferMode = _manager->preUserOperations();
-
-            std::unique_lock<std::mutex> lock(_mutex);
-            T aggregated = val;
-            if (bufferMode) {
-                //Compute aggregation if the value
-                //has already been written
-                if (_needWrite1) {
-                    aggregated = aggregateValue(
-                        _aggregationPolicy, _valueWrite1, val);
-                }
-                //Assign the value and timestamp
-                _valueWrite1 = aggregated;
-                _lastUserWrite = getTimePoint();
-                //Mark as dirty
-                _needWrite1 = true;
+            std::unique_lock<std::recursive_mutex> lock(_mutex);
+            
+            //Compute aggregation if the value
+            //has already been written
+            if (_needWrite) {
+                _valueWrite = aggregateValue(
+                    _aggregationPolicy, _valueWrite, val);
             } else {
-                //Compute aggregation if the value
-                //has already been written
-                if (_needWrite2) {
-                    aggregated = aggregateValue(
-                        _aggregationPolicy, _valueWrite2, val);
-                }
-                //Assign the value and timestamp
-                _valueWrite2 = aggregated;
-                _lastUserWrite = getTimePoint();
-                //Mark as dirty
-                _needWrite2 = true;
+                _valueWrite = val;
             }
+            //Assign the timestamp
+            _lastUserWrite = getTimePoint();
+            //Mark as dirty
+            _needWrite = true;
+            //Unlock mutex
             lock.unlock();
-
-            //Notify the end of double buffer use
-            _manager->postUserOperations();
+            //Do immediate write on the bus
+            //is the register is configured to forceWrite
+            //or given Manager send mode
+            if (isForceWrite || !_manager->isScheduleMode()) {
+                forceWrite();
+            }
         }
 
     protected:
@@ -475,37 +452,29 @@ class TypedRegister : public Register
          * Request conversion by derived TypedRegister
          * from typed written value to data buffer and from
          * data buffer to typed read value.
-         * Used given buffer mode for double buffered value.
          * No thread protection.
          */
-        inline virtual void doConvIn(bool bufferMode)
+        inline virtual void doConvIn() override
         {
-            if (bufferMode) {
-                funcConvIn(_dataBuffer, _valueWrite1);
-            } else {
-                funcConvIn(_dataBuffer, _valueWrite2);
-            }
+            funcConvIn(_dataBufferWrite, _valueWrite);
         }
-        inline virtual void doConvOut(bool bufferMode)
+        inline virtual void doConvOut() override
         {
-            if (bufferMode) {
-                _valueRead1 = funcConvOut(_dataBuffer);
-            } else {
-                _valueRead2 = funcConvOut(_dataBuffer);
-            }
+            _valueRead = funcConvOut(_dataBufferRead);
         }
 
     private:
 
         /**
-         * Double buffered Typed Register value 
-         * of last aggregated user write and 
-         * last hardware read value
+         * Typed Register value.
+         * ValueWrite is the user aggregated 
+         * last write.
+         * ValueRead is the current hardware 
+         * register read value. Possible newer value
+         * is in data read buffer waiting for swapping.
          */
-        T _valueRead1;
-        T _valueRead2;
-        T _valueWrite1;
-        T _valueWrite2;
+        T _valueRead;
+        T _valueWrite;
         
         /**
          * Value Aggregation policy

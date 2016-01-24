@@ -31,7 +31,8 @@ class RegistersList
             _id(id),
             _registers(),
             _manager(nullptr),
-            _memorySpace{0}
+            _memorySpaceRead{0},
+            _memorySpaceWrite{0}
         {
         }
 
@@ -55,6 +56,7 @@ class RegistersList
         /**
          * Add a new Register pointer to the internal
          * container.
+         * No Thread protection.
          * Throw std::logic_error if register name 
          * is already contained.
          */
@@ -91,8 +93,11 @@ class RegistersList
             _registers[reg->name] = reg;
             //Assign Register associated Device id,
             //the pointer to the manager instance
-            //and the pointer to data buffer
-            reg->init(_id, _manager, _memorySpace + reg->addr);
+            //and the pointer to data buffer read and write
+            reg->init(
+                _id, _manager, 
+                _memorySpaceRead + reg->addr,
+                _memorySpaceWrite + reg->addr);
             //Declare the register to the Manager
             //for building the set of all Registers
             _manager->onNewRegister(reg->id, reg->name);
@@ -132,11 +137,9 @@ class RegistersList
     private:
 
         /**
-         * Associated Device id and data buffer
-         * pointer
+         * Associated Device id 
          */
         id_t _id;
-        data_t* _data;
 
         /**
          * Registers container indexed by their name
@@ -151,9 +154,11 @@ class RegistersList
 
         /**
          * Complete allocated Device memory 
-         * space shared by all registers
+         * space for read and write shared 
+         * by all contained registers
          */
-        data_t _memorySpace[AddrDevLen];
+        data_t _memorySpaceRead[AddrDevLen];
+        data_t _memorySpaceWrite[AddrDevLen];
 };
 
 }
