@@ -1,5 +1,9 @@
 #include <iostream>
+#include <random>
 #include "FakeProtocol.hpp"
+
+static std::random_device generator;
+static std::uniform_real_distribution<> dist(0.0, 1.0);
 
 namespace RhAL
 {
@@ -16,8 +20,12 @@ void FakeProtocol::writeData(
     (void)data;
     std::cout << "WriteData id=" << id 
         << " addr=" << address
-        << " size=" << size 
-        << std::endl;
+        << " size=" << size;
+    if (size == 4) {
+        std::cout << " valFloat=" 
+            << *(reinterpret_cast<const float*>(data));
+    }
+    std::cout << std::endl;
 }
 
 ResponseState FakeProtocol::readData(
@@ -27,8 +35,13 @@ ResponseState FakeProtocol::readData(
     (void)data;
     std::cout << "ReadData id=" << id 
         << " addr=" << address
-        << " size=" << size 
-        << std::endl;
+        << " size=" << size;
+    if (size == 4) {
+        float val = dist(generator);
+        *(reinterpret_cast<float*>(data)) = val;
+        std::cout << " valFloat=" << val;
+    }
+    std::cout << std::endl;
     return ResponseOK;
 }
 
@@ -50,7 +63,16 @@ std::vector<ResponseState> FakeProtocol::syncRead(
         states.push_back(ResponseOK);
     }
     std::cout << "} addr=" << address 
-        << " size=" << size << std::endl;
+        << " size=" << size;
+    if (size == 4) {
+        std::cout << " valFoat: ";
+        for (size_t i=0;i<datas.size();i++) {
+            float val = dist(generator);
+            std::cout << val << ", ";
+            *(reinterpret_cast<float*>(datas[i])) = val;
+        }
+    }
+    std::cout << std::endl;
 
     return states;
 }
@@ -65,7 +87,15 @@ void FakeProtocol::syncWrite(
         std::cout << ids[i] << ",";
     }
     std::cout << "} addr=" << address 
-        << " size=" << size << std::endl;
+        << " size=" << size;
+    if (size == 4) {
+        std::cout << " valFoat: ";
+        for (size_t i=0;i<datas.size();i++) {
+            std::cout << *(reinterpret_cast<const float*>(datas[i]))
+                << ", ";
+        }
+    }
+    std::cout << std::endl;
 }
 
 }

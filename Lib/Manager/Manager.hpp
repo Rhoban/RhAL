@@ -100,6 +100,12 @@ class Manager : public AggregateManager<Types...>
          */
         inline void waitNextFlush()
         {
+            //No cooperative thread if 
+            //scheduling mode is disable
+            if (!CallManager::isScheduleMode()) {
+                //Do nothing
+                return;
+            }
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
             //The lock is now acquired
@@ -136,9 +142,17 @@ class Manager : public AggregateManager<Types...>
          *   Here, all threads are running.
          * - Perform all read operation.
          * - Perform all write operations.
+         * - Optionnaly swap Registers (if isForceSwap is true) 
+         *   to apply immediatly read values.
          */
-        inline void flush()
+        inline void flush(bool isForceSwap = false)
         {
+            //No cooperative thread if 
+            //scheduling mode is disable
+            if (!CallManager::isScheduleMode()) {
+                //Do nothing
+                return;
+            }
             //Wait for all cooperative user thread to have
             //started to wait in waitNextFlush();
             //(during wait, the shared mutex is released)
@@ -154,11 +168,11 @@ class Manager : public AggregateManager<Types...>
             //Select registers for read and write
             //and compute operation batching
             std::vector<BatchedRegisters> batchsRead = computeBatchedRegisters(
-                [this](const Register* reg) -> bool {
+                [this](Register* reg) -> bool {
                     return this->isNeedRead(reg);
                 });
             std::vector<BatchedRegisters> batchsWrite = computeBatchedRegisters(
-                [this](const Register* reg) -> bool {
+                [this](Register* reg) -> bool {
                     return this->isNeedWrite(reg);
                 });
             //Wake up cooperative user threads waiting
@@ -176,6 +190,20 @@ class Manager : public AggregateManager<Types...>
             for (size_t i=0;i<batchsWrite.size();i++) {
                 writeBatch(batchsWrite[i]);
             }
+            //Optionnaly force immediate swap read
+            if (isForceSwap) {
+                forceSwap();
+            }
+        }
+
+        /**
+         * Force all Registers to swap in order to 
+         * apply immediatly read values
+         */
+        inline void forceSwap()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            swapRead();
         }
 
         /**
@@ -270,6 +298,7 @@ class Manager : public AggregateManager<Types...>
          * Call the Manager to force the immediate 
          * Read or Write of the Register given by its
          * Device id and name.
+         * (Called by register, not by user)
          */
         inline virtual void forceRegisterRead(
             id_t id, const std::string& name) override
@@ -419,6 +448,9 @@ class Manager : public AggregateManager<Types...>
             //Container of 
             //registers batched
             std::vector<Register*> regs;
+            //Container of all unique ids 
+            //of batched registers
+            std::vector<id_t> ids;
         };
         
         /**
@@ -522,20 +554,20 @@ class Manager : public AggregateManager<Types...>
          * Return true if given Register pointer
          * is mark has to be read or write
          */
-        inline bool isNeedRead(const Register* reg) const
+        inline bool isNeedRead(Register* reg)
         {
             return 
                 reg->needRead() || 
                 (reg->periodPackedRead > 0 &&
                 (_readCycleCount % reg->periodPackedRead == 0));
         }
-        inline bool isNeedWrite(const Register* reg) const
+        inline bool isNeedWrite(Register* reg)
         {
             bool isNeed = reg->needWrite();
             //If selected for write, register
             //is reset for write aggregation
             if (isNeed) {
-                this->selectForWrite();
+                reg->selectForWrite();
             }
             return isNeed;
         }
@@ -548,18 +580,10 @@ class Manager : public AggregateManager<Types...>
          * return true.
          */
         std::vector<BatchedRegisters> computeBatchedRegisters(
-            std::function<bool(const Register*)> selectRegister)
+            std::function<bool(Register*)> selectRegister)
         {
             //Batched registers container
             std::vector<BatchedRegisters> container;
-
-            //Initialize the for the first register
-            BatchedRegisters tmpBatch;
-            if (_sortedRegisters.size() > 0) {
-                tmpBatch.addr = _sortedRegisters.front()->addr;
-                tmpBatch.length = _sortedRegisters.front()->length;
-                tmpBatch.regs = {_sortedRegisters.front()};
-            }
 
             //Merge the given temporary batch to 
             //final batches by merging by id
@@ -574,6 +598,7 @@ class Manager : public AggregateManager<Types...>
                         for (size_t k=0;k<tmpBatch.regs.size();k++) {
                             container[j].regs.push_back(tmpBatch.regs[k]);
                         }
+                        container[j].ids.push_back(tmpBatch.ids.front());
                         found = true;
                         break;
                     }
@@ -587,15 +612,24 @@ class Manager : public AggregateManager<Types...>
 
             //Iterate over all sorted Registers 
             //by id and then by address
-            size_t index = 1;
-            while (index < _sortedRegisters.size()) {
-                Register* reg = _sortedRegisters[index];
+            BatchedRegisters tmpBatch;
+            for (size_t i=0;i<_sortedRegisters.size();i++) {
+                Register* reg = _sortedRegisters[i];
                 //Select batched registers according to
                 //the given predicate function
                 if (selectRegister(reg)) {
+                    //Initialize the temporary batch if empty
+                    if (tmpBatch.regs.size() == 0) {
+                        tmpBatch.addr = reg->addr;
+                        tmpBatch.length = reg->length;
+                        tmpBatch.regs = {reg};
+                        tmpBatch.ids = {reg->id};
+                        //And continue to next register
+                        continue;
+                    }
                     bool isContigious = 
                         (tmpBatch.addr + tmpBatch.length == reg->addr) &&
-                        (reg->id == tmpBatch.regs.front()->id);
+                        (reg->id == tmpBatch.ids.front());
                     if (isContigious) {
                         //If the register is contigious to current
                         //batch, it is added to it.
@@ -608,16 +642,21 @@ class Manager : public AggregateManager<Types...>
                         //the temporaty batch is added to
                         //the final container.
                         mergeById(tmpBatch);
+                        //Reset the temporary batch
+                        tmpBatch.regs.clear();
+                        tmpBatch.ids.clear();
                         //And a new temporary batch is initialize
                         tmpBatch.addr = reg->addr;
                         tmpBatch.length = reg->length;
                         tmpBatch.regs = {reg};
+                        tmpBatch.ids = {reg->id};
                     }
                 }
-                index++;
             }
-            //Merge the last batch
-            mergeById(tmpBatch);
+            //Merge the last batch if not empty
+            if (tmpBatch.regs.size() > 0) {
+                mergeById(tmpBatch);
+            }
 
             return container;
         }
@@ -634,28 +673,21 @@ class Manager : public AggregateManager<Types...>
                 throw std::logic_error(
                     "Manager protocol not initialized");
             }
-            if (batch.regs.size() == 1) {
+            if (batch.ids.size() == 1) {
                 //Write single register
                 _protocol->writeData(
-                    batch.regs.front()->id, 
+                    batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferWrite, 
                     batch.length);
             } else {
                 //Synch Write multiple registers
-                std::vector<id_t> ids;
-                std::vector<data_t*> datas;
+                std::vector<const data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
-                    if (ids.size() == 0 || 
-                        batch.regs[i]->id != ids.back()
-                    ) {
-                        //Do not insert an id twice
-                        ids.push_back(batch.regs[i]->id);
-                    }
                     datas.push_back(batch.regs[i]->_dataBufferWrite);
                 }
                 _protocol->syncWrite(
-                    ids, 
+                    batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);
@@ -669,13 +701,13 @@ class Manager : public AggregateManager<Types...>
                     "Manager protocol not initialized");
             }
             //Reset read flags for all registers
-            for (size_t i=0;i<batch.regs[i].size();i++) {
+            for (size_t i=0;i<batch.regs.size();i++) {
                 batch.regs[i]->readyForRead();
             }
-            if (batch.regs.size() == 1) {
+            if (batch.ids.size() == 1) {
                 //Read single register
                 ResponseState state = _protocol->readData(
-                    batch.regs.front()->id, 
+                    batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferRead, 
                     batch.length);
@@ -686,19 +718,12 @@ class Manager : public AggregateManager<Types...>
                 }
             } else {
                 //Synch Read multiple registers
-                std::vector<id_t> ids;
                 std::vector<data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
-                    if (ids.size() == 0 || 
-                        batch.regs[i]->id != ids.back()
-                    ) {
-                        //Do not insert an id twice
-                        ids.push_back(batch.regs[i]->id);
-                    }
                     datas.push_back(batch.regs[i]->_dataBufferRead);
                 }
                 std::vector<ResponseState> states = _protocol->syncRead(
-                    ids, 
+                    batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);

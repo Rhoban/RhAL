@@ -12,6 +12,8 @@ set(BIN_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Bin")
 set(TESTS_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Tests")
+set(EXAMPLES_SOURCES_DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/Examples")
 set(VENDORS_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Vendors")
 
@@ -58,6 +60,13 @@ set(TESTS_SOURCES
     testManager
 )
 
+# Examples source files
+set(EXAMPLES_SOURCES
+    example1
+    example2
+    example3
+)
+
 # Build the RhAL Library
 add_library(LibRhAL ${PREFIXED_LIB_SOURCES})
 target_link_libraries(LibRhAL serial)
@@ -70,5 +79,11 @@ target_link_libraries(rhal LibRhAL)
 foreach(TEST ${TESTS_SOURCES})
     add_executable(${TEST} "${TESTS_SOURCES_DIRECTORY}/${TEST}.cpp")
     target_link_libraries(${TEST} LibRhAL)
+endforeach()
+
+# Build all Examples binary
+foreach(EXAMPLE ${EXAMPLES_SOURCES})
+    add_executable(${EXAMPLE} "${EXAMPLES_SOURCES_DIRECTORY}/${EXAMPLE}.cpp")
+    target_link_libraries(${EXAMPLE} LibRhAL)
 endforeach()
 
