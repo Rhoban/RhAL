@@ -18,3 +18,10 @@ else
     cd ..
 fi
 
+if [ ! -d "tclap" ]; then 
+    git clone https://github.com/Rhoban/tclap.git
+else
+    cd tclap
+    git pull
+    cd ..
+fi
