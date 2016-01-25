@@ -18,8 +18,9 @@ int main()
 
     //Test Register
     RhAL::data_t buffer1[256];
+    RhAL::data_t buffer2[256];
     RhAL::TypedRegisterBool reg("regName", 0xFF, 4, convIn, convOut, 0);
-    reg.init(1, &manager, buffer1);
+    reg.init(1, &manager, buffer1, buffer2);
     assertEquals(reg.id, (RhAL::id_t)1);
     assertEquals(reg.name, "regName");
     assertEquals(reg.addr, (RhAL::addr_t)0xFF);
@@ -36,14 +37,15 @@ int main()
     assertEquals(reg.needWrite(), true);
 
     //Test TypedRegister
-    RhAL::data_t buffer2[256];
+    RhAL::data_t buffer3[256];
+    RhAL::data_t buffer4[256];
     RhAL::TypedRegisterInt reg2("reg2Name", 0x42, 4, convIn, convOut, 1);
     assertEquals(reg2.name, "reg2Name");
     assertEquals(reg2.addr, (RhAL::addr_t)0x42);
     assertEquals(reg2.length, (size_t)4);
     assertEquals(reg2.periodPackedRead, (unsigned int)1);
     
-    reg2.init(2, &manager, buffer2);
+    reg2.init(2, &manager, buffer3, buffer4);
     assertEquals(reg2.id, (RhAL::id_t)2);
     assertEquals(reg2.needRead(), false);
     assertEquals(reg2.needWrite(), false);

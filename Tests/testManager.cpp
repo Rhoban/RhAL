@@ -10,19 +10,18 @@ int main()
         RhAL::ExampleDevice2
     > manager;
 
-    /*
-    assertEquals(manager.devAll().size(), (size_t)0);
+    assertEquals(manager.devContainer().size(), (size_t)0);
     assertEquals(manager.devExistsById(1), false);
     assertEquals(manager.devExistsByName("test2"), false);
     assertEquals(manager.devExistsById<RhAL::ExampleDevice1>(1), false);
     assertEquals(manager.devExistsByName<RhAL::ExampleDevice2>("test2"), false);
 
-    manager.devAdd<RhAL::ExampleDevice1>("test1", 1);
-    manager.devAdd<RhAL::ExampleDevice2>("test2", 2);
+    manager.devAdd<RhAL::ExampleDevice1>(1, "test1");
+    manager.devAdd<RhAL::ExampleDevice2>(2, "test2");
     
-    assertEquals(manager.devAll().size(), (size_t)2);
-    assertEquals(manager.devAll<RhAL::ExampleDevice1>().size(), (size_t)1);
-    assertEquals(manager.devAll<RhAL::ExampleDevice2>().size(), (size_t)1);
+    assertEquals(manager.devContainer().size(), (size_t)2);
+    assertEquals(manager.devContainer<RhAL::ExampleDevice1>().size(), (size_t)1);
+    assertEquals(manager.devContainer<RhAL::ExampleDevice2>().size(), (size_t)1);
     assertEquals(manager.devExistsById(1), true);
     assertEquals(manager.devExistsById(2), true);
     assertEquals(manager.devExistsByName("test1"), true);
@@ -31,9 +30,6 @@ int main()
     assertEquals(manager.devExistsById<RhAL::ExampleDevice2>(1), false);
     assertEquals(manager.devExistsByName<RhAL::ExampleDevice2>("test2"), true);
     assertEquals(manager.devExistsByName<RhAL::ExampleDevice1>("test2"), false);
-
-    assertEquals(manager.devAll<RhAL::ExampleDevice1>().front()->name(), "test1");
-    assertEquals(manager.devAll<RhAL::ExampleDevice2>().front()->name(), "test2");
 
     const RhAL::Device& d1 = manager.devById(1);
     const RhAL::Device& d2 = manager.devById(2);
@@ -52,25 +48,46 @@ int main()
     assertEquals(e2.name(), "test2");
     assertEquals(e3.id(), (RhAL::id_t)1);
     assertEquals(e4.id(), (RhAL::id_t)2);
-    */
+    
+    const RhAL::BaseExampleDevice1& b1 = manager.devById<RhAL::BaseExampleDevice1>(1);
+    const RhAL::BaseExampleDevice1& b2 = manager.devByName<RhAL::BaseExampleDevice1>("test1");
 
-    manager.initBus();
-
-    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test1", 1);
-    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test2", 2);
-    manager.devAdd<RhAL::ExampleDevice1>("Dev1Test3", 3);
-    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test4", 4);
-    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test5", 5);
-    manager.devAdd<RhAL::ExampleDevice2>("Dev2Test6", 6);
+    manager.devAdd<RhAL::ExampleDevice1>(10, "Dev1Test1");
+    manager.devAdd<RhAL::ExampleDevice1>(20, "Dev1Test2");
+    manager.devAdd<RhAL::ExampleDevice1>(3, "Dev1Test3");
+    manager.devAdd<RhAL::ExampleDevice2>(4, "Dev2Test4");
+    manager.devAdd<RhAL::ExampleDevice2>(5, "Dev2Test5");
+    manager.devAdd<RhAL::ExampleDevice2>(6, "Dev2Test6");
 
     //manager.devByName<RhAL::ExampleDevice1>("Dev1Test2").
+    /*
     manager.flushRead();
     manager.flushRead();
     manager.flushRead();
     manager.flushRead();
     manager.flushRead();
+    */
+    manager.writeConfig("/tmp/a");
+    manager.readConfig("/tmp/a");
 
-    std::cout << manager.saveJSON().dump(4) << std::endl;
+    nlohmann::json j = manager.saveJSON();
+    std::cout << j.dump(4) << std::endl;
+    /*
+    manager.loadJSON(j);
+    
+    RhAL::Manager<
+        RhAL::ExampleDevice1, 
+        RhAL::ExampleDevice2
+    > manager2;
+    nlohmann::json j2 = manager2.saveJSON();
+    std::cout << j2.dump(4) << std::endl;
+    manager2.loadJSON(j2);
+    std::cout << manager2.saveJSON().dump(4) << std::endl;
+    manager2.loadJSON(j);
+    manager2.loadJSON(j);
+    std::cout << manager2.saveJSON().dump(4) << std::endl;
+    */
+
 
     return 0;
 }

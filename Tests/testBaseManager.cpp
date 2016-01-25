@@ -12,8 +12,8 @@ int main()
     assertEquals(baseManager->devExistsByName("test1"), false);
     assertEquals(baseManager->devContainer().size(), (size_t)0);
 
-    baseManager->devAdd("test1", (RhAL::id_t)1, &manager);
-    baseManager->devAdd("test2", (RhAL::id_t)2, &manager);
+    baseManager->devAdd("test1", (RhAL::id_t)1);
+    baseManager->devAdd("test2", (RhAL::id_t)2);
 
     assertEquals(baseManager->devExistsById(1), true);
     assertEquals(baseManager->devExistsByName("test1"), true);

@@ -9,7 +9,7 @@ int main()
 
     assertEquals(dev.name(), "example");
     assertEquals(dev.id(), (RhAL::id_t)1);
-    assertEquals(manager.typeNumber<RhAL::ExampleDevice1>(), (RhAL::id_t)1);
+    assertEquals(manager.typeNumber<RhAL::ExampleDevice1>(), (RhAL::type_t)1);
     assertEquals(manager.typeName<RhAL::ExampleDevice1>(), "ExampleDevice1");
 
     return 0;
