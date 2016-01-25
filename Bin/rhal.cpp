@@ -12,12 +12,12 @@ int main(int argc, char *argv[])
     TCLAP::CmdLine cmd("RhAL command line tool", ' ', "0.1");
     TCLAP::SwitchArg scan("S", "scan", "Scan for devices", cmd, false);
     TCLAP::SwitchArg monitor("m", "monitor", "Monitors the devices", cmd, false);
-    TCLAP::ValueArg<std::string> ping("p", "ping", "Pings a device", true, "", "name|id", cmd);
-    TCLAP::ValueArg<std::string> dump("d", "dump", "Dumps registers of a device", true, "", "name|id", cmd);
-    TCLAP::ValueArg<std::string> blink("b", "blink", "Blinks a motor", true, "", "name|id", cmd);
-    TCLAP::ValueArg<std::string> set("r", "set", "Sets a register to a value", true, "", "name|id", cmd);
-    TCLAP::ValueArg<std::string> value("v", "value", "Value of the register", true, "", "name|id", cmd);
-    TCLAP::ValueArg<std::string> configure("c", "configure", "Configure a device", true, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> ping("p", "ping", "Pings a device", false, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> dump("d", "dump", "Dumps registers of a device", false, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> blink("b", "blink", "Blinks a motor", false, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> set("r", "set", "Sets a register to a value", false, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> value("v", "value", "Value of the register", false, "", "name|id", cmd);
+    TCLAP::ValueArg<std::string> configure("c", "configure", "Configure a device", false, "", "name|id", cmd);
     TCLAP::SwitchArg configureAll("C", "configure-all", "Configures all device", cmd, false);
     TCLAP::SwitchArg save("s", "save", "Save the configuration", cmd, false);
     cmd.parse(argc, argv);
