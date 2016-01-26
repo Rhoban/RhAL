@@ -1,6 +1,11 @@
 {
     "name": "rhoban/rhal",
-    "build": "cmake",
+    "build": [
+        "mkdir build",
+        "cd build",
+        "cmake ..",
+        "make"
+    ],
     "binaries": "build",
     "include": "RhAL",
     "deps": ["rhoban/serial", "rhoban/json", "rhoban/tclap"]
