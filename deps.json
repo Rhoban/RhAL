@@ -1,0 +1,7 @@
+{
+    "name": "rhoban/rhal",
+    "build": "cmake",
+    "binaries": "build",
+    "include": "RhAL",
+    "deps": ["rhoban/serial", "rhoban/json", "rhoban/tclap"]
+}
