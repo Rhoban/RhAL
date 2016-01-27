@@ -61,7 +61,7 @@ set(EXAMPLES_SOURCES
 
 # Build the RhAL Library
 add_library(LibRhAL ${PREFIXED_LIB_SOURCES})
-target_link_libraries(LibRhAL serial)
+target_link_libraries(LibRhAL serial pthread)
 
 # Build the utility binary
 add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
