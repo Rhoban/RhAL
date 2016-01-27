@@ -7,6 +7,6 @@
         "make"
     ],
     "binaries": "build",
-    "includes": "RhAL",
-    "deps": ["rhoban/serial", "rhoban/json", "rhoban/tclap"]
+    "includes": "Lib",
+    "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap"]
 }
