@@ -275,12 +275,10 @@ class Manager : public AggregateManager<Types...>
             id_t id, const std::string& name) override
         {
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
-            //Retrieve the nex register and 
+            //Retrieve the next register and 
             //add the pointer to the container
             _sortedRegisters.push_back(
-                &(this->devById(id)
-                .registersList()
-                .get(name)));
+                &(this->devById(id).registersList().reg(name)));
             //Re sort the container by id and then by address
             std::sort(_sortedRegisters.begin(), _sortedRegisters.end(),
                 [](const Register* pt1, const Register* pt2) -> bool
@@ -311,7 +309,7 @@ class Manager : public AggregateManager<Types...>
             }
             //Retrieve Register pointer
             Register* reg = &(AggregateManager<Types...>
-                ::devById(id)._registersList.get(name));
+                ::devById(id).registersList().reg(name));
             //Reset read flags
             reg->readyForRead();
             //Read single register
@@ -344,7 +342,7 @@ class Manager : public AggregateManager<Types...>
             }
             //Retrieve Register pointer
             Register* reg = &(AggregateManager<Types...>
-                ::devById(id)._registersList.get(name));
+                ::devById(id).registersList().reg(name));
             //Export typed value into data buffer
             reg->selectForWrite();
             //Write the register

@@ -11,8 +11,16 @@ void printDevice(const RhAL::Device& dev)
         << "Dev: id:" << dev.id() 
         << " name:" << dev.name()
         << std::endl;
-    std::cout << "    Registers:" << std::endl;
-    for (const auto& it : dev.registersList().container()) {
+    std::cout << "    RegistersBool:" << std::endl;
+    for (const auto& it : dev.registersList().containerBool()) {
+        std::cout << "    --" << it.first << std::endl;
+    }
+    std::cout << "    RegistersInt:" << std::endl;
+    for (const auto& it : dev.registersList().containerInt()) {
+        std::cout << "    --" << it.first << std::endl;
+    }
+    std::cout << "    RegistersFloat:" << std::endl;
+    for (const auto& it : dev.registersList().containerFloat()) {
         std::cout << "    --" << it.first << std::endl;
     }
     std::cout << "    ParametersBool:" << std::endl;

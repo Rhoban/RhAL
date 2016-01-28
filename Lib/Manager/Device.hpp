@@ -118,10 +118,14 @@ class Device
         }
 
         /**
-         * Read access to Registers and
+         * Read/Write access to Registers and
          * Parameters list
          */
         const RegistersList& registersList() const
+        {
+            return _registersList;
+        }
+        RegistersList& registersList()
         {
             return _registersList;
         }
@@ -129,24 +133,13 @@ class Device
         {
             return _parametersList;
         }
-        
-    protected:
-        
-        /**
-         * Read/Write access to Registers and
-         * Parameters list
-         * (Used for friend Manager access and
-         * derived Device)
-         */
-        RegistersList& registersList()
-        {
-            return _registersList;
-        }
         ParametersList& parametersList()
         {
             return _parametersList;
         }
-
+        
+    protected:
+        
         /**
          * Set Device isPresent state.
          * (Used for friend Manager access)
@@ -171,8 +164,6 @@ class Device
          */
         template <typename ... T>
         friend class Manager;
-        template <typename T>
-        friend class BaseManager;
 
     private:
         

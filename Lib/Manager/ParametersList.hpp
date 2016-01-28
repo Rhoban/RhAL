@@ -100,7 +100,7 @@ class ParametersList
          * Access to given parameter by its name.
          * Throw std::logic_error if asked name does not exists
          */
-        inline const ParameterBool& getBool(const std::string& name) const
+        inline const ParameterBool& paramBool(const std::string& name) const
         {
             if (_paramsBool.count(name) == 0) {
                 throw std::logic_error(
@@ -109,7 +109,7 @@ class ParametersList
             }
             return *(_paramsBool.at(name));
         }
-        inline ParameterBool& getBool(const std::string& name)
+        inline ParameterBool& paramBool(const std::string& name)
         {
             if (_paramsBool.count(name) == 0) {
                 throw std::logic_error(
@@ -118,7 +118,7 @@ class ParametersList
             }
             return *(_paramsBool.at(name));
         }
-        inline const ParameterNumber& getNumber(const std::string& name) const
+        inline const ParameterNumber& paramNumber(const std::string& name) const
         {
             if (_paramsNumber.count(name) == 0) {
                 throw std::logic_error(
@@ -127,7 +127,7 @@ class ParametersList
             }
             return *(_paramsNumber.at(name));
         }
-        inline ParameterNumber& getNumber(const std::string& name)
+        inline ParameterNumber& paramNumber(const std::string& name)
         {
             if (_paramsNumber.count(name) == 0) {
                 throw std::logic_error(
@@ -136,7 +136,7 @@ class ParametersList
             }
             return *(_paramsNumber.at(name));
         }
-        inline const ParameterStr& getStr(const std::string& name) const
+        inline const ParameterStr& paramStr(const std::string& name) const
         {
             if (_paramsStr.count(name) == 0) {
                 throw std::logic_error(
@@ -145,7 +145,7 @@ class ParametersList
             }
             return *(_paramsStr.at(name));
         }
-        inline ParameterStr& getStr(const std::string& name)
+        inline ParameterStr& paramStr(const std::string& name)
         {
             if (_paramsStr.count(name) == 0) {
                 throw std::logic_error(
@@ -215,7 +215,7 @@ class ParametersList
                             "ParametersContainer load parameters json bool does not exist: " 
                             + it.key());
                     } else {
-                        getBool(it.key()).value = it.value();
+                        paramBool(it.key()).value = it.value();
                     }
                 } else if (it.value().is_number()) {
                     //Number
@@ -224,7 +224,7 @@ class ParametersList
                             "ParametersContainer load parameters json number does not exist: " 
                             + it.key());
                     } else {
-                        getNumber(it.key()).value = it.value();
+                        paramNumber(it.key()).value = it.value();
                     }
                 } else if (it.value().is_string()) {
                     //String
@@ -233,7 +233,7 @@ class ParametersList
                             "ParametersContainer load parameters json str does not exist: " 
                             + it.key());
                     } else {
-                        getStr(it.key()).value = it.value();
+                        paramStr(it.key()).value = it.value();
                     }
                 } else {
                     throw std::runtime_error(
