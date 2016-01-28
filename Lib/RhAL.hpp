@@ -14,4 +14,6 @@
 
 #include "Devices/ExampleDevice1.hpp"
 #include "Devices/ExampleDevice2.hpp"
+#include "Devices/DXL.hpp"
+#include "Devices/RX64.hpp"
 

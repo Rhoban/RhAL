@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <mutex>
 #include "Manager/BaseManager.hpp"
 #include "Manager/Device.hpp"
