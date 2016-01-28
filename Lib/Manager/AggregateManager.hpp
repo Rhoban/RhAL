@@ -569,7 +569,7 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                         ImplManager<T>::typeName() 
                         + "_" 
                         + std::to_string(
-                            ptr->ImplManager<T>::devContainer().size());
+                            ptr->ImplManager<T>::devContainer().size()+1);
                     ptr->devAdd<T>(id, name);
                 } else {
                     throw std::logic_error(
@@ -661,7 +661,7 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                         ImplManager<T>::typeName() 
                         + "_" 
                         + std::to_string(
-                            ptr->ImplManager<T>::devContainer().size());
+                            ptr->ImplManager<T>::devContainer().size()+1);
                     ptr->devAdd<T>(id, name);
                 } else {
                     Impl<Ts...>::runAddByType(ptr, id, type);

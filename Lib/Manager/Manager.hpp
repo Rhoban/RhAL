@@ -251,9 +251,14 @@ class Manager : public AggregateManager<Types...>
                         //the Device as present
                         this->devById(i).setPresent(true);
                     } else {
+                        //Unlock the mutex to prevent dead lock
+                        //when onNewRegister() will be called
+                        lock.unlock();
                         //The Device is not yet present,
                         //it is created
                         this->devAddByTypeNumber(i, type);
+                        //Relock the mutex
+                        lock.lock();
                         //Set it as present
                         this->devById(i).setPresent(true);
                     }
@@ -274,7 +279,7 @@ class Manager : public AggregateManager<Types...>
         inline virtual void onNewRegister(
             id_t id, const std::string& name) override
         {
-            std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
             //Retrieve the next register and 
             //add the pointer to the container
             _sortedRegisters.push_back(
@@ -430,6 +435,50 @@ class Manager : public AggregateManager<Types...>
             _parametersList.loadJSON(j.at("Manager"));
             //Reset low level communication (bus/protocol)
             initBus();
+        }
+
+        /**
+         * Read/Write access to Manager Parameters list
+         */
+        const ParametersList& parametersList() const
+        {
+            return _parametersList;
+        }
+        ParametersList& parametersList()
+        {
+            return _parametersList;
+        }
+
+        /**
+         * Set all Bus/Protocol configuration
+         * with bus system path name, bus baudrate
+         * and protocol name.
+         */
+        inline void setProtocolConfig(
+            const std::string& port, 
+            unsigned long baudrate, 
+            const std::string& protocol)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramBusPort.value = port;
+            _paramBusBaudrate.value = baudrate;
+            _paramProtocolName.value = protocol;
+            //Reset low level communication (bus/protocol)
+            initBus();
+        }
+        
+        /**
+         * Manager Parameters setters
+         */
+        inline void setEnableSyncRead(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramEnableSyncRead.value = isEnable;
+        }
+        inline void setEnableSyncWrite(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramEnableSyncWrite.value = isEnable;
         }
 
     private:

@@ -44,6 +44,11 @@ int main()
 {
     Manager manager;
 
+    //manager.setProtocolConfig(
+    //    "/dev/ttyUSB0", 1000000, "DynamixelV1");
+    manager.setProtocolConfig(
+        "", 1000000, "FakeProtocol");
+
     //Scan the bus
     //(no response with FakeProtocol)
     manager.scan();
