@@ -41,7 +41,8 @@ inline uint16_t readWordFromBuffer(const data_t* buffer)
 /**
  * Conversion from typed value to buffer (in)
  * and buffer to typed value (out) 
- * for RX position values.
+ * for RX position values using 
+ * 1024 max representation.
  */
 inline void convIn_RXPos(data_t* buffer, float value)
 {
@@ -49,8 +50,8 @@ inline void convIn_RXPos(data_t* buffer, float value)
     if (value < -Deg2Rad(150)) value = -Deg2Rad(150);
     value += Deg2Rad(150);
     value *= 1023/Deg2Rad(300);
-    if (value < 0) value = 0.0;
-    if (value > 1023) value = 1023;
+    if (value < 0.0) value = 0.0;
+    if (value > 1023.0) value = 1023.0;
     uint16_t v = std::lround(value);
     writeWordToBuffer(buffer, v);
 }
@@ -59,6 +60,30 @@ inline float convOut_RXPos(const data_t* buffer)
     uint16_t val = readWordFromBuffer(buffer);
     float value = val;
     return value*Deg2Rad(300)/1023 - Deg2Rad(150);
+}
+
+/**
+ * Conversion from typed value to buffer (in)
+ * and buffer to typed value (out) 
+ * for MX position values using 
+ * 4096 max representation.
+ */
+inline void convIn_MXPos(data_t* buffer, float value)
+{
+    if (value > Deg2Rad(180)) value = Deg2Rad(180);
+    if (value < -Deg2Rad(180)) value = -Deg2Rad(180);
+    value += Deg2Rad(180);
+    value *= 4095/Deg2Rad(360);
+    if (value < 0.0) value = 0.0;
+    if (value > 4095.0) value = 4095.0;
+    uint16_t v = std::lround(value);
+    writeWordToBuffer(buffer, v);
+}
+inline float convOut_MXPos(const data_t* buffer)
+{
+    uint16_t val = readWordFromBuffer(buffer);
+    float value = val;
+    return value*Deg2Rad(360)/4095 - Deg2Rad(180);
 }
 
 /**

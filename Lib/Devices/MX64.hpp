@@ -11,22 +11,22 @@
 namespace RhAL {
 
 /**
- * RX64
+ * MX64
  *
- * Dynamixel RX-64 Device 
+ * Dynamixel MX-64 Device 
  * implementation
  */
-class RX64 : public DXL
+class MX64 : public DXL
 {
     public:
 
         /**
          * Initialization with name and id
          */
-        inline RX64(const std::string& name, id_t id) :
+        inline MX64(const std::string& name, id_t id) :
             DXL(name, id),
-            _goal("goal", 0X1E, 2, convIn_RXPos, convOut_RXPos, 0),
-            _position("pos", 0X24, 2, convIn_RXPos, convOut_RXPos, 1)
+            _goal("goal", 0X1E, 2, convIn_MXPos, convOut_MXPos, 0),
+            _position("pos", 0X24, 2, convIn_MXPos, convOut_MXPos, 1)
         {
         }
 
@@ -72,21 +72,21 @@ class RX64 : public DXL
 };
 
 /**
- * DeviceManager specialized for RX64
+ * DeviceManager specialized for MX64
  */
 template <>
-class ImplManager<RX64> : public BaseManager<RX64>
+class ImplManager<MX64> : public BaseManager<MX64>
 {
     public:
 
         inline static type_t typeNumber() 
         {
-            return 0x0040;
+            return 0x0136;
         }
 
         inline static std::string typeName()
         {
-            return "RX64";
+            return "MX64";
         }
 };
 
