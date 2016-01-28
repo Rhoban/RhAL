@@ -11,9 +11,9 @@ static Manager manager;
 void userThread()
 {
     //Get references on derived Devices
-    RhAL::ExampleDevice1& dev2 = manager.devById<RhAL::ExampleDevice1>(2);
-    RhAL::ExampleDevice1& dev3 = manager.devById<RhAL::ExampleDevice1>(3);
-    RhAL::ExampleDevice2& dev5 = manager.devById<RhAL::ExampleDevice2>(5);
+    RhAL::ExampleDevice1& dev2 = manager.dev<RhAL::ExampleDevice1>(2);
+    RhAL::ExampleDevice1& dev3 = manager.dev<RhAL::ExampleDevice1>(3);
+    RhAL::ExampleDevice2& dev5 = manager.dev<RhAL::ExampleDevice2>(5);
 
     for (size_t k=0;k<3;k++) {
         std::cout << "---- User cycle " << k << std::endl;
@@ -39,9 +39,9 @@ int main()
     manager.devAdd<RhAL::ExampleDevice2>(5, "devTest5");
     
     //Get references on derived Devices
-    RhAL::ExampleDevice1& dev2 = manager.devById<RhAL::ExampleDevice1>(2);
-    RhAL::ExampleDevice1& dev3 = manager.devById<RhAL::ExampleDevice1>(3);
-    RhAL::ExampleDevice2& dev5 = manager.devById<RhAL::ExampleDevice2>(5);
+    RhAL::ExampleDevice1& dev2 = manager.dev<RhAL::ExampleDevice1>(2);
+    RhAL::ExampleDevice1& dev3 = manager.dev<RhAL::ExampleDevice1>(3);
+    RhAL::ExampleDevice2& dev5 = manager.dev<RhAL::ExampleDevice2>(5);
 
     //Display Device 2 state
     std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;

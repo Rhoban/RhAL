@@ -240,7 +240,7 @@ class Manager : public AggregateManager<Types...>
                     }
                     //Check if the Device is already known
                     bool isExist = this->devExistsById(i);
-                    if (isExist && this->typeNumberById(i) != type) {
+                    if (isExist && this->devTypeNumberById(i) != type) {
                         //Throw exception if scanned Device id
                         //is already known with a diferent type
                         throw std::logic_error(

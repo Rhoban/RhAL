@@ -57,9 +57,9 @@ int main()
     //Iterate over Manager Devices with types
     for (const auto& it : manager.devContainer()) {
         //Retrieve Device model number and model name
-        RhAL::type_t type = manager.typeNumberById(it.second->id());
-        RhAL::type_t typebis = manager.typeNumberByName(it.first);
-        std::string name = manager.typeNameByName(it.second->name());
+        RhAL::type_t type = manager.devTypeNumberById(it.second->id());
+        RhAL::type_t typebis = manager.devTypeNumberByName(it.first);
+        std::string name = manager.devTypeName(it.second->name());
         (void)typebis;
         std::cout << "Device: name:" << it.first 
             << " id:" << it.second->id() 
@@ -69,23 +69,29 @@ int main()
     }
 
     //Device access
-    const RhAL::Device& dev2 = manager.devById(2);
-    const RhAL::Device& dev3 = manager.devByName("devTest3");
+    const RhAL::Device& dev2 = manager.dev(2);
+    const RhAL::Device& dev3 = manager.dev("devTest3");
     //Derived Device access
-    const RhAL::ExampleDevice2& dev5 = manager.devById<RhAL::ExampleDevice2>(5);
-    const RhAL::ExampleDevice2& dev5bis = manager.devByName<RhAL::ExampleDevice2>("devTest5");
+    const RhAL::ExampleDevice2& dev5 = manager.dev<RhAL::ExampleDevice2>(5);
+    const RhAL::ExampleDevice2& dev5bis = manager.dev<RhAL::ExampleDevice2>("devTest5");
     //Base class of derived Device access (dynamic cast)
-    const RhAL::BaseExampleDevice1& dev2bis = manager.devById<RhAL::BaseExampleDevice1>(2);
+    const RhAL::BaseExampleDevice1& dev2bis = manager.dev<RhAL::BaseExampleDevice1>(2);
 
     //Check if a Device or Derived Device exists
-    bool isDev4 = manager.devExistsById(4);
-    bool isDev2 = manager.devExistsByName<RhAL::ExampleDevice2>("devTest2");
+    bool isDev4 = manager.devExists(4);
+    bool isDev2 = manager.devExists<RhAL::ExampleDevice2>("devTest2");
     std::cout << isDev4 << " " << isDev2 << std::endl;
 
     //Iterate over all Device ExampleDevice1
     for (const auto& it : manager.devContainer<RhAL::ExampleDevice1>()) {
         const RhAL::ExampleDevice1* pt = it.second;
         std::cout << "ExampleDevice1: " << pt->name() << std::endl;
+    }
+    std::unordered_map<std::string, RhAL::BaseExampleDevice1*> container = 
+        manager.devContainer<RhAL::BaseExampleDevice1>();
+    //Iterate over all Device BaseExampleDevice1
+    for (const auto& it : container) {
+        std::cout << "BaseExampleDevice1: " << it.second->name() << std::endl;
     }
 
     //Display Device registers and parameters
