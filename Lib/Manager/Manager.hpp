@@ -44,13 +44,17 @@ class Manager : public AggregateManager<Types...>
             _parametersList(),
             _paramBusPort("port", ""),
             _paramBusBaudrate("baudrate", 1000000),
-            _paramProtocolName("protocol", "FakeProtocol")
+            _paramProtocolName("protocol", "FakeProtocol"),
+            _paramEnableSyncRead("enableSyncRead", true),
+            _paramEnableSyncWrite("enableSyncWrite", true)
         {
             //Registering all parameters
+            _parametersList.add(&this->_paramScheduleMode);
             _parametersList.add(&_paramBusPort);
             _parametersList.add(&_paramBusBaudrate);
             _parametersList.add(&_paramProtocolName);
-            _parametersList.add(&this->_paramScheduleMode);
+            _parametersList.add(&_paramEnableSyncRead);
+            _parametersList.add(&_paramEnableSyncWrite);
             //Initialize the low level communication
             initBus();
         }
@@ -167,14 +171,10 @@ class Manager : public AggregateManager<Types...>
             swapRead();
             //Select registers for read and write
             //and compute operation batching
-            std::vector<BatchedRegisters> batchsRead = computeBatchedRegisters(
-                [this](Register* reg) -> bool {
-                    return this->isNeedRead(reg);
-                });
-            std::vector<BatchedRegisters> batchsWrite = computeBatchedRegisters(
-                [this](Register* reg) -> bool {
-                    return this->isNeedWrite(reg);
-                });
+            std::vector<BatchedRegisters> batchsRead = 
+                computeBatchedRegisters(true);
+            std::vector<BatchedRegisters> batchsWrite = 
+                computeBatchedRegisters(false);
             //Wake up cooperative user threads waiting
             //in waitNextFlush()
             _isManagerFlushing = false;
@@ -509,14 +509,22 @@ class Manager : public AggregateManager<Types...>
 
         /**
          * Bus and protocol parameters.
-         * BusPort: system path to serial device
-         * BusBaudrate: serial port baudrate
-         * ProtocolName: textual name for Protocol 
+         * BusPort: system path to serial device.
+         * BusBaudrate: serial port baudrate.
+         * ProtocolName: textual name for Protocol.
          * (factory) instantiation
          */
         ParameterStr _paramBusPort;
         ParameterNumber _paramBusBaudrate;
         ParameterStr _paramProtocolName;
+
+        /**
+         * Register Batching configuration.
+         * EnableSyncRead: is protocol syncRead used.
+         * EnableSyncWrite: is protocol syncWrite used.
+         */
+        ParameterBool _paramEnableSyncRead;
+        ParameterBool _paramEnableSyncWrite;
         
         /**
          * Reset and initialize the
@@ -573,26 +581,37 @@ class Manager : public AggregateManager<Types...>
         /**
          * Iterate over all registers and batch them 
          * into compatible groups (address and length).
-         * A register is selected for batching if
-         * given predicate function selectRegister()
-         * return true.
+         * If isReadOrWrite is true, registers needing 
+         * read are selected.
+         * If isReadOrWrite is false, registers needing
+         * write are selected.
          */
         std::vector<BatchedRegisters> computeBatchedRegisters(
-            std::function<bool(Register*)> selectRegister)
+            bool isReadOrWrite)
         {
             //Batched registers container
             std::vector<BatchedRegisters> container;
 
             //Merge the given temporary batch to 
             //final batches by merging by id
-            auto mergeById = [&container](const BatchedRegisters& tmpBatch) {
+            auto mergeById = [&container, isReadOrWrite, this]
+            (const BatchedRegisters& tmpBatch) {
+                //SyncRead/Write is enable whenether
+                //configuration boolean are set
+                bool isSyncEnable = 
+                    (isReadOrWrite && this->_paramEnableSyncRead.value) ||
+                    (!isReadOrWrite && this->_paramEnableSyncWrite.value);
                 bool found = false;
                 //Already added final batch are iterated
                 //to find if the current batch can be merge
                 //with another batch by id with constant address 
                 //and length.
                 for (size_t j=0;j<container.size();j++) {
-                    if (container[j].addr == tmpBatch.addr && container[j].length == tmpBatch.length) {
+                    if (
+                        isSyncEnable &&
+                        container[j].addr == tmpBatch.addr && 
+                        container[j].length == tmpBatch.length
+                    ) {
                         for (size_t k=0;k<tmpBatch.regs.size();k++) {
                             container[j].regs.push_back(tmpBatch.regs[k]);
                         }
@@ -615,7 +634,10 @@ class Manager : public AggregateManager<Types...>
                 Register* reg = _sortedRegisters[i];
                 //Select batched registers according to
                 //the given predicate function
-                if (selectRegister(reg)) {
+                if (
+                    (isReadOrWrite && isNeedRead(reg)) ||
+                    (!isReadOrWrite && isNeedWrite(reg))
+                ) {
                     //Initialize the temporary batch if empty
                     if (tmpBatch.regs.size() == 0) {
                         tmpBatch.addr = reg->addr;
