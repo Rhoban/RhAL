@@ -14,8 +14,6 @@ set(TESTS_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Tests")
 set(EXAMPLES_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Examples")
-set(VENDORS_DIRECTORY
-    "${CMAKE_CURRENT_SOURCE_DIR}/Vendors")
 
 # Enable C++11
 set(CMAKE_CXX_FLAGS 
@@ -26,12 +24,6 @@ set(CMAKE_CXX_FLAGS
 
 # Include sources directory
 include_directories(${LIB_SOURCES_DIRECTORY})
-
-# Serial library
-add_subdirectory(${VENDORS_DIRECTORY}/serial)
-include_directories("${VENDORS_DIRECTORY}/serial/include")
-# Json library
-include_directories("${VENDORS_DIRECTORY}/json/src")
 
 # Lib source files
 set(LIB_SOURCES
@@ -69,7 +61,7 @@ set(EXAMPLES_SOURCES
 
 # Build the RhAL Library
 add_library(LibRhAL ${PREFIXED_LIB_SOURCES})
-target_link_libraries(LibRhAL serial)
+target_link_libraries(LibRhAL serial pthread)
 
 # Build the utility binary
 add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
