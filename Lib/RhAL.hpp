@@ -8,9 +8,10 @@
 #include "Manager/RegistersList.hpp"
 #include "Manager/ParametersList.hpp"
 #include "Manager/Device.hpp"
-#include "Manager/ExampleDevice1.hpp"
-#include "Manager/ExampleDevice2.hpp"
 #include "Manager/BaseManager.hpp"
 #include "Manager/AggregateManager.hpp"
 #include "Manager/Manager.hpp"
+
+#include "Devices/ExampleDevice1.hpp"
+#include "Devices/ExampleDevice2.hpp"
 

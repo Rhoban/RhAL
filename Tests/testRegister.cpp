@@ -1,7 +1,7 @@
 #include "tests.h"
 #include "Manager/Register.hpp"
 #include "Manager/Manager.hpp"
-#include "Manager/ExampleDevice1.hpp"
+#include "Devices/ExampleDevice1.hpp"
 
 static void convIn(RhAL::data_t* buffer, long value)
 {
