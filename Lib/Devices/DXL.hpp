@@ -63,6 +63,21 @@ inline float convOut_RXPos(const data_t* buffer)
 }
 
 /**
+ * Default raw copy conversion
+ */
+template <typename T>
+inline void convIn_Default(data_t* buffer, T value)
+{
+	*(reinterpret_cast<T*>(buffer)) = value;
+}
+template <typename T>
+inline T convOut_Default(const data_t* buffer)
+{
+	return *(reinterpret_cast<const T*>(buffer));
+}
+
+
+/**
  * Conversion from typed value to buffer (in)
  * and buffer to typed value (out) 
  * for MX position values using 
@@ -108,15 +123,15 @@ class DXL : public Device
          * Set the target motor 
          * position in radians
          */
-        virtual void setGoal(float angle) = 0;
+        virtual void setGoalPos(float angle) = 0;
 
         /**
          * Set the target motor 
          * position in degrees
          */
-        inline void setGoalDegree(float angle)
+        inline void setGoalPosDegree(float angle)
         {
-            setGoal(Deg2Rad(angle));
+            setGoalPos(Deg2Rad(angle));
         }
 
         /**
@@ -133,6 +148,9 @@ class DXL : public Device
         {
             return Rad2Deg(getPos());
         }
+
+        virtual void enableTorque() = 0;
+        virtual void disableTorque() = 0;
 };
 
 }

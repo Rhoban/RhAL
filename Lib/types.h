@@ -51,6 +51,12 @@ typedef uint8_t data_t;
 typedef std::chrono::time_point<std::chrono::steady_clock> TimePoint;
 
 /**
+ * Duration in seconds represented by a double
+ */
+typedef std::chrono::duration<double, std::ratio<1>> DurationDouble;
+
+
+/**
  * Return the current date as TimePoint
  */
 inline TimePoint getTimePoint()
@@ -58,14 +64,21 @@ inline TimePoint getTimePoint()
     return std::chrono::steady_clock::now();
 }
 
-/**
- * Returns the current system time in seconds
- */
-inline double getTimeDouble()
+///**
+// * Returns the current system time in seconds
+// */
+//inline double getTimeDouble()
+//{
+//    TimePoint tp = getTimePoint();
+//
+//    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+//        tp.time_since_epoch()).count()/1000000000.0;
+//
+//}
+
+inline DurationDouble getDuration(TimePoint t0, TimePoint t1)
 {
-    TimePoint tp = getTimePoint();
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(
-        tp.time_since_epoch()).count()/1000000000.0;
+	return std::chrono::duration_cast<DurationDouble>(t1 - t0);
 }
 
 /**

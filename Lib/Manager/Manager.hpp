@@ -11,6 +11,8 @@
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
 #include "Protocol/ProtocolFactory.hpp"
+#include <thread>
+
 
 namespace RhAL {
 

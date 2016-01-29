@@ -25,8 +25,9 @@ class MX64 : public DXL
          */
         inline MX64(const std::string& name, id_t id) :
             DXL(name, id),
-            _goal("goal", 0X1E, 2, convIn_MXPos, convOut_MXPos, 0),
-            _position("pos", 0X24, 2, convIn_MXPos, convOut_MXPos, 1)
+            _goalPos("goalPos", 0X1E, 2, convIn_MXPos, convOut_MXPos, 0),
+            _position("pos", 0X24, 2, convIn_MXPos, convOut_MXPos, 1),
+        	_torqueEnable("torqueEnable", 0X46, 1, convIn_Default<int>, convOut_Default<int>, 0)
         {
         }
 
@@ -35,9 +36,9 @@ class MX64 : public DXL
          * Set the target motor 
          * position in radians
          */
-        virtual void setGoal(float angle) override
+        virtual void setGoalPos(float angle) override
         {
-            _goal.writeValue(angle);
+            _goalPos.writeValue(angle);
         }
         
         /**
@@ -49,7 +50,22 @@ class MX64 : public DXL
         {
             return _position.readValue().value;
         }
+
+        virtual void enableTorque() override
+       	{
+        	_torqueEnable.writeValue(1);
+  		}
+
+        virtual void disableTorque() override
+		{
+        	_torqueEnable.writeValue(0);
+		}
     
+        int getTorqueEnable()
+        {
+        	return _torqueEnable.readValue().value;
+        }
+
     protected:
 
         /**
@@ -58,8 +74,9 @@ class MX64 : public DXL
          */
         inline virtual void onInit() override
         {
-            Device::registersList().add(&_goal);
+            Device::registersList().add(&_goalPos);
             Device::registersList().add(&_position);
+            Device::registersList().add(&_torqueEnable);
         }
 
     private:
@@ -67,8 +84,9 @@ class MX64 : public DXL
         /**
          * Register
          */
-        TypedRegisterFloat _goal;
+        TypedRegisterFloat _goalPos;
         TypedRegisterFloat _position;
+        TypedRegisterInt _torqueEnable;
 };
 
 /**
