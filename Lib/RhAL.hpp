@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "Manager/Aggregation.h"
+#include "Manager/Statistics.hpp"
 #include "Manager/CallManager.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"

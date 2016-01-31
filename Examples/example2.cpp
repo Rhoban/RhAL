@@ -82,6 +82,9 @@ int main()
     float val7 = dev5.forcePitchRead().value;
     std::cout << val7 << std::endl;
 
+    //Show Statistics
+    manager.getStatistics().print();
+
     return 0;
 }
 

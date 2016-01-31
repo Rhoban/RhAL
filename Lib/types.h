@@ -51,11 +51,30 @@ typedef uint8_t data_t;
 typedef std::chrono::time_point<std::chrono::steady_clock> TimePoint;
 
 /**
+ * Duration typedef in micro, milli 
+ * and seconds
+ */
+typedef std::chrono::milliseconds TimeDurationMicro;
+typedef std::chrono::microseconds TimeDurationMilli;
+typedef std::chrono::seconds TimeDurationSec;
+typedef std::chrono::duration<double, std::ratio<1>> TimeDurationFloat;
+
+/**
  * Return the current date as TimePoint
  */
 inline TimePoint getTimePoint()
 {
     return std::chrono::steady_clock::now();
+}
+
+/**
+ * Return the duration between two given
+ * TimePoint from p1 to p2.
+ */
+template <typename T>
+inline T getTimeDuration(const TimePoint& p1, const TimePoint& p2)
+{
+    return std::chrono::duration_cast<T>(p2 - p1);
 }
 
 /**

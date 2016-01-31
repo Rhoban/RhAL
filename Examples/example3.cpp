@@ -22,7 +22,7 @@ void userThread()
         std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;
         dev2.setGoal(0.2);
         dev3.setGoal(0.3);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         //Wait the next Manager cycle 
         //(wait for swap and selection of register for read/write)
         manager.waitNextFlush();
@@ -80,6 +80,9 @@ int main()
 
     t1.join();
     t2.join();
+
+    //Display Manager statistics
+    manager.getStatistics().print();
     
     return 0;
 }
