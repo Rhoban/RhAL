@@ -31,4 +31,10 @@ namespace RhAL
     {
         serial.flush();
     }
+
+    void SerialBus::clearInputBuffer() {
+        int n = this->available();
+        uint8_t dummy[n];
+        this->readData(dummy, n);
+    }
 }

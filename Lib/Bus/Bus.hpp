@@ -29,9 +29,14 @@ namespace RhAL
             virtual size_t readData(uint8_t *data, size_t size)=0;
 
             /**
-             * Flushes the I/O buffers
+             * Flushes the output buffer
              */
             virtual void flush()=0;
+
+            /**
+             * Clears the input buffer
+             */
+            virtual void clearInputBuffer()=0;
 
             /**
              * How many bytes are available to read?

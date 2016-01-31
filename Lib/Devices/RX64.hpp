@@ -25,8 +25,9 @@ class RX64 : public DXL
          */
         inline RX64(const std::string& name, id_t id) :
             DXL(name, id),
-            _goal("goal", 0X1E, 2, convIn_RXPos, convOut_RXPos, 0),
-            _position("pos", 0X24, 2, convIn_RXPos, convOut_RXPos, 1)
+            _goalPos("goalPos", 0X1E, 2, convIn_RXPos, convOut_RXPos, 0),
+            _position("pos", 0X24, 2, convIn_RXPos, convOut_RXPos, 1),
+			_torqueEnable("torqueEnable", 0X46, 1, convIn_Default<bool>, convOut_Default<bool>, 0)
         {
         }
 
@@ -35,9 +36,9 @@ class RX64 : public DXL
          * Set the target motor 
          * position in radians
          */
-        virtual void setGoal(float angle) override
+        virtual void setGoalPos(float angle) override
         {
-            _goal.writeValue(angle);
+            _goalPos.writeValue(angle);
         }
         
         /**
@@ -49,6 +50,16 @@ class RX64 : public DXL
         {
             return _position.readValue().value;
         }
+
+        virtual void enableTorque() override
+		{
+			_torqueEnable.writeValue(true);
+		}
+
+		virtual void disableTorque() override
+		{
+			_torqueEnable.writeValue(false);
+		}
     
     protected:
 
@@ -58,8 +69,9 @@ class RX64 : public DXL
          */
         inline virtual void onInit() override
         {
-            Device::registersList().add(&_goal);
+            Device::registersList().add(&_goalPos);
             Device::registersList().add(&_position);
+            Device::registersList().add(&_torqueEnable);
         }
 
     private:
@@ -67,8 +79,9 @@ class RX64 : public DXL
         /**
          * Register
          */
-        TypedRegisterFloat _goal;
+        TypedRegisterFloat _goalPos;
         TypedRegisterFloat _position;
+        TypedRegisterFloat _torqueEnable;
 };
 
 /**

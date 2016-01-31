@@ -57,7 +57,7 @@ typedef std::chrono::time_point<std::chrono::steady_clock> TimePoint;
 typedef std::chrono::milliseconds TimeDurationMicro;
 typedef std::chrono::microseconds TimeDurationMilli;
 typedef std::chrono::seconds TimeDurationSec;
-typedef std::chrono::duration<double, std::ratio<1>> TimeDurationFloat;
+typedef std::chrono::duration<double, std::ratio<1>> TimeDurationDouble;
 
 /**
  * Return the current date as TimePoint
@@ -69,22 +69,13 @@ inline TimePoint getTimePoint()
 
 /**
  * Return the duration between two given
- * TimePoint from p1 to p2.
+ * TimePoint from p1 to p2 in given template
+ * Duration type
  */
 template <typename T>
 inline T getTimeDuration(const TimePoint& p1, const TimePoint& p2)
 {
     return std::chrono::duration_cast<T>(p2 - p1);
-}
-
-/**
- * Returns the current system time in seconds
- */
-inline double getTimeDouble()
-{
-    TimePoint tp = getTimePoint();
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(
-        tp.time_since_epoch()).count()/1000000000.0;
 }
 
 /**

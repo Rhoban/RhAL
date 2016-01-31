@@ -98,22 +98,22 @@ struct Statistics
         os << "ForceRead() calls: " << forceReadCount << std::endl;
         os << "ForceWrite() calls: " << forceWriteCount << std::endl;
         os << "Read() spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(readDuration).count() << 
+            <TimeDurationDouble>(readDuration).count() << 
             "s" << std::endl;
         os << "Write() spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(writeDuration).count() << 
+            <TimeDurationDouble>(writeDuration).count() << 
             "s" << std::endl;
         os << "SyncRead() spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(syncReadDuration).count() << 
+            <TimeDurationDouble>(syncReadDuration).count() << 
             "s" << std::endl;
         os << "SyncWrite() spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(syncWriteDuration).count() << 
+            <TimeDurationDouble>(syncWriteDuration).count() << 
             "s" << std::endl;
         os << "Waiting Users spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(waitUsersDuration).count() << 
+            <TimeDurationDouble>(waitUsersDuration).count() << 
             "s" << std::endl;
         os << "Waiting Manager spent time: " << std::chrono::duration_cast
-            <TimeDurationFloat>(waitManagerDuration).count() << 
+            <TimeDurationDouble>(waitManagerDuration).count() << 
             "s" << std::endl;
     }
 };

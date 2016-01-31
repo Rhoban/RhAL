@@ -16,6 +16,7 @@ namespace RhAL
             size_t available();
             size_t readData(uint8_t *data, size_t size);
             void flush();
+            void clearInputBuffer();
 
         protected:
             serial::Serial serial;

@@ -57,6 +57,7 @@ set(EXAMPLES_SOURCES
     example1
     example2
     example3
+    test1
 )
 
 # Build the RhAL Library

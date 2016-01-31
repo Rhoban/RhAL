@@ -3,6 +3,7 @@
 #include <string.h>
 #include "DynamixelV1.hpp"
 
+
 using namespace std;
 
 namespace RhAL
@@ -120,7 +121,7 @@ namespace RhAL
 
     bool DynamixelV1::ping(id_t id)
     {
-        Packet packet(id, CommandRead, 0);
+        Packet packet(id, CommandPing, 0);
         sendPacket(packet);
 
         Packet *response;
@@ -166,45 +167,57 @@ namespace RhAL
     void DynamixelV1::sendPacket(Packet &packet)
     {
         bus.flush();
+        bus.clearInputBuffer();
         packet.prepare();
         bus.sendData(packet.buffer, packet.getSize());
     }
 
     ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id, double timeout)
     {
+    	ResponseState error = ResponseQuiet;
         response = NULL;
-        double start = getTimeDouble();
+        TimePoint start = getTimePoint();
         size_t position = 0;
 
-        while (getTimeDouble()-start <= timeout) {
-            double t = timeout-(getTimeDouble()-start);
+        while (getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count() <= timeout) {
+            double t = timeout-(getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count());
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];
                 bus.readData(data, n);
+//                printf("I have data boyz for id %d !\n", id);
                 for (size_t k=0; k<n; k++) {
+//                	printf ("byte %d : %d\n", k, data[k]);
                     uint8_t byte = data[k];
                     switch (position) {
                         case 0:
                         case 1:
-                            if (byte != 0xff) {
-                                return ResponseBadProtocol;
-                            }
+                        	if (byte == 0xff) {
+                        		position++;
+                        	} else {
+                        		position = 0;
+                        	}
                             break;
                         case 2:
-                            if (byte != id) {
-                                return ResponseBadId;
+                            if (byte == id) {
+                            	position++;
+                            } else {
+                                error = ResponseBadId;
+                                position = 0;
                             }
                             break;
                         case 3:
-                            if (byte < 2) {
-                                return ResponseBadSize;
-                            } else {
+                            if (byte >= 2) {
                                 response = new Packet(id, byte-2);
+                                position++;
+                            } else {
+                            	error = ResponseBadSize;
+                            	position = 0;
                             }
                             break;
                         case 4:
                             response->setError(byte);
+                            position++;
                             break;
                         default:
                             if (position-5 < response->parameters) {
@@ -232,12 +245,12 @@ namespace RhAL
                                     return ResponseBadChecksum;
                                 }
                             }
+                            position++;
                     }
-                    position++;
                 }
             }
-
-            return ResponseQuiet;
         }
+
+        return error;
     }
 }
