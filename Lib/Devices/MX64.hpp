@@ -27,7 +27,7 @@ class MX64 : public DXL
             DXL(name, id),
             _goalPos("goalPos", 0X1E, 2, convIn_MXPos, convOut_MXPos, 0),
             _position("pos", 0X24, 2, convIn_MXPos, convOut_MXPos, 1),
-        	_torqueEnable("torqueEnable", 0X46, 1, convIn_Default<int>, convOut_Default<int>, 0)
+        	_torqueEnable("torqueEnable", 0X18, 1, convIn_Default<bool>, convOut_Default<bool>, 0)
         {
         }
 
@@ -53,12 +53,12 @@ class MX64 : public DXL
 
         virtual void enableTorque() override
        	{
-        	_torqueEnable.writeValue(1);
+        	_torqueEnable.writeValue(true);
   		}
 
         virtual void disableTorque() override
 		{
-        	_torqueEnable.writeValue(0);
+        	_torqueEnable.writeValue(false);
 		}
     
         int getTorqueEnable()
@@ -86,7 +86,7 @@ class MX64 : public DXL
          */
         TypedRegisterFloat _goalPos;
         TypedRegisterFloat _position;
-        TypedRegisterInt _torqueEnable;
+        TypedRegisterBool _torqueEnable;
 };
 
 /**

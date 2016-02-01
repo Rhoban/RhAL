@@ -77,13 +77,23 @@ int main()
     std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
 //    dev.disableTorque();
 
+    int i = 0;
     while (true) {
+    	if (i%2 == 0) {
+    		std::cout << "enable torque" << std::endl;
+    		dev.enableTorque();
+    	} else {
+    		std::cout << "disable torque" << std::endl;
+    		dev.disableTorque();
+    	}
         std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
     	std::cout << "pos = " << dev.getPosDegree() << std::endl;
         dev.setGoalPosDegree(10);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "pos = " << dev.getPosDegree() << std::endl;
         dev.setGoalPosDegree(-10);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        i++;
     }
 
 
