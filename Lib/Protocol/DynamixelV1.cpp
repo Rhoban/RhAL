@@ -179,8 +179,8 @@ namespace RhAL
         TimePoint start = getTimePoint();
         size_t position = 0;
 
-        while (getDuration(start, getTimePoint()).count() <= timeout) {
-            double t = timeout-(getDuration(start, getTimePoint()).count());
+        while (getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count() <= timeout) {
+            double t = timeout-(getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count());
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];

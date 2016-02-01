@@ -7,12 +7,11 @@
 #include <fstream>
 #include <mutex>
 #include <condition_variable>
+#include "Statistics.hpp"
 #include "AggregateManager.hpp"
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
 #include "Protocol/ProtocolFactory.hpp"
-#include <thread>
-
 
 namespace RhAL {
 
@@ -41,6 +40,7 @@ class Manager : public AggregateManager<Types...>
             _isManagerFlushing(false),
             _cooperativeThreadCount(0),
             _currentThreadWaiting(0),
+            _stats(),
             _bus(nullptr),
             _protocol(nullptr),
             _parametersList(),
@@ -114,6 +114,7 @@ class Manager : public AggregateManager<Types...>
             }
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            _stats.waitNextFlushCount++;
             //The lock is now acquired
             //Increment current user in waitNextFlush()
             _currentThreadWaiting++;
@@ -121,8 +122,12 @@ class Manager : public AggregateManager<Types...>
             _managerWaitUser.notify_all();
             //Wait for the end of flush() barrier.
             //(during wait, the shared mutex is released)
+            TimePoint pStart = getTimePoint();
             _userWaitManager.wait(lock, 
                 [this](){return !_isManagerFlushing;});
+            TimePoint pStop = getTimePoint();
+            _stats.waitManagerDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //The lock is re acquire. Decrease the number 
             //of waiting thread.
             _currentThreadWaiting--;
@@ -164,11 +169,16 @@ class Manager : public AggregateManager<Types...>
             //(during wait, the shared mutex is released)
             //(The lock is taken once condition is reached)
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            _stats.flushCount++;
             _isManagerFlushing = true;
+            TimePoint pStart = getTimePoint();
             _managerWaitUser.wait(lock, 
                 [this](){
                     return _currentThreadWaiting == _cooperativeThreadCount;
                 });
+            TimePoint pStop = getTimePoint();
+            _stats.waitUsersDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //Swap to apply last read change
             swapRead();
             //Select registers for read and write
@@ -309,6 +319,7 @@ class Manager : public AggregateManager<Types...>
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.forceReadCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -321,11 +332,17 @@ class Manager : public AggregateManager<Types...>
             reg->readyForRead();
             //Read single register
             while (true) {
+                TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
                     reg->id, 
                     reg->addr, 
                     reg->_dataBufferRead, 
                     reg->length);
+                TimePoint pStop = getTimePoint();
+                _stats.readCount++;
+                _stats.readLength += reg->length;
+                _stats.readDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //TODO check response
                 if (state == ResponseOK) {
                     break;
@@ -342,6 +359,7 @@ class Manager : public AggregateManager<Types...>
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.forceWriteCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -353,11 +371,17 @@ class Manager : public AggregateManager<Types...>
             //Export typed value into data buffer
             reg->selectForWrite();
             //Write the register
+            TimePoint pStart = getTimePoint();
             _protocol->writeData(
                 reg->id, 
                 reg->addr, 
                 reg->_dataBufferWrite, 
                 reg->length);
+            TimePoint pStop = getTimePoint();
+            _stats.writeCount++;
+            _stats.writeLength += reg->length;
+            _stats.writeDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
         }
 
         /**
@@ -437,6 +461,15 @@ class Manager : public AggregateManager<Types...>
             _parametersList.loadJSON(j.at("Manager"));
             //Reset low level communication (bus/protocol)
             initBus();
+        }
+
+        /**
+         * Return by copy all Manager Statistics
+         */
+        inline Statistics getStatistics() const
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            return _stats;
         }
 
         /**
@@ -545,6 +578,11 @@ class Manager : public AggregateManager<Types...>
          * waitNextFlush() methods.
          */
         unsigned int _currentThreadWaiting;
+
+        /**
+         * Manager Statistics container
+         */
+        Statistics _stats;
 
         /**
          * Serial bus and Protocol pointers
@@ -746,22 +784,34 @@ class Manager : public AggregateManager<Types...>
             }
             if (batch.ids.size() == 1) {
                 //Write single register
+                TimePoint pStart = getTimePoint();
                 _protocol->writeData(
                     batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferWrite, 
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.writeCount++;
+                _stats.writeLength += batch.length;
+                _stats.writeDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
             } else {
                 //Synch Write multiple registers
                 std::vector<const data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
                     datas.push_back(batch.regs[i]->_dataBufferWrite);
                 }
+                TimePoint pStart = getTimePoint();
                 _protocol->syncWrite(
                     batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.syncWriteCount++;
+                _stats.syncWriteLength += batch.length;
+                _stats.syncWriteDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
             }
         }
         inline void readBatch(BatchedRegisters& batch)
@@ -777,11 +827,17 @@ class Manager : public AggregateManager<Types...>
             }
             if (batch.ids.size() == 1) {
                 //Read single register
+                TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
                     batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferRead, 
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.readCount++;
+                _stats.readLength += batch.length;
+                _stats.readDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                 if (state != ResponseOK) {
                     //TODO XXX XXX XXX handle response code
@@ -793,11 +849,17 @@ class Manager : public AggregateManager<Types...>
                 for (size_t i=0;i<batch.regs.size();i++) {
                     datas.push_back(batch.regs[i]->_dataBufferRead);
                 }
+                TimePoint pStart = getTimePoint();
                 std::vector<ResponseState> states = _protocol->syncRead(
                     batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.syncReadCount++;
+                _stats.syncReadLength += batch.length;
+                _stats.syncReadDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                     //TODO XXX XXX XXX handle response code
                     //SetPresent Device if ok

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <random>
+#include <thread>
 #include "FakeProtocol.hpp"
 
 static std::random_device generator;
@@ -26,6 +27,7 @@ void FakeProtocol::writeData(
             << *(reinterpret_cast<const float*>(data));
     }
     std::cout << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 ResponseState FakeProtocol::readData(
@@ -42,12 +44,14 @@ ResponseState FakeProtocol::readData(
         std::cout << " valFloat=" << val;
     }
     std::cout << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     return ResponseOK;
 }
 
 bool FakeProtocol::ping(id_t id) 
 {
     std::cout << "Ping id=" << id << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     return false;
 }
 
@@ -73,6 +77,7 @@ std::vector<ResponseState> FakeProtocol::syncRead(
         }
     }
     std::cout << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     return states;
 }
@@ -96,6 +101,7 @@ void FakeProtocol::syncWrite(
         }
     }
     std::cout << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 }
