@@ -21,20 +21,20 @@ constexpr size_t MaxRegisterLength = 4;
  * from value to raw data buffer and inverse
  */
 template <typename T>
-using FuncConvIn = std::function<void(data_t*, T)>;
+using FuncConvEncode = std::function<void(data_t*, T)>;
 template <typename T>
-using FuncConvOut = std::function<T(const data_t*)>;
+using FuncConvDecode = std::function<T(const data_t*)>;
 
 /**
  * Typedef for conversion function working
  * with type bool, int and float
  */
-typedef FuncConvIn<bool> FuncConvInBool;
-typedef FuncConvIn<int> FuncConvInInt;
-typedef FuncConvIn<float> FuncConvInFloat;
-typedef FuncConvOut<bool> FuncConvOutBool;
-typedef FuncConvOut<int> FuncConvOutInt;
-typedef FuncConvOut<float> FuncConvOutFloat;
+typedef FuncConvEncode<bool> FuncConvEncodeBool;
+typedef FuncConvEncode<int> FuncConvEncodeInt;
+typedef FuncConvEncode<float> FuncConvEncodeFloat;
+typedef FuncConvDecode<bool> FuncConvDecodeBool;
+typedef FuncConvDecode<int> FuncConvDecodeInt;
+typedef FuncConvDecode<float> FuncConvDecodeFloat;
 
 /**
  * Register
@@ -268,8 +268,8 @@ class Register
          * data buffer to typed read value.
          * No thread protection.
          */
-        virtual void doConvIn() = 0;
-        virtual void doConvOut() = 0;
+        virtual void doConvEncode() = 0;
+        virtual void doConvDecode() = 0;
 
         /**
          * Manager has access to 
@@ -288,7 +288,7 @@ class Register
         inline void selectForWrite()
         {
             std::lock_guard<std::recursive_mutex> lock(_mutex);
-            doConvIn();
+            doConvEncode();
             _needWrite = false;
         }
 
@@ -327,7 +327,7 @@ class Register
                 return;
             }
             _needSwaping = false;
-            doConvOut();
+            doConvDecode();
             _lastDevReadUser = _lastDevReadManager;
         }
 };
@@ -349,36 +349,36 @@ class TypedRegister : public Register
          * Conversion functions from
          * typed value to data buffer
          */
-        const FuncConvIn<T> funcConvIn;
+        const FuncConvEncode<T> funcConvEncode;
         
         /**
          * Conversion functions from
          * data buffer to typed value
          */
-        const FuncConvOut<T> funcConvOut;
+        const FuncConvDecode<T> funcConvDecode;
 
         /**
          * Initialization with Register 
          * configuration and:
-         * funcConvIn: convertion function 
+         * funcConvEncode: convertion function
          * from typed value to data buffer.
-         * funcConvOut: convertion function 
+         * funcConvDecode: convertion function
          * from data buffer to typed value.
          */
         TypedRegister(
             const std::string& name, 
             addr_t addr, 
             size_t length, 
-            FuncConvIn<T> funcConvIn,
-            FuncConvOut<T> funcConvOut,
+            FuncConvEncode<T> funcConvEncode,
+            FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
             bool forceRead = false,
             bool forceWrite = false) :
             //Member init
             Register(name, addr, length, 
                 periodPackedRead, forceRead, forceWrite),
-            funcConvIn(funcConvIn),
-            funcConvOut(funcConvOut),
+            funcConvEncode(funcConvEncode),
+            funcConvDecode(funcConvDecode),
             _valueRead(),
             _valueWrite(),
             _aggregationPolicy(AggregateLast)
@@ -454,13 +454,13 @@ class TypedRegister : public Register
          * data buffer to typed read value.
          * No thread protection.
          */
-        inline virtual void doConvIn() override
+        inline virtual void doConvEncode() override
         {
-            funcConvIn(_dataBufferWrite, _valueWrite);
+            funcConvEncode(_dataBufferWrite, _valueWrite);
         }
-        inline virtual void doConvOut() override
+        inline virtual void doConvDecode() override
         {
-            _valueRead = funcConvOut(_dataBufferRead);
+            _valueRead = funcConvDecode(_dataBufferRead);
         }
 
     private:

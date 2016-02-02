@@ -7,6 +7,7 @@
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include <math.h>
+#include <type_traits>
 
 namespace RhAL {
 
@@ -24,18 +25,48 @@ constexpr inline float Deg2Rad(float a)
 }
 
 /**
- * Write/Read to/from given 
- * data buffer given word value
+ * Write to given data buffer
  */
-inline void writeWordToBuffer(data_t* buffer, uint16_t value)
+inline void write1ByteToBuffer(data_t* buffer, uint8_t value)
+{
+    *(buffer) = (value & 0xFF);
+}
+inline void write2BytesToBuffer(data_t* buffer, uint16_t value)
 {
     *(buffer) = (value & 0xFF);
     *(buffer + 1) = ((value >> 8) & 0xFF);
 }
-inline uint16_t readWordFromBuffer(const data_t* buffer)
+inline void writeFloatToBuffer(data_t* buffer, float value)
+{
+	// Attention ! This compile time assert checks the size of the float but not its endianness. This implementation might fail depending on the platform.
+	static_assert(sizeof(value) == 4, "Float is not 32 bit on this platform, I'm done !");
+
+    *(buffer) = (value & 0xFF);
+    *(buffer + 1) = ((value >> 8) & 0xFF);
+    *(buffer + 2) = ((value >> 16) & 0xFF);
+    *(buffer + 3) = ((value >> 24) & 0xFF);
+}
+
+/**
+ * Read from buffer
+ */
+inline uint8_t read1ByteFromBuffer(const data_t* buffer)
+{
+    uint8_t val;
+    val = *(buffer) & 0xFF;
+    return val;
+}
+inline uint16_t read2BytesFromBuffer(const data_t* buffer)
 {
     uint16_t val;
     val = (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
+    return val;
+}
+inline float readFloatFromBuffer(const data_t* buffer)
+{
+    float val;
+    // Attention ! To be tested
+    val = (*(buffer + 3) << 8) | (*(buffer + 2) << 8) | (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
     return val;
 }
 
@@ -45,7 +76,7 @@ inline uint16_t readWordFromBuffer(const data_t* buffer)
  * for RX position values using 
  * 1024 max representation.
  */
-inline void convIn_RXPos(data_t* buffer, float value)
+inline void convEncode_RXPos(data_t* buffer, float value)
 {
     if (value > Deg2Rad(150)) value = Deg2Rad(150);
     if (value < -Deg2Rad(150)) value = -Deg2Rad(150);
@@ -54,24 +85,49 @@ inline void convIn_RXPos(data_t* buffer, float value)
     if (value < 0.0) value = 0.0;
     if (value > 1023.0) value = 1023.0;
     uint16_t v = std::lround(value);
-    writeWordToBuffer(buffer, v);
+    write2BytesToBuffer(buffer, v);
 }
-inline float convOut_RXPos(const data_t* buffer)
+inline float convDecode_RXPos(const data_t* buffer)
 {
-    uint16_t val = readWordFromBuffer(buffer);
+    uint16_t val = read2BytesFromBuffer(buffer);
     float value = val;
     return value*Deg2Rad(300)/1023 - Deg2Rad(150);
 }
 
 /**
- * Default raw copy conversion
+ * Default raw copy conversions. Since the raw value is contained in the hardware :
+ * - "encode" is the conversion from the user to the hardware
+ * - "decode" is the conversion from the hardware to the user
  */
+inline void convEncode_Bool(data_t* buffer, bool value)
+{
+	if (value) {
+		write1ByteToBuffer(buffer, (uint8_t)1);
+	} else {
+		write1ByteToBuffer(buffer, (uint8_t)0);
+	}
+}
+inline bool convDecode_Bool(data_t* buffer)
+{
+	uint8_t value = read1ByteFromBuffer(buffer);
+	bool result = true;
+	if (value == 0) {
+		result = false;
+	}
+
+	return result;
+}
+
 template <typename T>
 inline void convIn_Default(data_t* buffer, T value)
-= 0;
+{
+	*(reinterpret_cast<T*>(buffer)) = value;
+}
 template <typename T>
 inline T convOut_Default(const data_t* buffer)
-= 0;
+{
+	return *(reinterpret_cast<const T*>(buffer));
+}
 
 
 /**

@@ -25,8 +25,8 @@ class RX64 : public DXL
          */
         inline RX64(const std::string& name, id_t id) :
             DXL(name, id),
-            _goalPos("goalPos", 0X1E, 2, convIn_RXPos, convOut_RXPos, 0),
-            _position("pos", 0X24, 2, convIn_RXPos, convOut_RXPos, 1),
+            _goalPos("goalPos", 0X1E, 2, convEncode_RXPos, convDecode_RXPos, 0),
+            _position("pos", 0X24, 2, convEncode_RXPos, convDecode_RXPos, 1),
 			_torqueEnable("torqueEnable", 0X18, 1, convIn_Default<bool>, convOut_Default<bool>, 0)
         {
         }
