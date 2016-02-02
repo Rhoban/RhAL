@@ -71,9 +71,7 @@ inline float readFloatFromBuffer(const data_t* buffer)
 }
 
 /**
- * Conversion from typed value to buffer (in)
- * and buffer to typed value (out) 
- * for RX position values using 
+ * Encoding for RX position values using
  * 1024 max representation.
  */
 inline void convEncode_RXPos(data_t* buffer, float value)
@@ -117,41 +115,29 @@ inline bool convDecode_Bool(data_t* buffer)
 
 	return result;
 }
-
-template <typename T>
-inline void convIn_Default(data_t* buffer, T value)
+inline void convEncode_1Byte(data_t* buffer, uint8_t value)
 {
-	*(reinterpret_cast<T*>(buffer)) = value;
+	write1ByteToBuffer(buffer, value);
 }
-template <typename T>
-inline T convOut_Default(const data_t* buffer)
+inline uint8_t convDecode_1Byte(data_t* buffer)
 {
-	return *(reinterpret_cast<const T*>(buffer));
+	return read1ByteFromBuffer(buffer);
 }
-
-
-/**
- * Conversion from typed value to buffer (in)
- * and buffer to typed value (out) 
- * for MX position values using 
- * 4096 max representation.
- */
-inline void convIn_MXPos(data_t* buffer, float value)
+inline void convEncode_2Bytes(data_t* buffer, uint16_t value)
 {
-    if (value > Deg2Rad(180)) value = Deg2Rad(180);
-    if (value < -Deg2Rad(180)) value = -Deg2Rad(180);
-    value += Deg2Rad(180);
-    value *= 4095/Deg2Rad(360);
-    if (value < 0.0) value = 0.0;
-    if (value > 4095.0) value = 4095.0;
-    uint16_t v = std::lround(value);
-    writeWordToBuffer(buffer, v);
+	write2BytesToBuffer(buffer, value);
 }
-inline float convOut_MXPos(const data_t* buffer)
+inline uint16_t convDecode_2Bytes(data_t* buffer)
 {
-    uint16_t val = readWordFromBuffer(buffer);
-    float value = val;
-    return value*Deg2Rad(360)/4095 - Deg2Rad(180);
+	return read2BytesFromBuffer(buffer);
+}
+inline void convEncode_float(data_t* buffer, float value)
+{
+	write1ByteToBuffer(buffer, value);
+}
+inline float convDecode_1Byte(data_t* buffer)
+{
+	return readFloatFromBuffer(buffer);
 }
 
 /**

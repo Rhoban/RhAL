@@ -87,11 +87,11 @@ int main()
     		dev.disableTorque();
     	}
         std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
-    	std::cout << "pos = " << dev.getPosDegree() << std::endl;
-        dev.setGoalPosDegree(10);
+    	std::cout << "pos = " << dev.getPosition() << std::endl;
+        dev.setGoalPosition(10);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "pos = " << dev.getPosDegree() << std::endl;
-        dev.setGoalPosDegree(-10);
+        std::cout << "pos = " << dev.getPosition() << std::endl;
+        dev.setGoalPosition(-10)
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         i++;
     }

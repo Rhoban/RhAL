@@ -11,6 +11,33 @@
 namespace RhAL {
 
 /**
+ * Conversion from typed value to buffer (in)
+ * and buffer to typed value (out)
+ * for MX position values using
+ * 4096 max representation.
+ */
+inline void convEncode_Position(data_t* buffer, float value)
+{
+    if (value > Deg2Rad(180)) value = Deg2Rad(180);
+    if (value < -Deg2Rad(180)) value = -Deg2Rad(180);
+    value += Deg2Rad(180);
+    value *= 4095/Deg2Rad(360);
+    if (value < 0.0) value = 0.0;
+    if (value > 4095.0) value = 4095.0;
+    uint16_t v = std::lround(value);
+    write2BytesToBuffer(buffer, v);
+}
+inline float convDecode_Position(const data_t* buffer)
+{
+    uint16_t val = read2BytesFromBuffer(buffer);
+    float value = val;
+    return value*Deg2Rad(360)/4095 - Deg2Rad(180);
+}
+
+
+
+
+/**
  * MX
  *
  * Robotis Dynamixel MX-XX implementation.
@@ -26,44 +53,41 @@ class MX : public DXL
          */
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
-            _goalPos("goalPos", 0X1E, 2, convIn_MXPos, convOut_MXPos, 0),
-            _position("pos", 0X24, 2, convIn_MXPos, convOut_MXPos, 1),
-        	_torqueEnable("torqueEnable", 0X18, 1, convIn_Default<bool>, convOut_Default<bool>, 0)
-
-			_modelNumber("modelNumber", 0x00, 2, in, out, 0),
-			_firmwareVersion("firmwareVersion", 0x02, 1, in, out, 0),
-			_id("id", 0x03, 1, in, out, 0),
-			_baudrate("baudrate", 0x04, 1, in, out, 0),
-			_returnDelayTime("returnDelayTime", 0x05, 1, in, out, 0),
-			_angleLimitCW("angleLimitCW", 0x06, 2, in, out, 0),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, in, out, 0),
-			_temperatureLimit("temperatureLimit", 0x0B, 1, in, out, 0),
-			_voltageLowLimit("voltageLowLimit", 0x0C, 1, in, out, 0),
-			_voltageHighLimit("voltageHighLimit", 0x0D, 1, in, out, 0),
-			_maxTorque("maxTorque", 0x0E, 2, in, out, 0),
-			_statusReturnLevel("statusReturnLevel", 0x10, 1, in, out, 0),
-			_alarmLed("alarmLed", 0x11, 1, in, out, 0),
-			_alarmShutdown("alarmShutdown", 0x12, 1, in, out, 0),
-			_multiTurnOffset("multiTurnOffset", 0x14, 2, in, out, 0),
-			_resolutionDivider("resolutionDivider", 0x16, 1, in, out, 0),
-			_torqueEnable("torqueEnable", 0x18, 1, in, out, 0),
-			_led("led", 0x19, 1, in, out, 0),
-			_DGain("DGain", 0x1A, 1, in, out, 0),
-			_IGain("IGain", 0x1B, 1, in, out, 0),
-			_PGain("PGain", 0x1C, 1, in, out, 0),
-			_goalPosition("goalPosition", 0x1E, 2, in, out, 0),
-			_goalSpeed("goalSpeed", 0x20, 2, in, out, 0),
-			_torqueLimit("torqueLimit", 0x22, 2, in, out, 0),
-			_position("position", 0x24, 2, in, out, 0),
-			_speed("speed", 0x26, 2, in, out, 0),
-			_load("load", 0x28, 2, in, out, 0),
-			_voltage("voltage", 0x2A, 1, in, out, 0),
-			_temperature("temperature", 0x2B, 1, in, out, 0),
-			_registered("registered", 0x2C, 1, in, out, 0),
-			_moving("moving", 0x2E, 1, in, out, 0),
-			_lockEeprom("lockEeprom", 0x2F, 1, in, out, 0),
-			_punch("punch", 0x30, 2, in, out, 0),
-			_goalAcceleration("goalAcceleration", 0x49, 1, in, out, 0)
+        	//_register("name", adress, size, encodeFunction, decodeFunction, updateFreq)
+			_modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_baudrate("baudrate", 0x04, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_maxTorque("maxTorque", 0x0E, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
+			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
+			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_goalPosition("goalPosition", 0x1E, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_goalSpeed("goalSpeed", 0x20, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_torqueLimit("torqueLimit", 0x22, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_position("position", 0x24, 2, convEncode_Position, convDecode_Position, 1),
+			_speed("speed", 0x26, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
+			_load("load", 0x28, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_voltage("voltage", 0x2A, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_temperature("temperature", 0x2B, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_registered("registered", 0x2C, 1, convEncode_Bool, convDecode_Bool, 0),
+			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
+			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
+			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_1Byte, convDecode_1Byte, 0)
         {
         }
 
@@ -72,7 +96,7 @@ class MX : public DXL
          * Set the target motor
          * position in radians
          */
-
+        To do implement all of the DXL methods plus the methods realted to the 6 starred registers.
 
     protected:
 
@@ -82,11 +106,43 @@ class MX : public DXL
          */
         inline virtual void onInit() override
         {
-            Device::registersList().add(&_goalPos);
-            Device::registersList().add(&_position);
-            //Setting the aggregation method (sum for the goal position)
-            _position.setAggregationPolicy(AggregateSum);
-            Device::registersList().add(&_torqueEnable);
+            Device::registersList().add(&_modelNumber);
+			Device::registersList().add(&_firmwareVersion);
+			Device::registersList().add(&_id);
+			Device::registersList().add(&_baudrate);
+			Device::registersList().add(&_returnDelayTime);
+			Device::registersList().add(&_angleLimitCW);
+			Device::registersList().add(&_angleLimitCCW);
+			Device::registersList().add(&_temperatureLimit);
+			Device::registersList().add(&_voltageLowLimit);
+			Device::registersList().add(&_voltageHighLimit);
+			Device::registersList().add(&_maxTorque);
+			Device::registersList().add(&_statusReturnLevel);
+			Device::registersList().add(&_alarmLed);
+			Device::registersList().add(&_alarmShutdown);
+			Device::registersList().add(&_multiTurnOffset);
+			Device::registersList().add(&_resolutionDivider);
+			Device::registersList().add(&_torqueEnable);
+			Device::registersList().add(&_led);
+			Device::registersList().add(&_DGain);
+			Device::registersList().add(&_IGain);
+			Device::registersList().add(&_PGain);
+			Device::registersList().add(&_goalPosition);
+			//Setting the aggregation method (sum for the goal position)
+			_goalPosition.setAggregationPolicy(AggregateSum);
+			Device::registersList().add(&_goalSpeed);
+			Device::registersList().add(&_torqueLimit);
+			Device::registersList().add(&_position);
+			Device::registersList().add(&_speed);
+			Device::registersList().add(&_load);
+			Device::registersList().add(&_voltage);
+			Device::registersList().add(&_temperature);
+			Device::registersList().add(&_registered);
+			Device::registersList().add(&_moving);
+			Device::registersList().add(&_lockEeprom);
+			Device::registersList().add(&_punch);
+			Device::registersList().add(&_goalAcceleration);
+
         }
 
     private:
