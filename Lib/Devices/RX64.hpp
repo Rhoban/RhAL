@@ -74,6 +74,28 @@ class RX64 : public DXL
             Device::registersList().add(&_torqueEnable);
         }
 
+        /**
+         * Encoding for RX position values using
+         * 1024 max representation.
+         */
+        inline void convEncode_RXPos(data_t* buffer, float value)
+        {
+            if (value > Deg2Rad(150)) value = Deg2Rad(150);
+            if (value < -Deg2Rad(150)) value = -Deg2Rad(150);
+            value += Deg2Rad(150);
+            value *= 1023/Deg2Rad(300);
+            if (value < 0.0) value = 0.0;
+            if (value > 1023.0) value = 1023.0;
+            uint16_t v = std::lround(value);
+            write2BytesToBuffer(buffer, v);
+        }
+        inline float convDecode_RXPos(const data_t* buffer)
+        {
+            uint16_t val = read2BytesFromBuffer(buffer);
+            float value = val;
+            return value*Deg2Rad(300)/1023 - Deg2Rad(150);
+        }
+
     private:
 
         /**

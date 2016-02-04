@@ -24,121 +24,6 @@ constexpr inline float Deg2Rad(float a)
 	return a*M_PI/180.0;
 }
 
-/**
- * Write to given data buffer
- */
-inline void write1ByteToBuffer(data_t* buffer, uint8_t value)
-{
-    *(buffer) = (value & 0xFF);
-}
-inline void write2BytesToBuffer(data_t* buffer, uint16_t value)
-{
-    *(buffer) = (value & 0xFF);
-    *(buffer + 1) = ((value >> 8) & 0xFF);
-}
-inline void writeFloatToBuffer(data_t* buffer, float value)
-{
-	// Attention ! This compile time assert checks the size of the float but not its endianness. This implementation might fail depending on the platform.
-	static_assert(sizeof(value) == 4, "Float is not 32 bit on this platform, I'm done !");
-
-    *(buffer) = (value & 0xFF);
-    *(buffer + 1) = ((value >> 8) & 0xFF);
-    *(buffer + 2) = ((value >> 16) & 0xFF);
-    *(buffer + 3) = ((value >> 24) & 0xFF);
-}
-
-/**
- * Read from buffer
- */
-inline uint8_t read1ByteFromBuffer(const data_t* buffer)
-{
-    uint8_t val;
-    val = *(buffer) & 0xFF;
-    return val;
-}
-inline uint16_t read2BytesFromBuffer(const data_t* buffer)
-{
-    uint16_t val;
-    val = (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
-    return val;
-}
-inline float readFloatFromBuffer(const data_t* buffer)
-{
-    float val;
-    // Attention ! To be tested
-    val = (*(buffer + 3) << 8) | (*(buffer + 2) << 8) | (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
-    return val;
-}
-
-/**
- * Encoding for RX position values using
- * 1024 max representation.
- */
-inline void convEncode_RXPos(data_t* buffer, float value)
-{
-    if (value > Deg2Rad(150)) value = Deg2Rad(150);
-    if (value < -Deg2Rad(150)) value = -Deg2Rad(150);
-    value += Deg2Rad(150);
-    value *= 1023/Deg2Rad(300);
-    if (value < 0.0) value = 0.0;
-    if (value > 1023.0) value = 1023.0;
-    uint16_t v = std::lround(value);
-    write2BytesToBuffer(buffer, v);
-}
-inline float convDecode_RXPos(const data_t* buffer)
-{
-    uint16_t val = read2BytesFromBuffer(buffer);
-    float value = val;
-    return value*Deg2Rad(300)/1023 - Deg2Rad(150);
-}
-
-/**
- * Default raw copy conversions. Since the raw value is contained in the hardware :
- * - "encode" is the conversion from the user to the hardware
- * - "decode" is the conversion from the hardware to the user
- */
-inline void convEncode_Bool(data_t* buffer, bool value)
-{
-	if (value) {
-		write1ByteToBuffer(buffer, (uint8_t)1);
-	} else {
-		write1ByteToBuffer(buffer, (uint8_t)0);
-	}
-}
-inline bool convDecode_Bool(data_t* buffer)
-{
-	uint8_t value = read1ByteFromBuffer(buffer);
-	bool result = true;
-	if (value == 0) {
-		result = false;
-	}
-
-	return result;
-}
-inline void convEncode_1Byte(data_t* buffer, uint8_t value)
-{
-	write1ByteToBuffer(buffer, value);
-}
-inline uint8_t convDecode_1Byte(data_t* buffer)
-{
-	return read1ByteFromBuffer(buffer);
-}
-inline void convEncode_2Bytes(data_t* buffer, uint16_t value)
-{
-	write2BytesToBuffer(buffer, value);
-}
-inline uint16_t convDecode_2Bytes(data_t* buffer)
-{
-	return read2BytesFromBuffer(buffer);
-}
-inline void convEncode_float(data_t* buffer, float value)
-{
-	write1ByteToBuffer(buffer, value);
-}
-inline float convDecode_1Byte(data_t* buffer)
-{
-	return readFloatFromBuffer(buffer);
-}
 
 /**
  * DXL
@@ -153,36 +38,72 @@ class DXL : public Device
          * Initialization with name and id
          */
         inline DXL(const std::string& name, id_t id) :
-            Device(name, id)
+            Device(name, id),
+        /*
+         * Registers that are common to all the dxl devices should be present here.
+         * Unfortunately, the XL-320 has different addresses starting from the 'goalTorque' register.
+         * This messes up with the genericity of dxl devices and disables the elegant solution.
+         * Therefore, we decided to declare here only the Eeprom registers that are common among all the dxl devices.
+         *
+         */
+        _modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+        _firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0),
+        _id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0),
+        _baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0),
+        _returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0),
+        _temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_temperature, convDecode_temperature, 0),
+        _voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_voltage, convDecode_voltage, 0),
+        _voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0),
+        _maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0),
+        _statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0),
+        _alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0),
+		//Parameters configuration
+		_inverted("inverse", false),
+		_zero("zero", 0.0),
+		_stallTorque("stallTorque", 1000)
         {
         }
 
-        virtual int16_t getModelNumber() = 0;
+        virtual uint16_t getModelNumber() {
+        	return _modelNumber.readValue().value;
+        }
 
-        virtual int16_t getFirmwareVersion() = 0;
+        virtual int16_t getFirmwareVersion() {
+        	return _firmwareVersion.readValue().value;
+        }
 
-        virtual uint8_t getId() = 0;
-        virtual void setId(uint8_t id) = 0;
+        virtual uint8_t getId() {
+        	return _id.readValue().value;
+        }
+        virtual void setId(uint8_t id) {
+        	_id.writeValue(id);
+        }
 
         /**
 		 * Returns the baudrate in BPS
 		 */
-		virtual float getBaudrate() = 0;
+		virtual float getBaudrate() {
+			return _baudrate.readValue().value;
+		}
 		/**
 		 * Sets the baudrate in BPS.
 		 */
-		virtual void setBaudrate(float baudrate) = 0;
-        /**
-         * Returns the baudrate as encoded in the dxl datasheet
-         */
-        virtual uint8_t getBaudrateDxl() = 0;
-        /**
-         * Sets the baudrate as encoded in the dxl datasheet
-         */
-        virtual void setBaudrateDxl(uint8_t baudrate) = 0;
+		virtual void setBaudrate(float baudrate) {
+			_baudrate.writeValue(baudrate);
+		}
 
-        virtual uint8_t getReturnDelayTime() = 0;
-        virtual void setReturnDelayTime(uint8_t delay) = 0;
+		/**
+		 * Returns the return delay time in us
+		 */
+        virtual uint8_t getReturnDelayTime() {
+        	return _returnDelayTime.readValue().value;
+        }
+        /**
+         * Sets the return delay time in us
+         */
+        virtual void setReturnDelayTime(uint8_t delay) {
+        	_returnDelayTime.writeValue(delay);
+        }
 
         /**
          * Fills an array of 2 floats with the angle limits in degrees:
@@ -199,50 +120,71 @@ class DXL : public Device
         /**
          * Returns the temperature limit in degrees Celcius
          */
-        virtual float getTemperatureLimit() = 0;
+        virtual float getTemperatureLimit() {
+        	return _temperatureLimit.readValue().value;
+        }
         /**
          * Sets the temperature limit in degrees Celcius
          */
-        virtual void setTemperatatureLimit() = 0;
+        virtual void setTemperatatureLimit(float value) {
+        	_temperatureLimit.writeValue(value);
+        }
 
         /**
          * Fills an array of 2 floats with the voltage limits in volts :
          * [min voltage value, max voltage value]
          */
-		virtual void getVoltageLimits(float voltageLimits[2]) = 0;
+		virtual void getVoltageLimits(float voltageLimits[2]) {
+			voltageLimits[0] = _voltageLowLimit.readValue().value;
+			voltageLimits[1] = _voltageHighLimit.readValue().value;
+		}
+
 		/**
 		 * Sets the voltage voltage limits. Expected format, array of 2 floats :
 		 * [min voltage in volts, max voltage in volts]
 		 */
-		virtual void setVoltageLimits(float voltageLimits[2]) = 0;
-
+		virtual void setVoltageLimits(float voltageLimits[2]) {
+			_voltageLowLimit.writeValue(voltageLimits[0]);
+			_voltageHighLimit.writeValue(voltageLimits[1]);
+		}
 		/**
 		 * Returns the torque limit in N.m
 		 */
-		virtual float getTorqueLimit() = 0;
+		virtual float getTorqueLimit() {
+			return _maxTorque.readValue().value;
+		}
 		/**
 		 * Sets the torque limit in N.m
 		 */
-		virtual void setTorqueLimit(float torqueLimit) = 0;
+		virtual void setTorqueLimit(float torqueLimit) {
+			_maxTorque.writeValue(torqueLimit);
+		}
 
 		/**
 		 * Returns the torque limit as a % of the max torque
 		 */
-		virtual float getTorqueLimitNormalized() = 0;
+		inline float getTorqueLimitNormalized() {
+			return getTorqueLimit()/_stallTorque.value;
+		}
 		/**
 		 * Sets the torque limit as a % of the max torque
 		 */
-		virtual void setTorqueLimitNormalized(float torqueLimitNormalized) = 0;
+		inline void setTorqueLimitNormalized(float torqueLimitNormalized) {
+			setTorqueLimit(torqueLimitNormalized * _stallTorque.value);
+		}
 
 		/**
 		 * Returns the status return level without conversion
 		 */
-		virtual uint8_t getStatusReturnLevel() = 0;
+		virtual uint8_t getStatusReturnLevel() {
+			return _statusReturnLevel.readValue().value;
+		}
 		/**
 		 * Sets the status return level without conversion
 		 */
-		virtual void setStatusReturnLevel(uint8_t statusReturnLevel) = 0;
-
+		virtual void setStatusReturnLevel(uint8_t statusReturnLevel) {
+			_statusReturnLevel.writeValue(statusReturnLevel);
+		}
 
 		/**
 		 * Returns the alarm led value without conversion
@@ -256,11 +198,15 @@ class DXL : public Device
         /**
 		 * Returns the alarm shutdown value without conversion
 		 */
-		virtual uint8_t getAlarmShutdown() = 0;
+		virtual uint8_t getAlarmShutdown() {
+			return _alarmShutdown.readValue().value;
+		}
 		/**
 		 * Sets the alarm led shutdown value without conversion
 		 */
-		virtual void setAlarmShutdown(uint8_t alarmShutdown) = 0;
+		virtual void setAlarmShutdown(uint8_t alarmShutdown) {
+			_alarmShutdown.writeValue(alarmShutdown);
+		}
 
 
         // The methods above this point typically involve flash registers. The methods below this point typically involve RAM registers.
@@ -300,6 +246,11 @@ class DXL : public Device
 		inline float getGoalPositionRad() {
 			return Deg2Rad(getGoalPosition());
 		}
+
+		/**
+		 * Sets the goal position in degrees without boundaries ('725' will be sent as is)
+		 */
+		virtual void setGoalPositionMultiTurn(float goalPosition) = 0;
 		/**
 		 * Sets the goal position in rads
 		 */
@@ -410,12 +361,259 @@ class DXL : public Device
 		 */
 		virtual void setPunch(float punch) = 0;
 
+    protected :
+		/**
+		 * Inherit.
+		 * Declare Registers and parameters
+		 */
+		inline virtual void onInit() override
+		{
+			Device::registersList().add(&_modelNumber);
+			Device::registersList().add(&_firmwareVersion);
+			Device::registersList().add(&_id);
+			Device::registersList().add(&_baudrate);
+			Device::registersList().add(&_returnDelayTime);
+			Device::registersList().add(&_temperatureLimit);
+			Device::registersList().add(&_voltageLowLimit);
+			Device::registersList().add(&_voltageHighLimit);
+			Device::registersList().add(&_maxTorque);
+			Device::registersList().add(&_statusReturnLevel);
+			Device::registersList().add(&_alarmShutdown);
+		}
+
+		/*
+		 * Conversion functions
+		 */
+
+        /**
+         * Write to given data buffer
+         */
+        inline void write1ByteToBuffer(data_t* buffer, uint8_t value)
+        {
+            *(buffer) = (value & 0xFF);
+        }
+        inline void write2BytesToBuffer(data_t* buffer, uint16_t value)
+        {
+            *(buffer) = (value & 0xFF);
+            *(buffer + 1) = ((value >> 8) & 0xFF);
+        }
+        inline void writeFloatToBuffer(data_t* buffer, float value)
+        {
+        	// Attention ! This compile time assert checks the size of the float but not its endianness. This implementation might fail depending on the platform.
+        	static_assert(sizeof(value) == 4, "Float is not 32 bit on this platform, I'm done !");
+
+            *(buffer) = (value & 0xFF);
+            *(buffer + 1) = ((value >> 8) & 0xFF);
+            *(buffer + 2) = ((value >> 16) & 0xFF);
+            *(buffer + 3) = ((value >> 24) & 0xFF);
+        }
+
+        /**
+         * Read from buffer
+         */
+        inline uint8_t read1ByteFromBuffer(const data_t* buffer)
+        {
+            uint8_t val;
+            val = *(buffer) & 0xFF;
+            return val;
+        }
+        inline uint16_t read2BytesFromBuffer(const data_t* buffer)
+        {
+            uint16_t val;
+            val = (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
+            return val;
+        }
+        inline float readFloatFromBuffer(const data_t* buffer)
+        {
+            float val;
+            // Attention ! To be tested
+            val = (*(buffer + 3) << 8) | (*(buffer + 2) << 8) | (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
+            return val;
+        }
+
+        /**
+         * Default raw copy conversions. Since the raw value is contained in the hardware :
+         * - "encode" is the conversion from the user to the hardware
+         * - "decode" is the conversion from the hardware to the user
+         */
+        /**
+         * Default bool encode (raw copy)
+         */
+        inline void convEncode_Bool(data_t* buffer, bool value)
+        {
+        	if (value) {
+        		write1ByteToBuffer(buffer, (uint8_t)1);
+        	} else {
+        		write1ByteToBuffer(buffer, (uint8_t)0);
+        	}
+        }
+        /**
+         * Default 1Byte encode (raw copy)
+         */
+        inline void convEncode_1Byte(data_t* buffer, uint8_t value)
+        {
+        	write1ByteToBuffer(buffer, value);
+        }
+        /**
+         * Default 2Bytes encode (raw copy)
+         */
+        inline void convEncode_2Bytes(data_t* buffer, uint16_t value)
+        {
+        	write2BytesToBuffer(buffer, value);
+        }
+        /**
+         * Default float encode (raw copy)
+         */
+        inline void convEncode_float(data_t* buffer, float value)
+        {
+        	write1ByteToBuffer(buffer, value);
+        }
+
+        /**
+         * Default bool decode (raw copy)
+         */
+        inline bool convDecode_Bool(data_t* buffer)
+        {
+        	uint8_t value = read1ByteFromBuffer(buffer);
+        	bool result = true;
+        	if (value == 0) {
+        		result = false;
+        	}
+
+        	return result;
+        }
+        /**
+         * Default 1Byte decode (raw copy)
+         */
+        inline uint8_t convDecode_1Byte(data_t* buffer)
+        {
+        	return read1ByteFromBuffer(buffer);
+        }
+        /**
+         * Default 2Bytes decode (raw copy)
+         */
+        inline uint16_t convDecode_2Bytes(data_t* buffer)
+        {
+        	return read2BytesFromBuffer(buffer);
+        }
+        /**
+         * Default float decode (raw copy)
+         */
+        inline float convDecode_float(data_t* buffer)
+        {
+        	return readFloatFromBuffer(buffer);
+        }
+
+        /**
+         * Encode function for dxl baudrate, input in BPS
+         */
+        inline void convEncode_baudrate(data_t* buffer, int value) {
+        	int8_t result = (2000000 / value) - 1;
+        	if (result < 1) {
+        		// result must be signed for this 'if' to have a meaning
+        		result = 1;
+        	}
+        	write1ByteToBuffer(buffer, (uint8_t) result);
+        }
+        /**
+         * Decode function for dxl baudrate, output in BPS
+         */
+        inline int convDecode_baudrate(data_t* buffer) {
+        	return 2000000 / (read1ByteFromBuffer(buffer) + 1);
+        }
+
+        /**
+         * Encode function for the return delay time, input in us
+         */
+        inline void convEncode_returnDelayTime(data_t* buffer, int value) {
+        	write1ByteToBuffer(buffer, (uint8_t) (value/2));
+        }
+        /**
+         * Decode function for dxl baudrate, output in us
+         */
+        inline int convDecode_returnDelayTime(data_t* buffer) {
+        	return read1ByteFromBuffer(buffer) * 2;
+        }
+
+        /**
+         * Encode function for the temperature, input in degrees Celsius
+         */
+        inline void convEncode_temperature(data_t* buffer, float value) {
+        	write1ByteToBuffer(buffer, (uint8_t) value);
+        }
+        /**
+         * Decode function for the temperature, output in degrees Celsius
+         */
+        inline float convDecode_temperature(data_t* buffer) {
+        	return read1ByteFromBuffer(buffer);
+        }
+
+        /**
+         * Encode function for the voltage, input in V
+         */
+        inline void convEncode_voltage(data_t* buffer, float value) {
+        	uint8_t result = value*10;
+        	if (result < 0) {
+        		result = 0;
+        	}
+        	write1ByteToBuffer(buffer, result);
+        }
+        /**
+         * Decode function for the voltage, output in V
+         */
+        inline float convDecode_voltage(data_t* buffer) {
+        	return read1ByteFromBuffer(buffer)/10.0;
+        }
+
+        /**
+         * Encode function for the torque, input in N.m
+         */
+        inline void convEncode_torque(data_t* buffer, float value) {
+        	float result = value / _stallTorque.value();
+        	if (result > 1) {
+        		result = 1;
+        	}
+        	write2BytesToBuffer(buffer, uint16_t(result*1023));
+        }
+        /**
+         * Decode function for the torque, output in N.m
+         */
+        inline float convDecode_torque(data_t* buffer) {
+        	float result = (read2BytesFromBuffer(buffer)/1023.0)*_stallTorque.value();
+        	return result;
+        }
+    private:
+            /**
+             * Register
+             */
+            //The following comments specify the register size and address in the hardware.
+    		TypedRegisterInt 	_modelNumber; 			//2 00
+    		TypedRegisterInt	_firmwareVersion; 		//1	02
+    		TypedRegisterInt 	_id;					//1 03
+    		TypedRegisterInt 	_baudrate;				//1 04
+    		TypedRegisterInt 	_returnDelayTime;		//1 05
+    		TypedRegisterFloat 	_temperatureLimit;		//1 0B
+    		TypedRegisterFloat 	_voltageLowLimit;		//1 0C
+    		TypedRegisterFloat 	_voltageHighLimit;		//1 0D
+    		TypedRegisterFloat 	_maxTorque;				//2 0E
+    		TypedRegisterInt 	_statusReturnLevel;		//1 10
+    		TypedRegisterInt	_alarmShutdown;			//1	12
+
+    		/**
+			 * Parameters
+			 */
+			ParameterBool _inverted;
+			ParameterNumber _zero;
+			ParameterNumber _stallTorque;
+
 };
 
 }
 
 
-
+/* Registers present in all DXLs. Beware though, some of them are present at different addresses depending of the device, forcing their implementation below the DXL class...
+ *
+ */
 //		int16_t modelNumber;
 //		uint8_t firmwareVersion;
 //		uint8_t id;
@@ -448,7 +646,6 @@ class DXL : public Device
 //        bool moving;
 //        bool lockEeprom;
 //		float punch;
-
 
 
 

@@ -7,33 +7,9 @@
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include "Devices/DXL.hpp"
+#include <cmath>
 
 namespace RhAL {
-
-/**
- * Conversion from typed value to buffer (in)
- * and buffer to typed value (out)
- * for MX position values using
- * 4096 max representation.
- */
-inline void convEncode_Position(data_t* buffer, float value)
-{
-    if (value > Deg2Rad(180)) value = Deg2Rad(180);
-    if (value < -Deg2Rad(180)) value = -Deg2Rad(180);
-    value += Deg2Rad(180);
-    value *= 4095/Deg2Rad(360);
-    if (value < 0.0) value = 0.0;
-    if (value > 4095.0) value = 4095.0;
-    uint16_t v = std::lround(value);
-    write2BytesToBuffer(buffer, v);
-}
-inline float convDecode_Position(const data_t* buffer)
-{
-    uint16_t val = read2BytesFromBuffer(buffer);
-    float value = val;
-    return value*Deg2Rad(360)/4095 - Deg2Rad(180);
-}
-
 
 
 
@@ -54,21 +30,11 @@ class MX : public DXL
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
         	//_register("name", adress, size, encodeFunction, decodeFunction, updateFreq)
-			_modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_baudrate("baudrate", 0x04, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
 			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_maxTorque("maxTorque", 0x0E, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+
 			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
@@ -91,12 +57,139 @@ class MX : public DXL
         {
         }
 
-        /**
-         * Inherit.
-         * Set the target motor
-         * position in radians
-         */
-        To do implement all of the DXL methods plus the methods realted to the 6 starred registers.
+
+		/**
+		 * Fills an array of 2 floats with the angle limits in degrees:
+		 * [CW limit, CCW limit]
+		 */
+		virtual void getAngleLimits(float limits[2]) = 0;
+		/**
+		 * Sets the angle limits. Expected format, array of 2 floats :
+		 * [CW limit in degrees, CCW limit in degrees]
+		 */
+		virtual void setAngleLimits(float limits[2]) = 0;
+
+		/**
+		 * Returns the alarm led value without conversion
+		 */
+		virtual uint8_t getAlarmLed() = 0;
+		/**
+		 * Sets the alarm led value without conversion
+		 */
+		virtual void setAlarmLed(uint8_t alarmLed) = 0;
+
+
+		// The methods above this point typically involve flash registers. The methods below this point typically involve RAM registers.
+
+
+		virtual bool getTorqueEnable() = 0;
+		virtual void setTorqueEnable(bool torqueEnable) = 0;
+
+		/**
+		 * Returns true if the led is ON, false otherwise
+		 */
+		virtual bool getLed() = 0;
+		/**
+		 * Sets the led ON(true) or OFF(false)
+		 */
+		virtual void setLed(bool led) = 0;
+
+		/**
+		 * Returns the goal position in degrees
+		 */
+		virtual float getGoalPosition() = 0;
+		/**
+		 * Sets the goal position in degrees
+		 */
+		virtual void setGoalPosition(float goalPosition) = 0;
+		/**
+		 * Sets the goal position in degrees without boundaries ('725' will be sent as is)
+		 */
+		virtual void setGoalPositionMultiTurn(float goalPosition) = 0;
+
+		/**
+		 * Returns the goal speed in degrees/s
+		 */
+		virtual float getGoalSpeed() = 0;
+		/**
+		 * Sets the goal speed in degrees/s
+		 */
+		virtual void setGoalSpeed(float goalSpeed) = 0;
+
+		/**
+		 * Returns the maximum torque value in N.m
+		 */
+		virtual float getMaxTorque() = 0;
+		/**
+		 * Sets the maximum torque value in N.m
+		 */
+		virtual void setMaxTorque(float maxTorque) = 0;
+
+		/**
+		 * Returns the current position in degrees
+		 */
+		virtual float getPosition() = 0;
+
+		/**
+		 * Returns the current speed in degrees/s
+		 */
+		virtual float getSpeed() = 0;
+
+		/**
+		 * Returns the current load in N.m
+		 */
+		virtual float getLoad() = 0;
+
+		/**
+		 * Returns the current load as a percentage of the maximum value
+		 */
+		virtual float getLoadNormalized() = 0;
+
+
+		/**
+		 * Returns the current voltage in Volts
+		 */
+		virtual float getVoltage() = 0;
+
+		/**
+		 * Returns the current temperature in degrees Celcius
+		 */
+		virtual float getTemperature() = 0;
+
+		/**
+		 * Returns true if the instruction is registered, false otherwise
+		 */
+		virtual bool getRegistered() = 0;
+
+		/**
+		 * Returns true if the motor is moving, false otherwise
+		 */
+		virtual bool getMoving() = 0;
+
+		/**
+		 * Returns true of the eeprom is locked, false otherwise
+		 */
+		virtual bool getLockEeprom() = 0;
+		/**
+		 * Locks (true) or unlocks (false) the eeprom
+		 */
+		virtual void setLockEeprom(bool lockEeprom) = 0;
+
+		/**
+		 * Returns the punch value
+		 */
+		virtual float getPunch() = 0;
+		/**
+		 * Sets the punch value
+		 */
+		virtual void setPunch(float punch) = 0;
+
+//		_multiTurnOffset;		//2 14 *
+//		TypedRegisterInt	_resolutionDivider;		//1 16 *
+//		TypedRegisterFloat	_DGain;					//1 1A *
+//		TypedRegisterFloat	_IGain;					//1 1B *
+//		TypedRegisterFloat	_PGain;					//1	1C *
+//		TypedRegisterFloat 	_goalAcceleration;		//1 49 *
 
     protected:
 
@@ -106,20 +199,10 @@ class MX : public DXL
          */
         inline virtual void onInit() override
         {
-            Device::registersList().add(&_modelNumber);
-			Device::registersList().add(&_firmwareVersion);
-			Device::registersList().add(&_id);
-			Device::registersList().add(&_baudrate);
-			Device::registersList().add(&_returnDelayTime);
+        	DXL::onInit();
 			Device::registersList().add(&_angleLimitCW);
 			Device::registersList().add(&_angleLimitCCW);
-			Device::registersList().add(&_temperatureLimit);
-			Device::registersList().add(&_voltageLowLimit);
-			Device::registersList().add(&_voltageHighLimit);
-			Device::registersList().add(&_maxTorque);
-			Device::registersList().add(&_statusReturnLevel);
 			Device::registersList().add(&_alarmLed);
-			Device::registersList().add(&_alarmShutdown);
 			Device::registersList().add(&_multiTurnOffset);
 			Device::registersList().add(&_resolutionDivider);
 			Device::registersList().add(&_torqueEnable);
@@ -144,6 +227,42 @@ class MX : public DXL
 			Device::registersList().add(&_goalAcceleration);
 
         }
+        To do : check this conversion function and get a compilable version
+        /**
+         * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
+         */
+        inline void convEncode_Position(data_t* buffer, float value)
+        {
+        	if (value > 180) {
+        		value = 180;
+        	} else if (value < -180) {
+        		value = -180;
+        	}
+            if (value > 0) {
+                value = value * 4096 / 360;
+            } else {
+            	value = 2048 + (180 + value) * 4096 / 360;
+            }
+
+            uint16_t position = std::lround(value)%4096;
+            write2BytesToBuffer(buffer, position);
+            // works in pypot : 4095 * ((360 / 2 + value) / 360)
+        }
+        /**
+         * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
+         */
+        inline float convDecode_Position(const data_t* buffer)
+        {
+            uint16_t val = read2BytesFromBuffer(buffer);
+            if (val <= 2048) {
+            	return val * 360 / 4096.0;
+            } else {
+            	return -(4096 - val) * 360 / 4096.0;
+            }
+        }
+
+        // Values are not restricted to a specific range (e.g [-180, 180]) because of the multi-turn option
+        sgf
 
     private:
 
@@ -151,20 +270,9 @@ class MX : public DXL
          * Register
          */
         //The following comments specify the register size and address in the hardware. A '*' means that the register is not present in the all of the DXL children.
-		TypedRegisterInt 	_modelNumber; 			//2 00
-		TypedRegisterInt	_firmwareVersion; 		//1	02
-		TypedRegisterInt 	_id;					//1 03
-		TypedRegisterInt 	_baudrate;				//1 04
-		TypedRegisterInt 	_returnDelayTime;		//1 05
 		TypedRegisterFloat 	_angleLimitCW;			//2 06
 		TypedRegisterFloat 	_angleLimitCCW;			//2 08
-		TypedRegisterFloat 	_temperatureLimit;		//1 0B
-		TypedRegisterFloat 	_voltageLowLimit;		//1 0C
-		TypedRegisterFloat 	_voltageHighLimit;		//1 0D
-		TypedRegisterFloat 	_maxTorque;				//2 0E
-		TypedRegisterInt 	_statusReturnLevel;		//1 10
 		TypedRegisterInt 	_alarmLed;				//1 11
-		TypedRegisterInt	_alarmShutdown;			//1	12
 		TypedRegisterInt	_multiTurnOffset;		//2 14 *
 		TypedRegisterInt	_resolutionDivider;		//1 16 *
 
