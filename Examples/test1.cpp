@@ -88,17 +88,17 @@ int main()
     int i = 0;
     float pos = 0.0;
     while (true) {
-//    	if (i%2 == 0) {
-//    		std::cout << "enable torque" << std::endl;
-//    		dev.enableTorque();
-//    	} else {
-//    		std::cout << "disable torque" << std::endl;
-//    		dev.disableTorque();
-//    	}
-//    	pos = pos + 45;
-//    	std::cout << "setting pos " << pos << std::endl;
-        dev.setGoalSpeed(180);
+
+    	pos = 100;
+    	std::cout << "setting pos " << pos << std::endl;
+    	dev.setGoalPosition(pos);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        pos = -100;
+		std::cout << "setting pos " << pos << std::endl;
+		dev.setGoalPosition(pos);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
         i++;
     	std::cout << "temp = " << dev.getTemperature() << std::endl;
     	std::cout << "voltage = " << dev.getVoltage() << std::endl;

@@ -69,19 +69,19 @@ inline float convDecode_GoalTorque(const data_t* buffer)
 }
 
 /**
- * MX64
+ * MX106
  *
- * Dynamixel MX-64 Device 
+ * Dynamixel MX-106 Device
  * implementation
  */
-class MX64 : public MX
+class MX106 : public MX
 {
     public:
 
         /**
          * Initialization with name and id
          */
-        inline MX64(const std::string& name, id_t id) :
+        inline MX106(const std::string& name, id_t id) :
             MX(name, id),
 			_current("current", 0x44, 2, convEncode_Current, convDecode_Current, 0),
 			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
@@ -112,21 +112,21 @@ class MX64 : public MX
 };
 
 /**
- * DeviceManager specialized for MX64
+ * DeviceManager specialized for MX106
  */
 template <>
-class ImplManager<MX64> : public BaseManager<MX64>
+class ImplManager<MX106> : public BaseManager<MX106>
 {
     public:
 
         inline static type_t typeNumber()
         {
-            return 0x0136;
+            return 0x0164;
         }
 
         inline static std::string typeName()
         {
-            return "MX64";
+            return "MX106";
         }
 };
 
