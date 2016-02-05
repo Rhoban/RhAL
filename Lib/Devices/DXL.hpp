@@ -117,7 +117,7 @@ inline void convEncode_float(data_t* buffer, float value)
 /**
  * Default bool decode (raw copy)
  */
-inline bool convDecode_Bool(data_t* buffer)
+inline bool convDecode_Bool(const data_t* buffer)
 {
 	uint8_t value = read1ByteFromBuffer(buffer);
 	bool result = true;
@@ -130,21 +130,21 @@ inline bool convDecode_Bool(data_t* buffer)
 /**
  * Default 1Byte decode (raw copy)
  */
-inline uint8_t convDecode_1Byte(data_t* buffer)
+inline uint8_t convDecode_1Byte(const data_t* buffer)
 {
 	return read1ByteFromBuffer(buffer);
 }
 /**
  * Default 2Bytes decode (raw copy)
  */
-inline uint16_t convDecode_2Bytes(data_t* buffer)
+inline uint16_t convDecode_2Bytes(const data_t* buffer)
 {
 	return read2BytesFromBuffer(buffer);
 }
 /**
  * Default float decode (raw copy)
  */
-inline float convDecode_float(data_t* buffer)
+inline float convDecode_float(const data_t* buffer)
 {
 	return readFloatFromBuffer(buffer);
 }
@@ -164,7 +164,7 @@ inline void convEncode_baudrate(data_t* buffer, int value)
 /**
  * Decode function for dxl baudrate, output in BPS
  */
-inline int convDecode_baudrate(data_t* buffer)
+inline int convDecode_baudrate(const data_t* buffer)
 {
 	return 2000000 / (read1ByteFromBuffer(buffer) + 1);
 }
@@ -179,7 +179,7 @@ inline void convEncode_returnDelayTime(data_t* buffer, int value)
 /**
  * Decode function for dxl baudrate, output in us
  */
-inline int convDecode_returnDelayTime(data_t* buffer)
+inline int convDecode_returnDelayTime(const data_t* buffer)
 {
 	return read1ByteFromBuffer(buffer) * 2;
 }
@@ -194,7 +194,7 @@ inline void convEncode_temperature(data_t* buffer, float value)
 /**
  * Decode function for the temperature, output in degrees Celsius
  */
-inline float convDecode_temperature(data_t* buffer)
+inline float convDecode_temperature(const data_t* buffer)
 {
 	return read1ByteFromBuffer(buffer);
 }
@@ -216,7 +216,7 @@ inline void convEncode_voltage(data_t* buffer, float value)
 /**
  * Decode function for the voltage, output in V
  */
-inline float convDecode_voltage(data_t* buffer)
+inline float convDecode_voltage(const data_t* buffer)
 {
 	return read1ByteFromBuffer(buffer)/10.0;
 }
@@ -235,7 +235,7 @@ inline void convEncode_torque(data_t* buffer, float value)
 /**
  * Decode function for the torque, output in % of max
  */
-inline float convDecode_torque(data_t* buffer)
+inline float convDecode_torque(const data_t* buffer)
 {
 	return read2BytesFromBuffer(buffer)/1023.0;
 }
@@ -271,10 +271,10 @@ class DXL : public Device
 			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0),
 			_maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0),
 			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0)
+			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			//Parameters configuration
-//			_inverted("inverse", false),
-//			_zero("zero", 0.0)
+			_inverted("inverse", false),
+			_zero("zero", 0.0)
         {
 		}
 
@@ -344,7 +344,7 @@ class DXL : public Device
          * Sets the angle limits. Expected format, array of 2 floats :
          * [CW limit in degrees, CCW limit in degrees]
          */
-        virtual void setAngleLimits(float limits[2]) = 0;
+        virtual void setAngleLimits(const float limits[2]) = 0;
 
 
         /**

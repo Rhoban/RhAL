@@ -6,7 +6,6 @@
 typedef RhAL::Manager<
     RhAL::ExampleDevice1,
 	RhAL::MX64,
-	RhAL::RX64,
     RhAL::ExampleDevice2> Manager;
 
 void printDevice(const RhAL::Device& dev)
@@ -57,10 +56,13 @@ int main()
     //(no response with FakeProtocol)
     manager.scan();
 
+
     //Export configuration in file
     manager.writeConfig("/tmp/rhal.json");
+
     //Import configuration in file
     manager.readConfig("/tmp/rhal.json");
+
 
     std::cout << manager.saveJSON().dump(4) << std::endl;
 
@@ -72,28 +74,34 @@ int main()
     manager.setScheduleMode(false);
 
     RhAL::MX64& dev = manager.dev<RhAL::MX64>(1);
+
     std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
+
     dev.enableTorque();
-    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
 //    dev.disableTorque();
 
+    float limits[2];
+    limits[0] = 0.0;
+    limits[1] = 0.0;
+    dev.setAngleLimits(limits);
+
     int i = 0;
+    float pos = 0.0;
     while (true) {
-    	if (i%2 == 0) {
-    		std::cout << "enable torque" << std::endl;
-    		dev.enableTorque();
-    	} else {
-    		std::cout << "disable torque" << std::endl;
-    		dev.disableTorque();
-    	}
-        std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
-    	std::cout << "pos = " << dev.getPosition() << std::endl;
-        dev.setGoalPosition(10);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "pos = " << dev.getPosition() << std::endl;
-        dev.setGoalPosition(-10)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+//    	if (i%2 == 0) {
+//    		std::cout << "enable torque" << std::endl;
+//    		dev.enableTorque();
+//    	} else {
+//    		std::cout << "disable torque" << std::endl;
+//    		dev.disableTorque();
+//    	}
+//    	pos = pos + 45;
+//    	std::cout << "setting pos " << pos << std::endl;
+        dev.setGoalSpeed(180);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         i++;
+    	std::cout << "temp = " << dev.getTemperature() << std::endl;
+    	std::cout << "voltage = " << dev.getVoltage() << std::endl;
     }
 
 

@@ -143,6 +143,7 @@ class MX : public DXL
 			_load("load", 0x28, 2, convEncode_torque, convDecode_torque, 0),
 			_voltage("voltage", 0x2A, 1, convEncode_voltage, convDecode_voltage, 0),
 			_temperature("temperature", 0x2B, 1, convEncode_temperature, convDecode_temperature, 0),
+			_registered("registered", 0x2C, 1, convEncode_Bool, convDecode_Bool, 0),
 			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
@@ -165,7 +166,7 @@ class MX : public DXL
 		 * Sets the angle limits. Expected format, array of 2 floats :
 		 * [CW limit in degrees, CCW limit in degrees]
 		 */
-		virtual void setAngleLimits(float limits[2]) override
+		virtual void setAngleLimits(const float limits[2]) override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			_angleLimitCW.writeValue(limits[0]);
@@ -195,6 +196,7 @@ class MX : public DXL
 		virtual bool getTorqueEnable() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
+		    std::cout << "Alive after lock" << std::endl;
 			return _torqueEnable.readValue().value;
 		}
 		virtual TimePoint getTorqueEnableTs() override
@@ -562,6 +564,7 @@ class MX : public DXL
         inline virtual void onInit() override
         {
         	DXL::onInit();
+
 			Device::registersList().add(&_angleLimitCW);
 			Device::registersList().add(&_angleLimitCCW);
 			Device::registersList().add(&_alarmLed);

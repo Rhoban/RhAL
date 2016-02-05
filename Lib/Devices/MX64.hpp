@@ -34,6 +34,7 @@ class MX64 : public MX
          */
         inline virtual void onInit() override
         {
+        	MX::onInit();
         }
 
 };
