@@ -21,4 +21,5 @@ with the supported devices.
 
 ## TO DO
 - The timeout value has to be fixed by the user (currently it has a fixed constant value). It should be chosen depending on the servo configuration (e.g. "return delay time" for a dxl servo) and baudrate.
-- Debug the "enable torque" issue
+- Check endianness in the writeFloatToBuffer method
+- Add a method "getStallTorque" instead of the stallTorqueAt12V, and add the "smart" function that calculates the new stall torque with a voltage measure

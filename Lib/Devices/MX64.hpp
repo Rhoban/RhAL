@@ -27,6 +27,14 @@ class MX64 : public MX
             MX(name, id)
         {
         }
+    protected :
+        /**
+         * Inherit.
+         * Declare Registers and parameters
+         */
+        inline virtual void onInit() override
+        {
+        }
 
 };
 

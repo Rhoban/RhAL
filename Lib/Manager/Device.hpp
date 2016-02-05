@@ -31,13 +31,13 @@ class Device
          * device name and id
          */
         inline Device(const std::string& name, id_t id) :
+        	_mutex(),
             _registersList(id),
             _parametersList(),
             _name(name),
             _id(id),
             _manager(nullptr),
-            _isPresent(false),
-            _mutex()
+            _isPresent(false)
         {
             if (id < IdDevBegin || id > IdDevEnd) {
                 throw std::logic_error(
@@ -139,7 +139,12 @@ class Device
         }
         
     protected:
-        
+
+        /**
+         * Mutex protecting Device state access
+         */
+        mutable std::mutex _mutex;
+
         /**
          * Set Device isPresent state.
          * (Used for friend Manager access)
@@ -201,10 +206,6 @@ class Device
          */
         bool _isPresent;
 
-        /**
-         * Mutex protecting Device state access
-         */
-        mutable std::mutex _mutex;
 };
 
 }

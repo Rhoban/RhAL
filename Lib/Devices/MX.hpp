@@ -11,6 +11,100 @@
 
 namespace RhAL {
 
+/**
+ * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
+ */
+inline void convEncode_Position(data_t* buffer, float value)
+{
+	if (value > 180) {
+		value = 180;
+	} else if (value < -180) {
+		value = -180;
+	}
+	if (value > 0) {
+		value = value * 4096 / 360.0;
+	} else {
+		value = 2048 + (180 + value) * 4096 / 360.0;
+	}
+
+	uint16_t position = std::lround(value)%4096;
+	write2BytesToBuffer(buffer, position);
+}
+/**
+ * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
+ */
+inline float convDecode_Position(const data_t* buffer)
+{
+	uint16_t val = read2BytesFromBuffer(buffer);
+	if (val <= 2048) {
+		return val * 360.0 / 4096.0;
+	} else {
+		return -(4096 - val) * 360.0 / 4096.0;
+	}
+}
+
+/**
+ * Encode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
+ */
+inline void convEncode_Speed(data_t* buffer, float value)
+{
+	float maxSpeed = 702.42;
+	float conversion = 0.68662;
+	if (value > maxSpeed) {
+		value = maxSpeed;
+	} else if (value < -maxSpeed) {
+		value = -maxSpeed;
+	}
+	if (value > 0) {
+		value = value / conversion;
+	} else {
+		value = 1024 - (value / conversion);
+	}
+
+	uint16_t speed = std::lround(value)%2048;
+	write2BytesToBuffer(buffer, speed);
+}
+/**
+ * Decode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
+ */
+inline float convDecode_Speed(const data_t* buffer)
+{
+	float conversion = 0.68662;
+	uint16_t val = read2BytesFromBuffer(buffer);
+	if (val < 1024) {
+		return val * conversion;
+	} else {
+		return -(val - 1024) * conversion;
+	}
+}
+
+/**
+ * Encode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
+ */
+inline void convEncode_Acceleration(data_t* buffer, float value)
+{
+	float maxAccel = 2180;
+	float conversion = 8.583;
+	if (value > maxAccel) {
+		value = maxAccel;
+	} else if (value < 0) {
+		value = 0;
+	}
+	value = value / conversion;
+
+	uint8_t accel = std::lround(value)%256;
+	write1ByteToBuffer(buffer, accel);
+}
+/**
+ * Decode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
+ */
+inline float convDecode_Acceleration(const data_t* buffer)
+{
+	float conversion = 8.583;
+	uint8_t val = read1ByteFromBuffer(buffer);
+	return val * conversion;
+}
+
 
 
 /**
@@ -30,8 +124,8 @@ class MX : public DXL
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
         	//_register("name", adress, size, encodeFunction, decodeFunction, updateFreq)
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
 
@@ -41,19 +135,18 @@ class MX : public DXL
 			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_goalPosition("goalPosition", 0x1E, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalSpeed("goalSpeed", 0x20, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_torqueLimit("torqueLimit", 0x22, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+			_goalPosition("goalPosition", 0x1E, 2, convEncode_Position, convDecode_Position, 0),
+			_goalSpeed("goalSpeed", 0x20, 2, convEncode_Speed, convDecode_Speed, 0),
+			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
 			_position("position", 0x24, 2, convEncode_Position, convDecode_Position, 1),
-			_speed("speed", 0x26, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_load("load", 0x28, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_voltage("voltage", 0x2A, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_temperature("temperature", 0x2B, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_registered("registered", 0x2C, 1, convEncode_Bool, convDecode_Bool, 0),
+			_speed("speed", 0x26, 2, convEncode_Speed, convDecode_Speed, 1),
+			_load("load", 0x28, 2, convEncode_torque, convDecode_torque, 0),
+			_voltage("voltage", 0x2A, 1, convEncode_voltage, convDecode_voltage, 0),
+			_temperature("temperature", 0x2B, 1, convEncode_temperature, convDecode_temperature, 0),
 			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_1Byte, convDecode_1Byte, 0)
+			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_Acceleration, convDecode_Acceleration, 0)
         {
         }
 
@@ -62,134 +155,403 @@ class MX : public DXL
 		 * Fills an array of 2 floats with the angle limits in degrees:
 		 * [CW limit, CCW limit]
 		 */
-		virtual void getAngleLimits(float limits[2]) = 0;
+		virtual void getAngleLimits(float limits[2]) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			limits[0] = _angleLimitCW.readValue().value;
+			limits[1] = _angleLimitCCW.readValue().value;
+		}
 		/**
 		 * Sets the angle limits. Expected format, array of 2 floats :
 		 * [CW limit in degrees, CCW limit in degrees]
 		 */
-		virtual void setAngleLimits(float limits[2]) = 0;
+		virtual void setAngleLimits(float limits[2]) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_angleLimitCW.writeValue(limits[0]);
+			_angleLimitCCW.writeValue(limits[1]);
+		}
 
 		/**
 		 * Returns the alarm led value without conversion
 		 */
-		virtual uint8_t getAlarmLed() = 0;
+		virtual uint8_t getAlarmLed() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _alarmLed.readValue().value;
+		}
 		/**
 		 * Sets the alarm led value without conversion
 		 */
-		virtual void setAlarmLed(uint8_t alarmLed) = 0;
+		virtual void setAlarmLed(uint8_t alarmLed) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_alarmLed.writeValue(alarmLed);
+		}
 
 
 		// The methods above this point typically involve flash registers. The methods below this point typically involve RAM registers.
 
-
-		virtual bool getTorqueEnable() = 0;
-		virtual void setTorqueEnable(bool torqueEnable) = 0;
-
+		virtual bool getTorqueEnable() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _torqueEnable.readValue().value;
+		}
+		virtual TimePoint getTorqueEnableTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _torqueEnable.readValue().timestamp;
+		}
+		virtual void setTorqueEnable(bool torqueEnable) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_torqueEnable.writeValue(torqueEnable);
+		}
 		/**
 		 * Returns true if the led is ON, false otherwise
 		 */
-		virtual bool getLed() = 0;
+		virtual bool getLed() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _led.readValue().value;
+		}
+		virtual TimePoint getLedTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _led.readValue().timestamp;
+		}
 		/**
 		 * Sets the led ON(true) or OFF(false)
 		 */
-		virtual void setLed(bool led) = 0;
+		virtual void setLed(bool led) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_led.writeValue(led);
+		}
 
 		/**
 		 * Returns the goal position in degrees
 		 */
-		virtual float getGoalPosition() = 0;
+		virtual float getGoalPosition() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalPosition.readValue().value;
+		}
+		virtual TimePoint getGoalPositionTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalPosition.readValue().timestamp;
+		}
 		/**
 		 * Sets the goal position in degrees
 		 */
-		virtual void setGoalPosition(float goalPosition) = 0;
+		virtual void setGoalPosition(float goalPosition) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_goalPosition.writeValue(goalPosition);
+		}
+
 		/**
 		 * Sets the goal position in degrees without boundaries ('725' will be sent as is)
 		 */
-		virtual void setGoalPositionMultiTurn(float goalPosition) = 0;
+		//Attention ! Do I have to hack to overpass the conversion function of a register?
+		//virtual void setGoalPositionMultiTurn(float goalPosition) = 0;
 
 		/**
 		 * Returns the goal speed in degrees/s
 		 */
-		virtual float getGoalSpeed() = 0;
+		virtual float getGoalSpeed() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalSpeed.readValue().value;
+		}
+		virtual TimePoint getGoalSpeedTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalSpeed.readValue().timestamp;
+		}
 		/**
 		 * Sets the goal speed in degrees/s
 		 */
-		virtual void setGoalSpeed(float goalSpeed) = 0;
+		virtual void setGoalSpeed(float goalSpeed) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_goalSpeed.writeValue(goalSpeed);
+		}
 
 		/**
-		 * Returns the maximum torque value in N.m
+		 * Returns the maximum torque value in % of max
 		 */
-		virtual float getMaxTorque() = 0;
+		virtual float getMaxTorque() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _torqueLimit.readValue().value;
+		}
+		virtual TimePoint getMaxTorqueTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _torqueLimit.readValue().timestamp;
+		}
 		/**
-		 * Sets the maximum torque value in N.m
+		 * Sets the maximum torque value in % of max
 		 */
-		virtual void setMaxTorque(float maxTorque) = 0;
+		virtual void setMaxTorque(float maxTorque) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_torqueLimit.writeValue(maxTorque);
+		}
 
 		/**
 		 * Returns the current position in degrees
 		 */
-		virtual float getPosition() = 0;
+		virtual float getPosition() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _position.readValue().value;
+		}
+		virtual TimePoint getPositionTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _position.readValue().timestamp;
+		}
 
 		/**
 		 * Returns the current speed in degrees/s
 		 */
-		virtual float getSpeed() = 0;
+		virtual float getSpeed() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _speed.readValue().value;
+		}
+		virtual TimePoint getSpeedTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _speed.readValue().timestamp;
+		}
 
 		/**
 		 * Returns the current load in N.m
 		 */
-		virtual float getLoad() = 0;
-
-		/**
-		 * Returns the current load as a percentage of the maximum value
-		 */
-		virtual float getLoadNormalized() = 0;
-
+		virtual float getLoad() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _load.readValue().value;
+		}
+		virtual TimePoint getLoadTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _load.readValue().timestamp;
+		}
 
 		/**
 		 * Returns the current voltage in Volts
 		 */
-		virtual float getVoltage() = 0;
+		virtual float getVoltage() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _voltage.readValue().value;
+		}
+		virtual TimePoint getVoltageTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _voltage.readValue().timestamp;
+		}
 
 		/**
 		 * Returns the current temperature in degrees Celcius
 		 */
-		virtual float getTemperature() = 0;
+		virtual float getTemperature() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _temperature.readValue().value;
+		}
+		virtual TimePoint getTemperatureTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _temperature.readValue().timestamp;
+		}
 
 		/**
 		 * Returns true if the instruction is registered, false otherwise
 		 */
-		virtual bool getRegistered() = 0;
+		virtual bool getRegistered() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _registered.readValue().value;
+		}
+		virtual TimePoint getRegisteredTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _registered.readValue().timestamp;
+		}
 
 		/**
 		 * Returns true if the motor is moving, false otherwise
 		 */
-		virtual bool getMoving() = 0;
+		virtual bool getMoving() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _moving.readValue().value;
+		}
+		virtual TimePoint getMovingTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _moving.readValue().timestamp;
+		}
 
 		/**
 		 * Returns true of the eeprom is locked, false otherwise
 		 */
-		virtual bool getLockEeprom() = 0;
+		virtual bool getLockEeprom() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _lockEeprom.readValue().value;
+		}
+		virtual TimePoint getLockEepromTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _lockEeprom.readValue().timestamp;
+		}
 		/**
 		 * Locks (true) or unlocks (false) the eeprom
 		 */
-		virtual void setLockEeprom(bool lockEeprom) = 0;
+		virtual void setLockEeprom(bool lockEeprom) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_lockEeprom.writeValue(lockEeprom);
+		}
 
 		/**
 		 * Returns the punch value
 		 */
-		virtual float getPunch() = 0;
+		virtual float getPunch() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _punch.readValue().value;
+		}
+		virtual TimePoint getPunchTs() override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _punch.readValue().timestamp;
+		}
 		/**
 		 * Sets the punch value
 		 */
-		virtual void setPunch(float punch) = 0;
+		virtual void setPunch(float punch) override
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_punch.writeValue(punch);
+		}
 
-//		_multiTurnOffset;		//2 14 *
-//		TypedRegisterInt	_resolutionDivider;		//1 16 *
-//		TypedRegisterFloat	_DGain;					//1 1A *
-//		TypedRegisterFloat	_IGain;					//1 1B *
-//		TypedRegisterFloat	_PGain;					//1	1C *
-//		TypedRegisterFloat 	_goalAcceleration;		//1 49 *
+		// Non inherited methods :
+
+		/**
+		 * Returns the multiturn value
+		 */
+		inline int getMultitunOffset()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _multiTurnOffset.readValue().value;
+		}
+		inline TimePoint getMultitunOffsetTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _multiTurnOffset.readValue().timestamp;
+		}
+		/**
+		 * Sets the multiturn value
+		 */
+		inline void setMultiturnOffset(float value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_multiTurnOffset.writeValue(value);
+		}
+
+		/**
+		 * Returns the resolution divider
+		 */
+		inline int getResolutionDivider()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _resolutionDivider.readValue().value;
+		}
+		inline TimePoint getResolutionDividerTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _resolutionDivider.readValue().timestamp;
+		}
+		/**
+		 * Sets the resolution divider value
+		 */
+		inline void setResolutionDivider(float value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_resolutionDivider.writeValue(value);
+		}
+
+		inline int getPGain()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _PGain.readValue().value;
+		}
+		inline TimePoint getPGainTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _PGain.readValue().timestamp;
+		}
+		inline void setPGain(int value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_PGain.writeValue(value);
+		}
+
+		inline int getIGain()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _IGain.readValue().value;
+		}
+		inline TimePoint getIGainTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _IGain.readValue().timestamp;
+		}
+		inline void setIGain(int value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_IGain.writeValue(value);
+		}
+
+		inline int getDGain()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _DGain.readValue().value;
+		}
+		inline TimePoint getDGainTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _DGain.readValue().timestamp;
+		}
+		inline void setDGain(int value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_DGain.writeValue(value);
+		}
+
+		inline float getGoalAcceleration()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalAcceleration.readValue().value;
+		}
+		inline TimePoint getGoalAccelerationTs()
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			return _goalAcceleration.readValue().timestamp;
+		}
+		inline void setGoalAcceleration(float value)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_goalAcceleration.writeValue(value);
+		}
 
     protected:
 
@@ -227,44 +589,6 @@ class MX : public DXL
 			Device::registersList().add(&_goalAcceleration);
 
         }
-        To do : check this conversion function and get a compilable version
-        /**
-         * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
-         */
-        inline void convEncode_Position(data_t* buffer, float value)
-        {
-        	if (value > 180) {
-        		value = 180;
-        	} else if (value < -180) {
-        		value = -180;
-        	}
-            if (value > 0) {
-                value = value * 4096 / 360;
-            } else {
-            	value = 2048 + (180 + value) * 4096 / 360;
-            }
-
-            uint16_t position = std::lround(value)%4096;
-            write2BytesToBuffer(buffer, position);
-            // works in pypot : 4095 * ((360 / 2 + value) / 360)
-        }
-        /**
-         * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
-         */
-        inline float convDecode_Position(const data_t* buffer)
-        {
-            uint16_t val = read2BytesFromBuffer(buffer);
-            if (val <= 2048) {
-            	return val * 360 / 4096.0;
-            } else {
-            	return -(4096 - val) * 360 / 4096.0;
-            }
-        }
-
-        // Values are not restricted to a specific range (e.g [-180, 180]) because of the multi-turn option
-        sgf
-
-    private:
 
         /**
          * Register
@@ -296,10 +620,18 @@ class MX : public DXL
 		TypedRegisterBool 	_lockEeprom;			//1 2F
 		TypedRegisterFloat 	_punch;					//2 30
 		TypedRegisterFloat 	_goalAcceleration;		//1 49 *
-
-
 };
 
 
 }
+
+// Finds getter :
+// (virtual )(\w+ )(get\w+)(.*)( = 0; )(_\w+)(\s{1})
+// Instanciates it :
+// $1$2$3$4 override\n\t\t{\n\t\t\tstd::lock_guard<std::mutex> lock(_mutex);\n\t\t\treturn $6.readValue().value;\n\t\t}\n
+
+//Finds setter :
+// (virtual )(\w+ )(set\w+)(.{1})(\w+)(\s{1})(\w+)(.{1})( = 0; )(_\w+)(\s{1})
+// Instanciates it :
+//$1$2$3$4$5$6$7$8 override\n\t\t{\n\t\t\tstd::lock_guard<std::mutex> lock(_mutex);\n\t\t\t$10.writeValue($7);\n\t\t}\n
 
