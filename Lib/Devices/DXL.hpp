@@ -560,7 +560,7 @@ class DXL : public Device
 		}
 
 		/**
-		 * Returns the current load in N.m
+		 * Returns the current load in % of max
 		 */
 		virtual float getLoad() = 0;
 		virtual TimePoint getLoadTs() = 0;

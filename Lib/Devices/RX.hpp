@@ -16,6 +16,7 @@ namespace RhAL {
  */
 inline void convEncode_Position(data_t* buffer, float value)
 {
+	to do check rhoban convention, since the dxl convention is incompatible between MX and RX... --> The good call seems to be to change both the MX and the RX convention and put the 0 upfront
 	if (value > 180) {
 		value = 180;
 	} else if (value < -180) {
@@ -35,6 +36,7 @@ inline void convEncode_Position(data_t* buffer, float value)
  */
 inline float convDecode_Position(const data_t* buffer)
 {
+	to do
 	uint16_t val = read2BytesFromBuffer(buffer);
 	if (val <= 2048) {
 		return val * 360.0 / 4096.0;
@@ -48,6 +50,7 @@ inline float convDecode_Position(const data_t* buffer)
  */
 inline void convEncode_Speed(data_t* buffer, float value)
 {
+	to do
 	float maxSpeed = 702.42;
 	float conversion = 0.68662;
 	if (value > maxSpeed) {
@@ -69,6 +72,7 @@ inline void convEncode_Speed(data_t* buffer, float value)
  */
 inline float convDecode_Speed(const data_t* buffer)
 {
+	to do
 	float conversion = 0.68662;
 	uint16_t val = read2BytesFromBuffer(buffer);
 	if (val < 1024) {
@@ -83,6 +87,7 @@ inline float convDecode_Speed(const data_t* buffer)
  */
 inline void convEncode_Acceleration(data_t* buffer, float value)
 {
+	to do
 	float maxAccel = 2180;
 	float conversion = 8.583;
 	if (value > maxAccel) {
@@ -100,6 +105,7 @@ inline void convEncode_Acceleration(data_t* buffer, float value)
  */
 inline float convDecode_Acceleration(const data_t* buffer)
 {
+	to do
 	float conversion = 8.583;
 	uint8_t val = read1ByteFromBuffer(buffer);
 	return val * conversion;
@@ -108,33 +114,24 @@ inline float convDecode_Acceleration(const data_t* buffer)
 
 
 /**
- * MX
+ * RX
  *
- * Robotis Dynamixel MX-XX implementation.
- * This class entirely covers the MX-12 and MX-28.
- * The MX-64 and MX-106 have 3 registers that are covered in their specific classes.
- * The Dynaban versions have lots of other registers.
+ * Robotis Dynamixel RX-XX implementation.
  */
-class MX : public DXL
+class RX : public DXL
 {
     public:
         /**
          * Initialization with name and id
          */
-        inline MX(const std::string& name, id_t id) :
+        inline RX(const std::string& name, id_t id) :
             DXL(name, id),
         	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq)
 			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0),
 			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-
-			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
-			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_goalPosition("goalPosition", 0x1E, 2, convEncode_Position, convDecode_Position, 0),
 			_goalSpeed("goalSpeed", 0x20, 2, convEncode_Speed, convDecode_Speed, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
@@ -146,8 +143,7 @@ class MX : public DXL
 			_registered("registered", 0x2C, 1, convEncode_Bool, convDecode_Bool, 0),
 			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
-			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_Acceleration, convDecode_Acceleration, 0)
+			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0)
         {
         }
 
@@ -445,116 +441,6 @@ class MX : public DXL
 			_punch.writeValue(punch);
 		}
 
-		// Non inherited methods :
-
-		/**
-		 * Returns the multiturn value
-		 */
-		inline int getMultitunOffset()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _multiTurnOffset.readValue().value;
-		}
-		inline TimePoint getMultitunOffsetTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _multiTurnOffset.readValue().timestamp;
-		}
-		/**
-		 * Sets the multiturn value
-		 */
-		inline void setMultiturnOffset(float value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_multiTurnOffset.writeValue(value);
-		}
-
-		/**
-		 * Returns the resolution divider
-		 */
-		inline int getResolutionDivider()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _resolutionDivider.readValue().value;
-		}
-		inline TimePoint getResolutionDividerTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _resolutionDivider.readValue().timestamp;
-		}
-		/**
-		 * Sets the resolution divider value
-		 */
-		inline void setResolutionDivider(float value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_resolutionDivider.writeValue(value);
-		}
-
-		inline int getPGain()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _PGain.readValue().value;
-		}
-		inline TimePoint getPGainTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _PGain.readValue().timestamp;
-		}
-		inline void setPGain(int value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_PGain.writeValue(value);
-		}
-
-		inline int getIGain()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _IGain.readValue().value;
-		}
-		inline TimePoint getIGainTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _IGain.readValue().timestamp;
-		}
-		inline void setIGain(int value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_IGain.writeValue(value);
-		}
-
-		inline int getDGain()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _DGain.readValue().value;
-		}
-		inline TimePoint getDGainTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _DGain.readValue().timestamp;
-		}
-		inline void setDGain(int value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_DGain.writeValue(value);
-		}
-
-		inline float getGoalAcceleration()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalAcceleration.readValue().value;
-		}
-		inline TimePoint getGoalAccelerationTs()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalAcceleration.readValue().timestamp;
-		}
-		inline void setGoalAcceleration(float value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_goalAcceleration.writeValue(value);
-		}
-
     protected:
 
         /**
@@ -568,13 +454,8 @@ class MX : public DXL
 			Device::registersList().add(&_angleLimitCW);
 			Device::registersList().add(&_angleLimitCCW);
 			Device::registersList().add(&_alarmLed);
-			Device::registersList().add(&_multiTurnOffset);
-			Device::registersList().add(&_resolutionDivider);
 			Device::registersList().add(&_torqueEnable);
 			Device::registersList().add(&_led);
-			Device::registersList().add(&_DGain);
-			Device::registersList().add(&_IGain);
-			Device::registersList().add(&_PGain);
 			Device::registersList().add(&_goalPosition);
 			//Setting the aggregation method (sum for the goal position)
 			_goalPosition.setAggregationPolicy(AggregateSum);
@@ -589,7 +470,6 @@ class MX : public DXL
 			Device::registersList().add(&_moving);
 			Device::registersList().add(&_lockEeprom);
 			Device::registersList().add(&_punch);
-			Device::registersList().add(&_goalAcceleration);
 
         }
 
@@ -600,16 +480,11 @@ class MX : public DXL
 		TypedRegisterFloat 	_angleLimitCW;			//2 06
 		TypedRegisterFloat 	_angleLimitCCW;			//2 08
 		TypedRegisterInt 	_alarmLed;				//1 11
-		TypedRegisterInt	_multiTurnOffset;		//2 14 *
-		TypedRegisterInt	_resolutionDivider;		//1 16 *
 
 		// Flash/RAM limit (this info has no impact on the way the registers are handled)
 
 		TypedRegisterBool 	_torqueEnable;			//1 18
 		TypedRegisterBool 	_led;					//1 19
-		TypedRegisterFloat	_DGain;					//1 1A *
-		TypedRegisterFloat	_IGain;					//1 1B *
-		TypedRegisterFloat	_PGain;					//1	1C *
 		TypedRegisterFloat 	_goalPosition;			//2	1E
 		TypedRegisterFloat 	_goalSpeed;				//2	20
 		TypedRegisterFloat 	_torqueLimit;			//2	22
@@ -622,19 +497,9 @@ class MX : public DXL
 		TypedRegisterBool 	_moving;				//1 2E
 		TypedRegisterBool 	_lockEeprom;			//1 2F
 		TypedRegisterFloat 	_punch;					//2 30
-		TypedRegisterFloat 	_goalAcceleration;		//1 49 *
 };
 
 
 }
 
-// Finds getter :
-// (virtual )(\w+ )(get\w+)(.*)( = 0; )(_\w+)(\s{1})
-// Instanciates it :
-// $1$2$3$4 override\n\t\t{\n\t\t\tstd::lock_guard<std::mutex> lock(_mutex);\n\t\t\treturn $6.readValue().value;\n\t\t}\n
-
-//Finds setter :
-// (virtual )(\w+ )(set\w+)(.{1})(\w+)(\s{1})(\w+)(.{1})( = 0; )(_\w+)(\s{1})
-// Instanciates it :
-//$1$2$3$4$5$6$7$8 override\n\t\t{\n\t\t\tstd::lock_guard<std::mutex> lock(_mutex);\n\t\t\t$10.writeValue($7);\n\t\t}\n
 
