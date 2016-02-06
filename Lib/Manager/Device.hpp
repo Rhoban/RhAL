@@ -31,13 +31,13 @@ class Device
          * device name and id
          */
         inline Device(const std::string& name, id_t id) :
+        	_mutex(),
             _registersList(id),
             _parametersList(),
             _name(name),
             _id(id),
             _manager(nullptr),
-            _isPresent(false),
-            _mutex()
+            _isPresent(false)
         {
             if (id < IdDevBegin || id > IdDevEnd) {
                 throw std::logic_error(
@@ -118,10 +118,14 @@ class Device
         }
 
         /**
-         * Read access to Registers and
+         * Read/Write access to Registers and
          * Parameters list
          */
         const RegistersList& registersList() const
+        {
+            return _registersList;
+        }
+        RegistersList& registersList()
         {
             return _registersList;
         }
@@ -129,23 +133,17 @@ class Device
         {
             return _parametersList;
         }
-        
-    protected:
-        
-        /**
-         * Read/Write access to Registers and
-         * Parameters list
-         * (Used for friend Manager access and
-         * derived Device)
-         */
-        RegistersList& registersList()
-        {
-            return _registersList;
-        }
         ParametersList& parametersList()
         {
             return _parametersList;
         }
+        
+    protected:
+
+        /**
+         * Mutex protecting Device state access
+         */
+        mutable std::mutex _mutex;
 
         /**
          * Set Device isPresent state.
@@ -171,8 +169,6 @@ class Device
          */
         template <typename ... T>
         friend class Manager;
-        template <typename T>
-        friend class BaseManager;
 
     private:
         
@@ -210,10 +206,6 @@ class Device
          */
         bool _isPresent;
 
-        /**
-         * Mutex protecting Device state access
-         */
-        mutable std::mutex _mutex;
 };
 
 }

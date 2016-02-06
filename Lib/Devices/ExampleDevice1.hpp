@@ -1,10 +1,11 @@
 #pragma once
 
+#include <string>
 #include <mutex>
-#include "BaseManager.hpp"
-#include "Device.hpp"
-#include "Register.hpp"
-#include "Parameter.hpp"
+#include "Manager/BaseManager.hpp"
+#include "Manager/Device.hpp"
+#include "Manager/Register.hpp"
+#include "Manager/Parameter.hpp"
 
 namespace RhAL {
 

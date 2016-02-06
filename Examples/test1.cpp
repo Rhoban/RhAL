@@ -1,8 +1,11 @@
 #include <iostream>
 #include "RhAL.hpp"
+#include <thread>
+
 
 typedef RhAL::Manager<
-    RhAL::ExampleDevice1, 
+    RhAL::ExampleDevice1,
+	RhAL::MX64,
     RhAL::ExampleDevice2> Manager;
 
 void printDevice(const RhAL::Device& dev)
@@ -44,23 +47,65 @@ int main()
 {
     Manager manager;
 
-    //manager.setProtocolConfig(
-    //    "/dev/ttyUSB0", 1000000, "DynamixelV1");
     manager.setProtocolConfig(
-        "", 1000000, "FakeProtocol");
+        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+//    manager.setProtocolConfig(
+//        "", 1000000, "FakeProtocol");
 
     //Scan the bus
     //(no response with FakeProtocol)
     manager.scan();
 
+
     //Export configuration in file
     manager.writeConfig("/tmp/rhal.json");
+
     //Import configuration in file
     manager.readConfig("/tmp/rhal.json");
 
+
+    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+//    manager.devAdd<RhAL::MX64>(1, "devTest1");
+
+
     //Set Manager scheduling config mode
     //(default is true)
-    manager.setScheduleMode(true);
+    manager.setScheduleMode(false);
+
+    RhAL::MX64& dev = manager.dev<RhAL::MX64>(1);
+
+    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
+
+    dev.enableTorque();
+//    dev.disableTorque();
+
+    float limits[2];
+    limits[0] = 0.0;
+    limits[1] = 0.0;
+    dev.setAngleLimits(limits);
+
+    int i = 0;
+    float pos = 0.0;
+    while (true) {
+
+    	pos = 100;
+    	std::cout << "setting pos " << pos << std::endl;
+    	dev.setGoalPosition(pos);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        pos = -100;
+		std::cout << "setting pos " << pos << std::endl;
+		dev.setGoalPosition(pos);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        i++;
+    	std::cout << "temp = " << dev.getTemperature() << std::endl;
+    	std::cout << "voltage = " << dev.getVoltage() << std::endl;
+    }
+
+
+    return 0;
 
     //Add new Device with type, id and name
     manager.devAdd<RhAL::ExampleDevice1>(2, "devTest2");

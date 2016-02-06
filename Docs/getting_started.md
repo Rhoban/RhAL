@@ -1,5 +1,15 @@
 # Getting started
 
+First of all, go to https://github.com/Rhoban/deps and follow the (short) instructions.
+
+Then, clone this repository :
+    `git clone https://github.com/Rhoban/RhAL.git`
+
+And run :
+    `deps install`
+
+So far, so good.
+
 To use RhAL, you have to include `RhAL.hpp`, and instanciate
 the manager:
 

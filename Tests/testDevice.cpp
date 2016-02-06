@@ -1,4 +1,4 @@
-#include "Manager/ExampleDevice1.hpp"
+#include "Devices/ExampleDevice1.hpp"
 #include "tests.h"
 #include "Manager/Manager.hpp"
 

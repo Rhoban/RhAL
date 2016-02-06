@@ -7,6 +7,7 @@
 #include <fstream>
 #include <mutex>
 #include <condition_variable>
+#include "Statistics.hpp"
 #include "AggregateManager.hpp"
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
@@ -39,18 +40,23 @@ class Manager : public AggregateManager<Types...>
             _isManagerFlushing(false),
             _cooperativeThreadCount(0),
             _currentThreadWaiting(0),
+            _stats(),
             _bus(nullptr),
             _protocol(nullptr),
             _parametersList(),
             _paramBusPort("port", ""),
             _paramBusBaudrate("baudrate", 1000000),
-            _paramProtocolName("protocol", "FakeProtocol")
+            _paramProtocolName("protocol", "FakeProtocol"),
+            _paramEnableSyncRead("enableSyncRead", true),
+            _paramEnableSyncWrite("enableSyncWrite", true)
         {
             //Registering all parameters
+            _parametersList.add(&this->_paramScheduleMode);
             _parametersList.add(&_paramBusPort);
             _parametersList.add(&_paramBusBaudrate);
             _parametersList.add(&_paramProtocolName);
-            _parametersList.add(&this->_paramScheduleMode);
+            _parametersList.add(&_paramEnableSyncRead);
+            _parametersList.add(&_paramEnableSyncWrite);
             //Initialize the low level communication
             initBus();
         }
@@ -108,6 +114,7 @@ class Manager : public AggregateManager<Types...>
             }
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            _stats.waitNextFlushCount++;
             //The lock is now acquired
             //Increment current user in waitNextFlush()
             _currentThreadWaiting++;
@@ -115,8 +122,12 @@ class Manager : public AggregateManager<Types...>
             _managerWaitUser.notify_all();
             //Wait for the end of flush() barrier.
             //(during wait, the shared mutex is released)
+            TimePoint pStart = getTimePoint();
             _userWaitManager.wait(lock, 
                 [this](){return !_isManagerFlushing;});
+            TimePoint pStop = getTimePoint();
+            _stats.waitManagerDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //The lock is re acquire. Decrease the number 
             //of waiting thread.
             _currentThreadWaiting--;
@@ -158,23 +169,24 @@ class Manager : public AggregateManager<Types...>
             //(during wait, the shared mutex is released)
             //(The lock is taken once condition is reached)
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            _stats.flushCount++;
             _isManagerFlushing = true;
+            TimePoint pStart = getTimePoint();
             _managerWaitUser.wait(lock, 
                 [this](){
                     return _currentThreadWaiting == _cooperativeThreadCount;
                 });
+            TimePoint pStop = getTimePoint();
+            _stats.waitUsersDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //Swap to apply last read change
             swapRead();
             //Select registers for read and write
             //and compute operation batching
-            std::vector<BatchedRegisters> batchsRead = computeBatchedRegisters(
-                [this](Register* reg) -> bool {
-                    return this->isNeedRead(reg);
-                });
-            std::vector<BatchedRegisters> batchsWrite = computeBatchedRegisters(
-                [this](Register* reg) -> bool {
-                    return this->isNeedWrite(reg);
-                });
+            std::vector<BatchedRegisters> batchsRead = 
+                computeBatchedRegisters(true);
+            std::vector<BatchedRegisters> batchsWrite = 
+                computeBatchedRegisters(false);
             //Wake up cooperative user threads waiting
             //in waitNextFlush()
             _isManagerFlushing = false;
@@ -240,7 +252,7 @@ class Manager : public AggregateManager<Types...>
                     }
                     //Check if the Device is already known
                     bool isExist = this->devExistsById(i);
-                    if (isExist && this->typeNumberById(i) != type) {
+                    if (isExist && this->devTypeNumberById(i) != type) {
                         //Throw exception if scanned Device id
                         //is already known with a diferent type
                         throw std::logic_error(
@@ -251,9 +263,14 @@ class Manager : public AggregateManager<Types...>
                         //the Device as present
                         this->devById(i).setPresent(true);
                     } else {
+                        //Unlock the mutex to prevent dead lock
+                        //when onNewRegister() will be called
+                        lock.unlock();
                         //The Device is not yet present,
                         //it is created
                         this->devAddByTypeNumber(i, type);
+                        //Relock the mutex
+                        lock.lock();
                         //Set it as present
                         this->devById(i).setPresent(true);
                     }
@@ -274,13 +291,11 @@ class Manager : public AggregateManager<Types...>
         inline virtual void onNewRegister(
             id_t id, const std::string& name) override
         {
-            std::unique_lock<std::mutex> lock(CallManager::_mutex);
-            //Retrieve the nex register and 
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            //Retrieve the next register and 
             //add the pointer to the container
             _sortedRegisters.push_back(
-                &(this->devById(id)
-                .registersList()
-                .get(name)));
+                &(this->devById(id).registersList().reg(name)));
             //Re sort the container by id and then by address
             std::sort(_sortedRegisters.begin(), _sortedRegisters.end(),
                 [](const Register* pt1, const Register* pt2) -> bool
@@ -304,6 +319,7 @@ class Manager : public AggregateManager<Types...>
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.forceReadCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -311,16 +327,22 @@ class Manager : public AggregateManager<Types...>
             }
             //Retrieve Register pointer
             Register* reg = &(AggregateManager<Types...>
-                ::devById(id)._registersList.get(name));
+                ::devById(id).registersList().reg(name));
             //Reset read flags
             reg->readyForRead();
             //Read single register
             while (true) {
+                TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
                     reg->id, 
                     reg->addr, 
                     reg->_dataBufferRead, 
                     reg->length);
+                TimePoint pStop = getTimePoint();
+                _stats.readCount++;
+                _stats.readLength += reg->length;
+                _stats.readDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //TODO check response
                 if (state == ResponseOK) {
                     break;
@@ -337,6 +359,7 @@ class Manager : public AggregateManager<Types...>
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.forceWriteCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -344,15 +367,21 @@ class Manager : public AggregateManager<Types...>
             }
             //Retrieve Register pointer
             Register* reg = &(AggregateManager<Types...>
-                ::devById(id)._registersList.get(name));
+                ::devById(id).registersList().reg(name));
             //Export typed value into data buffer
             reg->selectForWrite();
             //Write the register
+            TimePoint pStart = getTimePoint();
             _protocol->writeData(
                 reg->id, 
                 reg->addr, 
                 reg->_dataBufferWrite, 
                 reg->length);
+            TimePoint pStop = getTimePoint();
+            _stats.writeCount++;
+            _stats.writeLength += reg->length;
+            _stats.writeDuration += 
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
         }
 
         /**
@@ -434,6 +463,59 @@ class Manager : public AggregateManager<Types...>
             initBus();
         }
 
+        /**
+         * Return by copy all Manager Statistics
+         */
+        inline Statistics getStatistics() const
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            return _stats;
+        }
+
+        /**
+         * Read/Write access to Manager Parameters list
+         */
+        const ParametersList& parametersList() const
+        {
+            return _parametersList;
+        }
+        ParametersList& parametersList()
+        {
+            return _parametersList;
+        }
+
+        /**
+         * Set all Bus/Protocol configuration
+         * with bus system path name, bus baudrate
+         * and protocol name.
+         */
+        inline void setProtocolConfig(
+            const std::string& port, 
+            unsigned long baudrate, 
+            const std::string& protocol)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramBusPort.value = port;
+            _paramBusBaudrate.value = baudrate;
+            _paramProtocolName.value = protocol;
+            //Reset low level communication (bus/protocol)
+            initBus();
+        }
+        
+        /**
+         * Manager Parameters setters
+         */
+        inline void setEnableSyncRead(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramEnableSyncRead.value = isEnable;
+        }
+        inline void setEnableSyncWrite(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramEnableSyncWrite.value = isEnable;
+        }
+
     private:
 
         /**
@@ -498,6 +580,11 @@ class Manager : public AggregateManager<Types...>
         unsigned int _currentThreadWaiting;
 
         /**
+         * Manager Statistics container
+         */
+        Statistics _stats;
+
+        /**
          * Serial bus and Protocol pointers
          */
         SerialBus* _bus;
@@ -511,14 +598,22 @@ class Manager : public AggregateManager<Types...>
 
         /**
          * Bus and protocol parameters.
-         * BusPort: system path to serial device
-         * BusBaudrate: serial port baudrate
-         * ProtocolName: textual name for Protocol 
+         * BusPort: system path to serial device.
+         * BusBaudrate: serial port baudrate.
+         * ProtocolName: textual name for Protocol.
          * (factory) instantiation
          */
         ParameterStr _paramBusPort;
         ParameterNumber _paramBusBaudrate;
         ParameterStr _paramProtocolName;
+
+        /**
+         * Register Batching configuration.
+         * EnableSyncRead: is protocol syncRead used.
+         * EnableSyncWrite: is protocol syncWrite used.
+         */
+        ParameterBool _paramEnableSyncRead;
+        ParameterBool _paramEnableSyncWrite;
         
         /**
          * Reset and initialize the
@@ -575,26 +670,37 @@ class Manager : public AggregateManager<Types...>
         /**
          * Iterate over all registers and batch them 
          * into compatible groups (address and length).
-         * A register is selected for batching if
-         * given predicate function selectRegister()
-         * return true.
+         * If isReadOrWrite is true, registers needing 
+         * read are selected.
+         * If isReadOrWrite is false, registers needing
+         * write are selected.
          */
         std::vector<BatchedRegisters> computeBatchedRegisters(
-            std::function<bool(Register*)> selectRegister)
+            bool isReadOrWrite)
         {
             //Batched registers container
             std::vector<BatchedRegisters> container;
 
             //Merge the given temporary batch to 
             //final batches by merging by id
-            auto mergeById = [&container](const BatchedRegisters& tmpBatch) {
+            auto mergeById = [&container, isReadOrWrite, this]
+            (const BatchedRegisters& tmpBatch) {
+                //SyncRead/Write is enable whenether
+                //configuration boolean are set
+                bool isSyncEnable = 
+                    (isReadOrWrite && this->_paramEnableSyncRead.value) ||
+                    (!isReadOrWrite && this->_paramEnableSyncWrite.value);
                 bool found = false;
                 //Already added final batch are iterated
                 //to find if the current batch can be merge
                 //with another batch by id with constant address 
                 //and length.
                 for (size_t j=0;j<container.size();j++) {
-                    if (container[j].addr == tmpBatch.addr && container[j].length == tmpBatch.length) {
+                    if (
+                        isSyncEnable &&
+                        container[j].addr == tmpBatch.addr && 
+                        container[j].length == tmpBatch.length
+                    ) {
                         for (size_t k=0;k<tmpBatch.regs.size();k++) {
                             container[j].regs.push_back(tmpBatch.regs[k]);
                         }
@@ -617,7 +723,10 @@ class Manager : public AggregateManager<Types...>
                 Register* reg = _sortedRegisters[i];
                 //Select batched registers according to
                 //the given predicate function
-                if (selectRegister(reg)) {
+                if (
+                    (isReadOrWrite && isNeedRead(reg)) ||
+                    (!isReadOrWrite && isNeedWrite(reg))
+                ) {
                     //Initialize the temporary batch if empty
                     if (tmpBatch.regs.size() == 0) {
                         tmpBatch.addr = reg->addr;
@@ -675,22 +784,34 @@ class Manager : public AggregateManager<Types...>
             }
             if (batch.ids.size() == 1) {
                 //Write single register
+                TimePoint pStart = getTimePoint();
                 _protocol->writeData(
                     batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferWrite, 
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.writeCount++;
+                _stats.writeLength += batch.length;
+                _stats.writeDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
             } else {
                 //Synch Write multiple registers
                 std::vector<const data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
                     datas.push_back(batch.regs[i]->_dataBufferWrite);
                 }
+                TimePoint pStart = getTimePoint();
                 _protocol->syncWrite(
                     batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.syncWriteCount++;
+                _stats.syncWriteLength += batch.length;
+                _stats.syncWriteDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
             }
         }
         inline void readBatch(BatchedRegisters& batch)
@@ -706,11 +827,17 @@ class Manager : public AggregateManager<Types...>
             }
             if (batch.ids.size() == 1) {
                 //Read single register
+                TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
                     batch.ids.front(), 
                     batch.addr, 
                     batch.regs.front()->_dataBufferRead, 
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.readCount++;
+                _stats.readLength += batch.length;
+                _stats.readDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                 if (state != ResponseOK) {
                     //TODO XXX XXX XXX handle response code
@@ -722,11 +849,17 @@ class Manager : public AggregateManager<Types...>
                 for (size_t i=0;i<batch.regs.size();i++) {
                     datas.push_back(batch.regs[i]->_dataBufferRead);
                 }
+                TimePoint pStart = getTimePoint();
                 std::vector<ResponseState> states = _protocol->syncRead(
                     batch.ids, 
                     batch.addr,
                     datas,
                     batch.length);
+                TimePoint pStop = getTimePoint();
+                _stats.syncReadCount++;
+                _stats.syncReadLength += batch.length;
+                _stats.syncReadDuration += 
+                    getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                     //TODO XXX XXX XXX handle response code
                     //SetPresent Device if ok

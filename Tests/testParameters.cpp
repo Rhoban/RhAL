@@ -29,49 +29,49 @@ int main()
     assertEquals(params.containerNumber().size(), (size_t)1);
     assertEquals(params.containerStr().size(), (size_t)1);
 
-    assertEquals(params.getBool("testBool").name, "testBool");
-    assertEquals(params.getBool("testBool").value, false);
-    assertEquals(params.getBool("testBool").defaultValue, false);
-    assertEquals(params.getNumber("testNumber").name, "testNumber");
-    assertEquals(params.getNumber("testNumber").defaultValue, 42.0);
-    assertEquals(params.getNumber("testNumber").value, 42.0);
-    assertEquals(params.getStr("testStr").name, "testStr");
-    assertEquals(params.getStr("testStr").defaultValue, "is a test");
-    assertEquals(params.getStr("testStr").value, "is a test");
+    assertEquals(params.paramBool("testBool").name, "testBool");
+    assertEquals(params.paramBool("testBool").value, false);
+    assertEquals(params.paramBool("testBool").defaultValue, false);
+    assertEquals(params.paramNumber("testNumber").name, "testNumber");
+    assertEquals(params.paramNumber("testNumber").defaultValue, 42.0);
+    assertEquals(params.paramNumber("testNumber").value, 42.0);
+    assertEquals(params.paramStr("testStr").name, "testStr");
+    assertEquals(params.paramStr("testStr").defaultValue, "is a test");
+    assertEquals(params.paramStr("testStr").value, "is a test");
 
     //Test modification
     p2.value = 3.0;
-    assertEquals(params.getNumber("testNumber").value, 3.0);
-    params.getNumber("testNumber").value = 2.0;
-    assertEquals(params.getNumber("testNumber").value, 2.0);
+    assertEquals(params.paramNumber("testNumber").value, 3.0);
+    params.paramNumber("testNumber").value = 2.0;
+    assertEquals(params.paramNumber("testNumber").value, 2.0);
 
     //Test copy constructor
     RhAL::ParametersList params2 = params;
-    assertEquals(params2.getBool("testBool").name, "testBool");
-    assertEquals(params2.getBool("testBool").value, false);
-    assertEquals(params2.getBool("testBool").defaultValue, false);
-    assertEquals(params2.getNumber("testNumber").name, "testNumber");
-    assertEquals(params2.getNumber("testNumber").defaultValue, 42.0);
-    assertEquals(params2.getNumber("testNumber").value, 2.0);
-    assertEquals(params2.getStr("testStr").name, "testStr");
-    assertEquals(params2.getStr("testStr").defaultValue, "is a test");
-    assertEquals(params2.getStr("testStr").value, "is a test");
+    assertEquals(params2.paramBool("testBool").name, "testBool");
+    assertEquals(params2.paramBool("testBool").value, false);
+    assertEquals(params2.paramBool("testBool").defaultValue, false);
+    assertEquals(params2.paramNumber("testNumber").name, "testNumber");
+    assertEquals(params2.paramNumber("testNumber").defaultValue, 42.0);
+    assertEquals(params2.paramNumber("testNumber").value, 2.0);
+    assertEquals(params2.paramStr("testStr").name, "testStr");
+    assertEquals(params2.paramStr("testStr").defaultValue, "is a test");
+    assertEquals(params2.paramStr("testStr").value, "is a test");
 
     //Test json import and export
-    params.getBool("testBool").value = true;
-    params.getNumber("testNumber").value = 3.0;
-    params.getStr("testStr").value = "simple test";
-    assertEquals(params.getBool("testBool").value, true);
-    assertEquals(params.getNumber("testNumber").value, 3.0);
-    assertEquals(params.getStr("testStr").value, "simple test");
+    params.paramBool("testBool").value = true;
+    params.paramNumber("testNumber").value = 3.0;
+    params.paramStr("testStr").value = "simple test";
+    assertEquals(params.paramBool("testBool").value, true);
+    assertEquals(params.paramNumber("testNumber").value, 3.0);
+    assertEquals(params.paramStr("testStr").value, "simple test");
 
     std::string str = params.saveJSON().dump(4);
     std::cout << str << std::endl;
     params2.loadJSON(nlohmann::json::parse(str));
     
-    assertEquals(params2.getBool("testBool").value, true);
-    assertEquals(params2.getNumber("testNumber").value, 3.0);
-    assertEquals(params2.getStr("testStr").value, "simple test");
+    assertEquals(params2.paramBool("testBool").value, true);
+    assertEquals(params2.paramNumber("testNumber").value, 3.0);
+    assertEquals(params2.paramStr("testStr").value, "simple test");
 
     return 0;
 }

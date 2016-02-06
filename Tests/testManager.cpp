@@ -1,7 +1,7 @@
 #include "Manager/Manager.hpp"
 #include "tests.h"
-#include "Manager/ExampleDevice1.hpp"
-#include "Manager/ExampleDevice2.hpp"
+#include "Devices/ExampleDevice1.hpp"
+#include "Devices/ExampleDevice2.hpp"
 
 int main()
 {

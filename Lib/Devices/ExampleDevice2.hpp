@@ -1,10 +1,11 @@
 #pragma once
 
+#include <string>
 #include <mutex>
-#include "BaseManager.hpp"
-#include "Device.hpp"
-#include "Register.hpp"
-#include "Parameter.hpp"
+#include "Manager/BaseManager.hpp"
+#include "Manager/Device.hpp"
+#include "Manager/Register.hpp"
+#include "Manager/Parameter.hpp"
 
 namespace RhAL {
 
@@ -18,12 +19,25 @@ inline float convOut2(const RhAL::data_t* buffer)
 }
 
 /**
+ * BaseExampleDevice2
+ */
+class BaseExampleDevice2 : public Device
+{
+    public:
+
+        inline BaseExampleDevice2(const std::string& name, id_t id) :
+            Device(name, id)
+        {
+        }
+};
+
+/**
  * ExampleDevice2
  *
  * Simple example device 
  * type implemetation
  */
-class ExampleDevice2 : public Device
+class ExampleDevice2 : public BaseExampleDevice2
 {
     public:
 
@@ -31,7 +45,7 @@ class ExampleDevice2 : public Device
          * Initialization with name and id
          */
         inline ExampleDevice2(const std::string& name, id_t id) :
-            Device(name, id),
+            BaseExampleDevice2(name, id),
             //Registers configuration
             _pitch("pitch", (addr_t)4, 4, convIn2, convOut2, 2),
             _roll("roll", (addr_t)8, 4, convIn2, convOut2, 0, true, false),

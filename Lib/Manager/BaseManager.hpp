@@ -186,12 +186,24 @@ class BaseManager
                 //Retrieve device id
                 id_t id = dev.at("id");
                 //Load parameters
-                _devicesById.at(id)->_parametersList
+                _devicesById.at(id)->parametersList()
                     .loadJSON(dev.at("parameters"));
             }
         }
 
-    protected:
+        /**
+         * Read/Write access to Parameters list
+         */
+        const ParametersList& parametersList() const
+        {
+            return _parametersList;
+        }
+        ParametersList& parametersList()
+        {
+            return _parametersList;
+        }
+
+    private:
         
         /**
          * Container of bool, number and 
@@ -199,25 +211,6 @@ class BaseManager
          */
         ParametersList _parametersList;
         
-        /**
-         * Read/Write access to Registers and
-         * Parameters list
-         * (Used for friend Manager access)
-         */
-        ParametersList& parametersList()
-        {
-            return _parametersList;
-        }
-
-        /**
-         * Manager has access to listed 
-         * Parameters and Registers
-         */
-        template <typename ... U>
-        friend class Manager;
-
-    private:
-
         /**
          * Device container indexed by
          * their name and their id
