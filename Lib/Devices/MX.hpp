@@ -12,7 +12,8 @@
 namespace RhAL {
 
 /**
- * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Encode function for position, input in degrees [-180, 180[ (precision : 360/4096 degrees)
+ * 180 and -180 are the exact same point
  */
 inline void convEncode_Position(data_t* buffer, float value)
 {
@@ -21,26 +22,21 @@ inline void convEncode_Position(data_t* buffer, float value)
 	} else if (value < -180) {
 		value = -180;
 	}
-	if (value > 0) {
-		value = value * 4096 / 360.0;
-	} else {
-		value = 2048 + (180 + value) * 4096 / 360.0;
-	}
+
+	value = 2048.0 + value * 4096/360.0;
 
 	uint16_t position = std::lround(value)%4096;
+	std::cout << "Sending value : " << position << std::endl;
 	write2BytesToBuffer(buffer, position);
 }
 /**
- * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Decode function for position, output in degrees [-180, 180[ (precision : 360/4096 degrees)
  */
 inline float convDecode_Position(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
-	if (val <= 2048) {
-		return val * 360.0 / 4096.0;
-	} else {
-		return -(4096 - val) * 360.0 / 4096.0;
-	}
+	std::cout << "Reading value : " << val << std::endl;
+	return (val - 2048) * 360.0 / 4096.0;
 }
 
 /**
@@ -123,11 +119,11 @@ class MX : public DXL
          */
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
-        	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq)
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0),
-			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+        	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0, false, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0, false, false, true),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
 
 			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
@@ -196,7 +192,6 @@ class MX : public DXL
 		virtual bool getTorqueEnable() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-		    std::cout << "Alive after lock" << std::endl;
 			return _torqueEnable.readValue().value;
 		}
 		virtual TimePoint getTorqueEnableTs() override
@@ -553,6 +548,32 @@ class MX : public DXL
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			_goalAcceleration.writeValue(value);
+		}
+
+		/**
+		 * Sets the angle limits to the maximum possible range
+		 */
+		inline void setJointMode()
+		{
+			float limits[2];
+			limits[0] = -180;
+			//Means "180 minus one step"
+			limits[1] = 180 - 360.0/4096.0;
+			setAngleLimits(limits);
+		}
+		inline void setWheelMode()
+		{
+			float limits[2];
+			limits[0] = -180;
+			limits[1] = -180;
+			setAngleLimits(limits);
+		}
+		inline void setMultiTurnMode()
+		{
+			float limits[2];
+			limits[0] = 180 - 360.0/4096.0;
+			limits[1] = 180 - 360.0/4096.0;
+			setAngleLimits(limits);
 		}
 
     protected:

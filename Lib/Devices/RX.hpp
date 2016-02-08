@@ -12,37 +12,30 @@
 namespace RhAL {
 
 /**
- * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Encode function for position, input in degrees [-180, 180[ (precision : 360/4096 degrees)
+ * 180 and -180 are the exact same point
  */
 inline void convEncode_Position(data_t* buffer, float value)
 {
-	to do check rhoban convention, since the dxl convention is incompatible between MX and RX... --> The good call seems to be to change both the MX and the RX convention and put the 0 upfront
 	if (value > 180) {
 		value = 180;
 	} else if (value < -180) {
 		value = -180;
 	}
-	if (value > 0) {
-		value = value * 4096 / 360.0;
-	} else {
-		value = 2048 + (180 + value) * 4096 / 360.0;
-	}
+
+	value = 2048.0 + value * 4096 / 360.0;
 
 	uint16_t position = std::lround(value)%4096;
 	write2BytesToBuffer(buffer, position);
 }
 /**
- * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Decode function for position, output in degrees [-180, 180[ (precision : 360/4096 degrees)
  */
 inline float convDecode_Position(const data_t* buffer)
 {
-	to do
 	uint16_t val = read2BytesFromBuffer(buffer);
-	if (val <= 2048) {
-		return val * 360.0 / 4096.0;
-	} else {
-		return -(4096 - val) * 360.0 / 4096.0;
-	}
+
+	return (val - 2048) * 360.0 / 4096.0;
 }
 
 /**
@@ -192,7 +185,6 @@ class RX : public DXL
 		virtual bool getTorqueEnable() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-		    std::cout << "Alive after lock" << std::endl;
 			return _torqueEnable.readValue().value;
 		}
 		virtual TimePoint getTorqueEnableTs() override

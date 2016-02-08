@@ -48,7 +48,7 @@ int main()
     Manager manager;
 
     manager.setProtocolConfig(
-        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+        "/dev/ttyUSB1", 1000000, "DynamixelV1");
 //    manager.setProtocolConfig(
 //        "", 1000000, "FakeProtocol");
 
@@ -75,29 +75,53 @@ int main()
 
     RhAL::MX64& dev = manager.dev<RhAL::MX64>(1);
 
-    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
+//    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
+
 
     dev.enableTorque();
-//    dev.disableTorque();
 
     float limits[2];
-    limits[0] = 0.0;
-    limits[1] = 0.0;
-    dev.setAngleLimits(limits);
+//    limits[0] = 0.0;
+//    limits[1] = 0.0;
+//    dev.setAngleLimits(limits);
+
+	dev.getAngleLimits(limits);
+	std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+
+
+//    std::cout << "Setting wheel mode !" << std::endl;
+//    dev.setWheelMode();
+//    std::cout << "Done." << std::endl;
+//    dev.getAngleLimits(limits);
+//    std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+//
+//    std::cout << "Setting speed command" << std::endl;
+//    dev.setGoalSpeed(100);
+//    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+//    dev.setGoalSpeed(0);
+//
+//    std::cout << "Setting joint mode = " << std::endl;
+//    dev.setJointMode();
+//	dev.getAngleLimits(limits);
+//    std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
 
     int i = 0;
     float pos = 0.0;
     while (true) {
-
-    	pos = 100;
+    	pos = -90;
     	std::cout << "setting pos " << pos << std::endl;
     	dev.setGoalPosition(pos);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
-        pos = -100;
+        pos = 0;
 		std::cout << "setting pos " << pos << std::endl;
 		dev.setGoalPosition(pos);
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+		pos = 90;
+		std::cout << "setting pos " << pos << std::endl;
+		dev.setGoalPosition(pos);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
         i++;
     	std::cout << "temp = " << dev.getTemperature() << std::endl;

@@ -12,6 +12,7 @@
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
 #include "Protocol/ProtocolFactory.hpp"
+#include <thread>
 
 namespace RhAL {
 
@@ -159,7 +160,7 @@ class Manager : public AggregateManager<Types...>
         inline void flush(bool isForceSwap = false)
         {
             //No cooperative thread if 
-            //scheduling mode is disable
+            //scheduling mode is disabled
             if (!CallManager::isScheduleMode()) {
                 //Do nothing
                 return;
@@ -198,19 +199,28 @@ class Manager : public AggregateManager<Types...>
             }
             //Increment Read counter
             _readCycleCount++;
+            bool needsToWait = false;
             //Perform write operation on all batchs
             for (size_t i=0;i<batchsWrite.size();i++) {
                 writeBatch(batchsWrite[i]);
+                for(auto const& reg : batchsWrite[i].regs) {
+                	if (reg->isSlowRegister) {
+                		needsToWait = true;
+                	}
+                }
+
             }
-            //Optionnaly force immediate swap read
+            //Optionally force immediate swap read
             if (isForceSwap) {
                 forceSwap();
             }
+            //If a slow register was written, we need to wait a ginormous amount of time
+            std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
         }
 
         /**
          * Force all Registers to swap in order to 
-         * apply immediatly read values
+         * apply immediately read values
          */
         inline void forceSwap()
         {
@@ -254,7 +264,7 @@ class Manager : public AggregateManager<Types...>
                     bool isExist = this->devExistsById(i);
                     if (isExist && this->devTypeNumberById(i) != type) {
                         //Throw exception if scanned Device id
-                        //is already known with a diferent type
+                        //is already known with a different type
                         throw std::logic_error(
                             "Manager scan type mismatch: " 
                             + std::to_string(i));
@@ -330,6 +340,7 @@ class Manager : public AggregateManager<Types...>
                 ::devById(id).registersList().reg(name));
             //Reset read flags
             reg->readyForRead();
+            int nbFails = 0;
             //Read single register
             while (true) {
                 TimePoint pStart = getTimePoint();
@@ -346,6 +357,12 @@ class Manager : public AggregateManager<Types...>
                 //TODO check response
                 if (state == ResponseOK) {
                     break;
+                } else {
+                	nbFails++;
+                	if (nbFails >= maxForceReadErrors) {
+                		//Attention ! Swap to a boolean return value?
+                		throw std::logic_error("Max number of consecutive errors reached while trying to read");
+                	}
                 }
             }
             //Retrieve the read timestamp
@@ -382,6 +399,9 @@ class Manager : public AggregateManager<Types...>
             _stats.writeLength += reg->length;
             _stats.writeDuration += 
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
+            if (reg->isSlowRegister) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
+            }
         }
 
         /**

@@ -64,6 +64,7 @@ inline uint8_t read1ByteFromBuffer(const data_t* buffer)
 inline uint16_t read2BytesFromBuffer(const data_t* buffer)
 {
     uint16_t val;
+    std::cout << "Reading buffer" <<  std::endl;
     val = (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
     return val;
 }
@@ -258,20 +259,20 @@ class DXL : public Device
 			 * Registers that are common to all the dxl devices should be present here.
 			 * Unfortunately, the XL-320 has different addresses starting from the 'goalTorque' register.
 			 * This messes up with the genericity of dxl devices and disables the elegant solution.
-			 * Therefore, we decided to declare here only the Eeprom registers that are common among all the dxl devices.
-			 *
+			 * Therefore, we decided to declare here only the Eeprom/flash registers that are common among all the dxl devices.
 			 */
-			_modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0),
-			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0),
-			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_temperature, convDecode_temperature, 0),
-			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_voltage, convDecode_voltage, 0),
-			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0),
-			_maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0),
-			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
+			_modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
+			_firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0, false, false, true),
+			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0, false, false, true),
+			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_temperature, convDecode_temperature, 0, false, false, true),
+			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_voltage, convDecode_voltage, 0, false, false, true),
+			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0, false, false, true),
+			_maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0, false, false, true),
+			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			//Parameters configuration
 			_inverted("inverse", false),
 			_zero("zero", 0.0)
@@ -609,6 +610,10 @@ class DXL : public Device
 		 * Sets the punch value
 		 */
 		virtual void setPunch(float punch) = 0;
+
+		virtual void setJointMode() = 0;
+		virtual void setWheelMode() = 0;
+		virtual void setMultiTurnMode() = 0;
 
     protected:
 		/**
