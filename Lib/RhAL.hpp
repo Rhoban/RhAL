@@ -16,6 +16,10 @@
 #include "Devices/ExampleDevice1.hpp"
 #include "Devices/ExampleDevice2.hpp"
 #include "Devices/DXL.hpp"
+#include "Devices/MX106.hpp"
 #include "Devices/MX64.hpp"
+#include "Devices/MX28.hpp"
 #include "Devices/RX64.hpp"
+#include "Devices/RX28.hpp"
+#include "Devices/AX12.hpp"
 

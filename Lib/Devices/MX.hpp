@@ -15,7 +15,7 @@ namespace RhAL {
  * Encode function for position, input in degrees [-180, 180[ (precision : 360/4096 degrees)
  * 180 and -180 are the exact same point
  */
-inline void convEncode_Position(data_t* buffer, float value)
+inline void convEncode_PositionMx(data_t* buffer, float value)
 {
 	value = 2048.0 + value * 4096/360.0;
 
@@ -25,7 +25,7 @@ inline void convEncode_Position(data_t* buffer, float value)
 /**
  * Decode function for position, output in degrees [-180, 180[ (precision : 360/4096 degrees)
  */
-inline float convDecode_Position(const data_t* buffer)
+inline float convDecode_PositionMx(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
 	float result = (val - 2048) * 360.0 / 4096.0;
@@ -35,14 +35,13 @@ inline float convDecode_Position(const data_t* buffer)
 		//Modulating to be in [-180, 180[
 		result = fmod(result + 180.0, 360) - 180;
 	}
-	std::cout << "Reading : " << result << std::endl;
 	return result;
 }
 
 /**
  * Encode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
  */
-inline void convEncode_Speed(data_t* buffer, float value)
+inline void convEncode_SpeedMx(data_t* buffer, float value)
 {
 	float maxSpeed = 702.42;
 	float conversion = 0.68662;
@@ -63,7 +62,7 @@ inline void convEncode_Speed(data_t* buffer, float value)
 /**
  * Decode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
  */
-inline float convDecode_Speed(const data_t* buffer)
+inline float convDecode_SpeedMx(const data_t* buffer)
 {
 	float conversion = 0.68662;
 	uint16_t val = read2BytesFromBuffer(buffer);
@@ -77,7 +76,7 @@ inline float convDecode_Speed(const data_t* buffer)
 /**
  * Encode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
  */
-inline void convEncode_Acceleration(data_t* buffer, float value)
+inline void convEncode_AccelerationMx(data_t* buffer, float value)
 {
 	float maxAccel = 2180;
 	float conversion = 8.583;
@@ -94,7 +93,7 @@ inline void convEncode_Acceleration(data_t* buffer, float value)
 /**
  * Decode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
  */
-inline float convDecode_Acceleration(const data_t* buffer)
+inline float convDecode_AccelerationMx(const data_t* buffer)
 {
 	float conversion = 8.583;
 	uint8_t val = read1ByteFromBuffer(buffer);
@@ -120,8 +119,8 @@ class MX : public DXL
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
         	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0, false, false, true),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0, false, false, true),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
 
@@ -131,11 +130,11 @@ class MX : public DXL
 			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_goalPosition("goalPosition", 0x1E, 2, convEncode_Position, convDecode_Position, 0),
-			_goalSpeed("goalSpeed", 0x20, 2, convEncode_Speed, convDecode_Speed, 0),
+			_goalPosition("goalPosition", 0x1E, 2, convEncode_PositionMx, convDecode_PositionMx, 0),
+			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedMx, convDecode_SpeedMx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
-			_position("position", 0x24, 2, convEncode_Position, convDecode_Position, 1),
-			_speed("speed", 0x26, 2, convEncode_Speed, convDecode_Speed, 1),
+			_position("position", 0x24, 2, convEncode_PositionMx, convDecode_PositionMx, 1),
+			_speed("speed", 0x26, 2, convEncode_SpeedMx, convDecode_SpeedMx, 1),
 			_load("load", 0x28, 2, convEncode_torque, convDecode_torque, 0),
 			_voltage("voltage", 0x2A, 1, convEncode_voltage, convDecode_voltage, 0),
 			_temperature("temperature", 0x2B, 1, convEncode_temperature, convDecode_temperature, 0),
@@ -143,7 +142,7 @@ class MX : public DXL
 			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_Acceleration, convDecode_Acceleration, 0)
+			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_AccelerationMx, convDecode_AccelerationMx, 0)
         {
         }
 
@@ -588,7 +587,7 @@ class MX : public DXL
 		/**
 		 * Sets the angle limits to the maximum possible range
 		 */
-		inline void setJointMode()
+		virtual void setJointMode() override
 		{
 			float limits[2];
 			limits[0] = -180;
@@ -596,7 +595,7 @@ class MX : public DXL
 			limits[1] = 180 - 360.0/4096.0;
 			setAngleLimits(limits);
 		}
-		inline void setWheelMode()
+		virtual void setWheelMode() override
 		{
 			float limits[2];
 			limits[0] = -180;

@@ -22,3 +22,4 @@ with the supported devices.
 ## TO DO
 - The timeout value has to be fixed by the user (currently it has a fixed constant value). It should be chosen depending on the servo configuration (e.g. "return delay time" for a dxl servo) and baudrate.
 - Check endianness in the writeFloatToBuffer method
+- Add EX106, xl320

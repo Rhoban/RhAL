@@ -612,7 +612,6 @@ class DXL : public Device
 
 		virtual void setJointMode() = 0;
 		virtual void setWheelMode() = 0;
-		virtual void setMultiTurnMode() = 0;
 
     protected:
 		/**
