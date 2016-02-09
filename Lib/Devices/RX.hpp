@@ -16,8 +16,10 @@ namespace RhAL {
  */
 inline void convEncode_PositionRx(data_t* buffer, float value)
 {
-	if (value > 150) {
-		value = 150;
+	// "150 minus one step"
+	float maxValue = 150 - 300.0/1024.0;
+	if (value > maxValue) {
+		value = maxValue;
 	} else if (value < -150) {
 		value = -150;
 	}
@@ -78,6 +80,96 @@ inline float convDecode_SpeedRx(const data_t* buffer)
 }
 
 /**
+ * Decode function for the compliance margin. Same precision and unit than position but in a byte range.
+ * Input in degrees [0, 74.7] (precision : 300/1024 degrees)
+ */
+inline void convEncode_ComplianceMargin(data_t* buffer, float value)
+{
+	float maxValue = 74.7;
+	if (value > maxValue) {
+		value = maxValue;
+	} else if (value < 0) {
+		value = 0.0;
+	}
+	value = value * 1024/300.0;
+
+	uint8_t position = std::lround(value);
+	write1ByteToBuffer(buffer, position);
+}
+
+/**
+ * Encode function for the compliance margin. Output in degrees [0, 74.7] (precision : 300/1024 degrees)
+ */
+inline float convDecode_ComplianceMargin(const data_t* buffer)
+{
+	uint8_t val = read1ByteFromBuffer(buffer);
+	float result = val * 300.0 / 1024.0;
+
+	return result;
+}
+
+/**
+ * Encode function for the compliance slope. Only 7 inputs are possible (cf datasheet) : 1, 2, 3, 4, 5, 6, 7.
+ * No unit is given.
+ */
+inline void convEncode_ComplianceSlope(data_t* buffer, int value)
+{
+	if (value > 7) {
+		value = 7;
+	} else if (value < 1) {
+		value = 1;
+	}
+
+	switch(value) {
+	   case 1 :
+		   value = 2;
+	      break;
+	   case 2 :
+		   value = 4;
+		   break;
+	   case 3 :
+		   value = 8;
+		   break;
+	   case 4 :
+		   value = 16;
+		   break;
+	   case 5 :
+		   value = 32;
+		   break;
+	   case 6 :
+		   value = 64;
+		   break;
+	   case 7 :
+		   value = 128;
+		   break;
+	   default :
+		   value = 128;
+	}
+
+	uint8_t position = value;
+	write1ByteToBuffer(buffer, position);
+}
+
+/**
+ * Encode function for the compliance slope. No unit is given.
+ * Only 7 different outputs should be possible : 1, 2, 3, 4, 5, 6, 7.
+ */
+inline int convDecode_ComplianceSlope(const data_t* buffer)
+{
+	uint8_t val = read1ByteFromBuffer(buffer);
+	int index = 0;
+	while (index < 7) {
+		// val is a power of 2, the slope is the (power+1). If val == 00000010 then the slope is 2
+		if ((val >> index)&1) {
+			return index;
+		}
+		index++;
+	}
+
+	return 7;
+}
+
+/**
  * RX
  *
  * Robotis Dynamixel RX-XX implementation.
@@ -91,11 +183,16 @@ class RX : public DXL
         inline RX(const std::string& name, id_t id) :
             DXL(name, id),
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionRx, convDecode_PositionRx, 0),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionRx, convDecode_PositionRx, 0),
-			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
+			_complianceMarginCW("complianceMarginCW", 0x1A, 1, convEncode_ComplianceMargin, convDecode_ComplianceMargin, 0),
+			_complianceMarginCCW("complianceMarginCCW", 0x1B, 1, convEncode_ComplianceMargin, convDecode_ComplianceMargin, 0),
+			_complianceSlopeCW("complianceSlopeCW", 0x1C, 1, convEncode_ComplianceSlope, convDecode_ComplianceSlope, 0),
+			_complianceSlopeCCW("complianceSlopeCCW", 0x1D, 1, convEncode_ComplianceSlope, convDecode_ComplianceSlope, 0),
 			_goalPosition("goalPosition", 0x1E, 2, convEncode_PositionRx, convDecode_PositionRx, 0),
 			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedRx, convDecode_SpeedRx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
@@ -450,6 +547,63 @@ class RX : public DXL
 			setAngleLimits(limits);
 		}
 
+		// Non inherited methods :
+
+		/**
+		 * Returns an array of 2 compliance margins [CW, CCW]
+		 */
+		inline void getComplianceMargins(float margins[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			margins[0] =_complianceMarginCW.readValue().value;
+			margins[1] =_complianceMarginCCW.readValue().value;
+		}
+		/**
+		 * Returns an array of 2 TimePoints [CW, CCW]
+		 */
+		inline void getComplianceMarginsTs(TimePoint marginsTs[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			marginsTs[0] =_complianceMarginCW.readValue().timestamp;
+			marginsTs[1] =_complianceMarginCCW.readValue().timestamp;
+		}
+		/**
+		 * Sets the compliance margins with an array of 2 floats [CW, CCW]
+		 */
+		inline void setComplianceMargins(float margins[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_complianceMarginCW.writeValue(margins[0]);
+			_complianceMarginCCW.writeValue(margins[1]);
+		}
+
+		/**
+		 * Returns an array of 2 compliance slope [CW, CCW]
+		 */
+		inline void getComplianceSlopes(int slopes[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			slopes[0] =_complianceSlopeCW.readValue().value;
+			slopes[1] =_complianceSlopeCCW.readValue().value;
+		}
+		/**
+		 * Returns an array of 2 TimePoints [CW, CCW]
+		 */
+		inline void getComplianceSlopesTs(TimePoint slopesTs[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			slopesTs[0] =_complianceSlopeCW.readValue().timestamp;
+			slopesTs[1] =_complianceSlopeCCW.readValue().timestamp;
+		}
+		/**
+		 * Sets the compliance slopes with an array of 2 floats [CW, CCW]
+		 */
+		inline void setComplianceSlopes(int slopes[2])
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			_complianceSlopeCW.writeValue(slopes[0]);
+			_complianceSlopeCCW.writeValue(slopes[1]);
+		}
 
     protected:
 
@@ -466,6 +620,10 @@ class RX : public DXL
 			Device::registersList().add(&_alarmLed);
 			Device::registersList().add(&_torqueEnable);
 			Device::registersList().add(&_led);
+			Device::registersList().add(&_complianceMarginCW);
+			Device::registersList().add(&_complianceMarginCCW);
+			Device::registersList().add(&_complianceSlopeCW);
+			Device::registersList().add(&_complianceSlopeCCW);
 			Device::registersList().add(&_goalPosition);
 			//Setting the aggregation method (sum for the goal position)
 			_goalPosition.setAggregationPolicy(AggregateSum);
@@ -495,6 +653,10 @@ class RX : public DXL
 
 		TypedRegisterBool 	_torqueEnable;			//1 18
 		TypedRegisterBool 	_led;					//1 19
+		TypedRegisterFloat	_complianceMarginCW;	//1	1A *
+		TypedRegisterFloat	_complianceMarginCCW;	//1	1B *
+		TypedRegisterInt	_complianceSlopeCW;		//1	1C *
+		TypedRegisterInt	_complianceSlopeCCW;	//1	1D *
 		TypedRegisterFloat 	_goalPosition;			//2	1E
 		TypedRegisterFloat 	_goalSpeed;				//2	20
 		TypedRegisterFloat 	_torqueLimit;			//2	22

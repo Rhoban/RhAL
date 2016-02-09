@@ -215,7 +215,9 @@ class Manager : public AggregateManager<Types...>
                 forceSwap();
             }
             //If a slow register was written, we need to wait a ginormous amount of time
-            std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
+            if (needsToWait) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
+            }
         }
 
         /**
