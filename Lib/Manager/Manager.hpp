@@ -360,8 +360,7 @@ class Manager : public AggregateManager<Types...>
                 } else {
                 	nbFails++;
                 	if (nbFails >= maxForceReadErrors) {
-                		//Attention ! Swap to a boolean return value?
-                		throw std::logic_error("Max number of consecutive errors reached while trying to read");
+                		throw std::runtime_error("Max number of consecutive errors reached while trying to read");
                 	}
                 }
             }

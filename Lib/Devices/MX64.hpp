@@ -35,7 +35,7 @@ inline float convDecode_Current(const data_t* buffer)
 }
 
 /**
- * Encode function for goal torque, input in bullshit (precision 1/2048 bullshit).
+ * Encode function for goal torque, input in bullshits (precision 1/2048 bullshits).
  * Actually expects a value between -1 and 1
  */
 inline void convEncode_GoalTorque(data_t* buffer, float value)

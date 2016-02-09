@@ -17,16 +17,9 @@ namespace RhAL {
  */
 inline void convEncode_Position(data_t* buffer, float value)
 {
-	if (value > 180) {
-		value = 180;
-	} else if (value < -180) {
-		value = -180;
-	}
-
 	value = 2048.0 + value * 4096/360.0;
 
 	uint16_t position = std::lround(value)%4096;
-	std::cout << "Sending value : " << position << std::endl;
 	write2BytesToBuffer(buffer, position);
 }
 /**
@@ -35,8 +28,15 @@ inline void convEncode_Position(data_t* buffer, float value)
 inline float convDecode_Position(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
-	std::cout << "Reading value : " << val << std::endl;
-	return (val - 2048) * 360.0 / 4096.0;
+	float result = (val - 2048) * 360.0 / 4096.0;
+	if (result >= -180 && result < 180) {
+		//We're already in the desired portion
+	} else {
+		//Modulating to be in [-180, 180[
+		result = fmod(result + 180.0, 360) - 180;
+	}
+	std::cout << "Reading : " << result << std::endl;
+	return result;
 }
 
 /**
@@ -232,7 +232,12 @@ class MX : public DXL
 		virtual float getGoalPosition() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalPosition.readValue().value;
+			float value = _goalPosition.readValue().value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			value = value - _zero.value;
+			return value;
 		}
 		virtual TimePoint getGoalPositionTs() override
 		{
@@ -245,7 +250,12 @@ class MX : public DXL
 		virtual void setGoalPosition(float goalPosition) override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalPosition.writeValue(goalPosition);
+
+			float value = goalPosition + _zero.value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			_goalPosition.writeValue(value);
 		}
 
 		/**
@@ -260,7 +270,11 @@ class MX : public DXL
 		virtual float getGoalSpeed() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalSpeed.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _goalSpeed.readValue().value * direction;
 		}
 		virtual TimePoint getGoalSpeedTs() override
 		{
@@ -273,7 +287,11 @@ class MX : public DXL
 		virtual void setGoalSpeed(float goalSpeed) override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalSpeed.writeValue(goalSpeed);
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			_goalSpeed.writeValue(goalSpeed * direction);
 		}
 
 		/**
@@ -304,7 +322,12 @@ class MX : public DXL
 		virtual float getPosition() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _position.readValue().value;
+			float value = _position.readValue().value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			value = value - _zero.value;
+			return value;
 		}
 		virtual TimePoint getPositionTs() override
 		{
@@ -318,7 +341,11 @@ class MX : public DXL
 		virtual float getSpeed() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _speed.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _speed.readValue().value * direction;
 		}
 		virtual TimePoint getSpeedTs() override
 		{
@@ -445,12 +472,12 @@ class MX : public DXL
 		/**
 		 * Returns the multiturn value
 		 */
-		inline int getMultitunOffset()
+		inline int getMultiturnOffset()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			return _multiTurnOffset.readValue().value;
 		}
-		inline TimePoint getMultitunOffsetTs()
+		inline TimePoint getMultiturnOffsetTs()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			return _multiTurnOffset.readValue().timestamp;
@@ -537,7 +564,11 @@ class MX : public DXL
 		inline float getGoalAcceleration()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalAcceleration.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _goalAcceleration.readValue().value * direction;
 		}
 		inline TimePoint getGoalAccelerationTs()
 		{
@@ -547,7 +578,11 @@ class MX : public DXL
 		inline void setGoalAcceleration(float value)
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalAcceleration.writeValue(value);
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			_goalAcceleration.writeValue(value * direction);
 		}
 
 		/**

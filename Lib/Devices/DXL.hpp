@@ -64,7 +64,6 @@ inline uint8_t read1ByteFromBuffer(const data_t* buffer)
 inline uint16_t read2BytesFromBuffer(const data_t* buffer)
 {
     uint16_t val;
-    std::cout << "Reading buffer" <<  std::endl;
     val = (*(buffer + 1) << 8) | (*(buffer) & 0x00FF);
     return val;
 }
@@ -662,8 +661,9 @@ class DXL : public Device
 }
 
 
-/* Registers present in all DXLs. Beware though, some of them are present at different addresses depending of the device, forcing their implementation below the DXL class...
- *
+/*
+ * Registers present in all DXLs. Beware though, some of them are present at different addresses depending of the device, forcing their implementation below the DXL class.
+ * I'm looking at you xl320...
  */
 //		int16_t modelNumber;
 //		uint8_t firmwareVersion;

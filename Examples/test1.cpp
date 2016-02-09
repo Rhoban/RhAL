@@ -48,7 +48,7 @@ int main()
     Manager manager;
 
     manager.setProtocolConfig(
-        "/dev/ttyUSB1", 1000000, "DynamixelV1");
+        "/dev/ttyUSB0", 1000000, "DynamixelV1");
 //    manager.setProtocolConfig(
 //        "", 1000000, "FakeProtocol");
 
@@ -85,6 +85,7 @@ int main()
 //    limits[1] = 0.0;
 //    dev.setAngleLimits(limits);
 
+//    dev.setWheelMode();
 	dev.getAngleLimits(limits);
 	std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
 
@@ -105,10 +106,22 @@ int main()
 //	dev.getAngleLimits(limits);
 //    std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
 
+	float pos = 0.0;
+	int direction = 1;
+	// Going from 0 to 720 then 720 to 0 degrees
+	while (true) {
+		pos = pos + 20 * direction;
+		std::cout << "setting pos " << pos << std::endl;
+		dev.setGoalPosition(pos);
+		std::cout << "Position read = " << dev.getGoalPosition() << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(400));
+		if (pos >= 720) {
+			direction = -1 * direction;
+		}
+	}
     int i = 0;
-    float pos = 0.0;
     while (true) {
-    	pos = -90;
+    	pos = -20;
     	std::cout << "setting pos " << pos << std::endl;
     	dev.setGoalPosition(pos);
         std::this_thread::sleep_for(std::chrono::milliseconds(1500));
@@ -118,7 +131,7 @@ int main()
 		dev.setGoalPosition(pos);
 		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
-		pos = 90;
+		pos = 20;
 		std::cout << "setting pos " << pos << std::endl;
 		dev.setGoalPosition(pos);
 		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
