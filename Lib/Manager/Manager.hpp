@@ -1,18 +1,19 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <functional>
 #include <json.hpp>
 #include <fstream>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 #include "Statistics.hpp"
 #include "AggregateManager.hpp"
 #include "Bus/SerialBus.hpp"
 #include "Protocol/Protocol.hpp"
 #include "Protocol/ProtocolFactory.hpp"
-#include <thread>
 
 namespace RhAL {
 
@@ -49,7 +50,9 @@ class Manager : public AggregateManager<Types...>
             _paramBusBaudrate("baudrate", 1000000),
             _paramProtocolName("protocol", "FakeProtocol"),
             _paramEnableSyncRead("enableSyncRead", true),
-            _paramEnableSyncWrite("enableSyncWrite", true)
+            _paramEnableSyncWrite("enableSyncWrite", true),
+            _paramThrowErrorOnScan("throwErrorOnScan", true),
+            _paramThrowErrorOnRead("throwErrorOnRead", true)
         {
             //Registering all parameters
             _parametersList.add(&this->_paramScheduleMode);
@@ -199,24 +202,26 @@ class Manager : public AggregateManager<Types...>
             }
             //Increment Read counter
             _readCycleCount++;
-            bool needsToWait = false;
             //Perform write operation on all batchs
+            bool needsToWait = false;
             for (size_t i=0;i<batchsWrite.size();i++) {
                 writeBatch(batchsWrite[i]);
+                //Check if a written register is slow
                 for(auto const& reg : batchsWrite[i].regs) {
-                	if (reg->isSlowRegister) {
-                		needsToWait = true;
-                	}
+                    if (reg->isSlowRegister) {
+                        needsToWait = true;
+                    }
                 }
-
             }
             //Optionally force immediate swap read
             if (isForceSwap) {
                 forceSwap();
             }
-            //If a slow register was written, we need to wait a ginormous amount of time
+            //If a slow register was written, we need 
+            //to wait a big amount of time
             if (needsToWait) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(SlowRegisterDelayMs));
             }
         }
 
@@ -278,6 +283,21 @@ class Manager : public AggregateManager<Types...>
                         //Unlock the mutex to prevent dead lock
                         //when onNewRegister() will be called
                         lock.unlock();
+                        //Check if the type number is suppoerted 
+                        //by the manager
+                        if (!this->isTypeSupported(type)) {
+                            //The type is not supported
+                            if (_paramThrowErrorOnScan.value) {
+                                throw std::runtime_error(
+                                    "Manager type found in scan() not supported: " 
+                                    + std::to_string(type));
+                            } else {
+                                std::cerr << 
+                                    "Manager type found in scan() not supported: " 
+                                    << std::to_string(type) << std::endl;
+                                continue;
+                            }
+                        }
                         //The Device is not yet present,
                         //it is created
                         this->devAddByTypeNumber(i, type);
@@ -342,8 +362,8 @@ class Manager : public AggregateManager<Types...>
                 ::devById(id).registersList().reg(name));
             //Reset read flags
             reg->readyForRead();
-            int nbFails = 0;
             //Read single register
+            unsigned int nbFails = 0;
             while (true) {
                 TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
@@ -360,10 +380,19 @@ class Manager : public AggregateManager<Types...>
                 if (state == ResponseOK) {
                     break;
                 } else {
-                	nbFails++;
-                	if (nbFails >= maxForceReadErrors) {
-                		throw std::runtime_error("Max number of consecutive errors reached while trying to read");
-                	}
+                    nbFails++;
+                    if (nbFails >= MaxForceReadTries) {
+                        if (_paramThrowErrorOnRead.value) {
+                            throw std::runtime_error(
+                                "Manager max tries reached when read error: " 
+                                + reg->name);
+                        } else {
+                            std::cerr <<
+                                "Manager max tries reached when read error: " 
+                                << reg->name << std::endl;
+                            return;
+                        }
+                    }
                 }
             }
             //Retrieve the read timestamp
@@ -400,8 +429,10 @@ class Manager : public AggregateManager<Types...>
             _stats.writeLength += reg->length;
             _stats.writeDuration += 
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
+            //Wait delay in case of slow register
             if (reg->isSlowRegister) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(slowRegisterDelayMs));
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(SlowRegisterDelayMs));
             }
         }
 
@@ -536,6 +567,16 @@ class Manager : public AggregateManager<Types...>
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             _paramEnableSyncWrite.value = isEnable;
         }
+        inline void setThrowOnScan(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramThrowErrorOnScan.value = isEnable;
+        }
+        inline void setThrowOnRead(bool isEnable)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _paramThrowErrorOnRead.value = isEnable;
+        }
 
     private:
 
@@ -635,6 +676,18 @@ class Manager : public AggregateManager<Types...>
          */
         ParameterBool _paramEnableSyncRead;
         ParameterBool _paramEnableSyncWrite;
+
+        /**
+         * Exception error configuration.
+         * If true, an std::runtime_error exception
+         * is thrown if:
+         * ThrowErrorOnScan: unknown device type 
+         * is found while scanning.
+         * ThrowErrorOnRead: maximum read tries is 
+         * reached while force read fails.
+         */
+        ParameterBool _paramThrowErrorOnScan;
+        ParameterBool _paramThrowErrorOnRead;
         
         /**
          * Reset and initialize the

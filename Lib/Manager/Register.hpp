@@ -6,7 +6,6 @@
 #include "types.h"
 #include "CallManager.hpp"
 #include "Aggregation.h"
-#include <iostream>
 
 namespace RhAL {
 
@@ -85,7 +84,8 @@ class Register
         const bool isForceWrite;
 
         /**
-         * If true, a sleep delay will be added after writing to the register.
+         * If true, a sleep delay will be added after 
+         * writing to the register
          */
         const bool isSlowRegister;
 
@@ -99,7 +99,9 @@ class Register
          * read from hardware every given readFlush().
          * forceRead: Do not packed read operation.
          * forceWrite: Do not packed write operation.
-         * isSlowRegister : Tags the buffer as slow or not. Some registers are slow to write on the hardware (flash memory takes 20-40 ms to write).
+         * isSlowRegister : If true, marks the buffer as slow. 
+         * Some registers are slow to write on the hardware
+         * (flash memory takes 20-40 ms to write).
          */
         inline Register(
             const std::string& name, 
@@ -108,7 +110,7 @@ class Register
             unsigned int periodPackedRead = 0,
             bool isForceRead = false,
             bool isForceWrite = false,
-			bool isSlowRegister = false) :
+            bool isSlowRegister = false) :
             //Member init
             id(0),
             name(name),
@@ -117,7 +119,7 @@ class Register
             periodPackedRead(periodPackedRead),
             isForceRead(isForceRead),
             isForceWrite(isForceWrite),
-			isSlowRegister(isSlowRegister),
+            isSlowRegister(isSlowRegister),
             _dataBufferRead(nullptr),
             _dataBufferWrite(nullptr),
             _lastDevReadUser(),
@@ -383,10 +385,10 @@ class TypedRegister : public Register
             unsigned int periodPackedRead = 0,
             bool forceRead = false,
             bool forceWrite = false,
-			bool isSlowRegister = false) :
+            bool isSlowRegister = false) :
             //Member init
-            Register(name, addr, length, 
-                periodPackedRead, forceRead, forceWrite, isSlowRegister),
+            Register(name, addr, length, periodPackedRead, 
+                forceRead, forceWrite, isSlowRegister),
             funcConvEncode(funcConvEncode),
             funcConvDecode(funcConvDecode),
             _valueRead(),
