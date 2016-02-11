@@ -61,6 +61,8 @@ class Manager : public AggregateManager<Types...>
             _parametersList.add(&_paramProtocolName);
             _parametersList.add(&_paramEnableSyncRead);
             _parametersList.add(&_paramEnableSyncWrite);
+            _parametersList.add(&_paramThrowErrorOnScan);
+            _parametersList.add(&_paramThrowErrorOnRead);
             //Initialize the low level communication
             initBus();
         }
@@ -280,9 +282,6 @@ class Manager : public AggregateManager<Types...>
                         //the Device as present
                         this->devById(i).setPresent(true);
                     } else {
-                        //Unlock the mutex to prevent dead lock
-                        //when onNewRegister() will be called
-                        lock.unlock();
                         //Check if the type number is suppoerted 
                         //by the manager
                         if (!this->isTypeSupported(type)) {
@@ -294,10 +293,14 @@ class Manager : public AggregateManager<Types...>
                             } else {
                                 std::cerr << 
                                     "Manager type found in scan() not supported: " 
+                                    << "id=" << i << " type=" 
                                     << std::to_string(type) << std::endl;
                                 continue;
                             }
                         }
+                        //Unlock the mutex to prevent dead lock
+                        //when onNewRegister() will be called
+                        lock.unlock();
                         //The Device is not yet present,
                         //it is created
                         this->devAddByTypeNumber(i, type);

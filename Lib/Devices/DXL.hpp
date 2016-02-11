@@ -653,6 +653,8 @@ class DXL : public Device
 			Device::registersList().add(&_maxTorque);
 			Device::registersList().add(&_statusReturnLevel);
 			Device::registersList().add(&_alarmShutdown);
+                        Device::parametersList().add(&_inverted);
+                        Device::parametersList().add(&_zero);
 		}
 
 };
