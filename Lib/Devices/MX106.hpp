@@ -7,66 +7,9 @@
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include "Devices/MX.hpp"
+#include "Devices/MX64.hpp"
 
 namespace RhAL {
-
-/**
- * Encode function for current, input in A [-9.2115, 9.2115] (precision : 4.5 mA)
- */
-inline void convEncode_Current(data_t* buffer, float value)
-{
-	float maxValue = 9.2115;
-	if (value > maxValue) {
-		value = maxValue;
-	} else if (value < -maxValue) {
-		value = -maxValue;
-	}
-
-	uint16_t current = std::lround(2048 + value*1000.0/4.5);
-	write1ByteToBuffer(buffer, current);
-}
-/**
- * Decode function for current, output in A [-9.2115, 9.2115] (precision : 4.5 mA)
- */
-inline float convDecode_Current(const data_t* buffer)
-{
-	uint16_t val = read2BytesFromBuffer(buffer);
-	return val * 4.5 * (val - 2048.0);
-}
-
-/**
- * Encode function for goal torque, input in bullshit (precision 1/2048 bullshit).
- * Actually expects a value between -1 and 1
- */
-inline void convEncode_GoalTorque(data_t* buffer, float value)
-{
-	if (value > 1.0) {
-		value = 1.0;
-	} else if (value < -1.0) {
-		value = -1.0;
-	}
-
-	if (value >= 0) {
-		value = 2047 * value;
-	} else {
-		value = 2048 - 2047*value;
-	}
-	uint16_t result = std::lround(value);
-	write2BytesToBuffer(buffer, result);
-}
-/**
- * Decode function for current, output in bullshit (precision 1/2048 bullshit).
- * Actually outputs a value between -1 and 1
- */
-inline float convDecode_GoalTorque(const data_t* buffer)
-{
-	uint16_t val = read2BytesFromBuffer(buffer);
-	if (val < 2048) {
-		return val/2047.0;
-	} else {
-		return -(val - 2048)/2047.0;
-	}
-}
 
 /**
  * MX106

@@ -145,6 +145,15 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
         }
 
         /**
+         * Return true if given Device type model
+         * number is supported by the manager
+         */
+        inline bool isTypeSupported(type_t type) const
+        {
+            return Impl<Types...>::runIsTypeSupported(type);
+        }
+
+        /**
          * Return the model number or the 
          * model name of given template Device
          * derived type
@@ -577,6 +586,11 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                         + std::to_string(id));
                 }
             }
+            //Is type supported
+            inline static bool runIsTypeSupported(type_t type)
+            {
+                return (ImplManager<T>::typeNumber() == type);
+            }
             //Type number by Id
             inline static type_t runTypeNumberById(
                 const AggregateManager<Types...>* ptr, id_t id)
@@ -665,6 +679,15 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                     ptr->devAdd<T>(id, name);
                 } else {
                     Impl<Ts...>::runAddByType(ptr, id, type);
+                }
+            }
+            //Is type supported
+            inline static bool runIsTypeSupported(type_t type)
+            {
+                if (ImplManager<T>::typeNumber() == type) {
+                    return true;
+                } else {
+                    return Impl<Ts...>::runIsTypeSupported(type);
                 }
             }
             //Type number by Id

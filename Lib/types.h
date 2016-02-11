@@ -19,6 +19,18 @@ constexpr id_t IdDevBegin = 1;
 constexpr id_t IdDevEnd = 253;
 
 /**
+ * Number of milliseconds that will be waited 
+ * after writing to a slow register
+ */
+constexpr unsigned int SlowRegisterDelayMs = 100;
+
+/**
+ * Number of consecutive trials when trying 
+ * to immediate read before abording
+ */
+constexpr unsigned int MaxForceReadTries = 20;
+
+/**
  * Device register address
  */
 typedef size_t addr_t;

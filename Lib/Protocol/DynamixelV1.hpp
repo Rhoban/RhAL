@@ -104,6 +104,6 @@ namespace RhAL
             /**
              * Waits to receive a packet over the bus
              */
-            ResponseState receivePacket(Packet* &response, id_t id, double timeout = 0.001);
+            ResponseState receivePacket(Packet* &response, id_t id, double timeout = 0.005);
     };
 }

@@ -12,41 +12,36 @@
 namespace RhAL {
 
 /**
- * Encode function for position, input in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Encode function for position, input in degrees [-180, 180[ (precision : 360/4096 degrees)
+ * 180 and -180 are the exact same point
  */
-inline void convEncode_Position(data_t* buffer, float value)
+inline void convEncode_PositionMx(data_t* buffer, float value)
 {
-	if (value > 180) {
-		value = 180;
-	} else if (value < -180) {
-		value = -180;
-	}
-	if (value > 0) {
-		value = value * 4096 / 360.0;
-	} else {
-		value = 2048 + (180 + value) * 4096 / 360.0;
-	}
+	value = 2048.0 + value * 4096/360.0;
 
 	uint16_t position = std::lround(value)%4096;
 	write2BytesToBuffer(buffer, position);
 }
 /**
- * Decode function for position, output in degrees [-180, 180] (precision : 360/4096 degrees)
+ * Decode function for position, output in degrees [-180, 180[ (precision : 360/4096 degrees)
  */
-inline float convDecode_Position(const data_t* buffer)
+inline float convDecode_PositionMx(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
-	if (val <= 2048) {
-		return val * 360.0 / 4096.0;
+	float result = (val - 2048) * 360.0 / 4096.0;
+	if (result >= -180 && result < 180) {
+		//We're already in the desired portion
 	} else {
-		return -(4096 - val) * 360.0 / 4096.0;
+		//Modulating to be in [-180, 180[
+		result = fmod(result + 180.0, 360) - 180;
 	}
+	return result;
 }
 
 /**
  * Encode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
  */
-inline void convEncode_Speed(data_t* buffer, float value)
+inline void convEncode_SpeedMx(data_t* buffer, float value)
 {
 	float maxSpeed = 702.42;
 	float conversion = 0.68662;
@@ -67,7 +62,7 @@ inline void convEncode_Speed(data_t* buffer, float value)
 /**
  * Decode function for speed, input in degrees/s [-702.42, 702.42] (precision : 0.114 rpm ~= 0.687 degrees/s)
  */
-inline float convDecode_Speed(const data_t* buffer)
+inline float convDecode_SpeedMx(const data_t* buffer)
 {
 	float conversion = 0.68662;
 	uint16_t val = read2BytesFromBuffer(buffer);
@@ -81,7 +76,7 @@ inline float convDecode_Speed(const data_t* buffer)
 /**
  * Encode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
  */
-inline void convEncode_Acceleration(data_t* buffer, float value)
+inline void convEncode_AccelerationMx(data_t* buffer, float value)
 {
 	float maxAccel = 2180;
 	float conversion = 8.583;
@@ -98,7 +93,7 @@ inline void convEncode_Acceleration(data_t* buffer, float value)
 /**
  * Decode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
  */
-inline float convDecode_Acceleration(const data_t* buffer)
+inline float convDecode_AccelerationMx(const data_t* buffer)
 {
 	float conversion = 8.583;
 	uint8_t val = read1ByteFromBuffer(buffer);
@@ -123,11 +118,11 @@ class MX : public DXL
          */
         inline MX(const std::string& name, id_t id) :
             DXL(name, id),
-        	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq)
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_Position, convDecode_Position, 0),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_Position, convDecode_Position, 0),
-			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
+        	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
 
 			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
@@ -135,11 +130,11 @@ class MX : public DXL
 			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_goalPosition("goalPosition", 0x1E, 2, convEncode_Position, convDecode_Position, 0),
-			_goalSpeed("goalSpeed", 0x20, 2, convEncode_Speed, convDecode_Speed, 0),
+			_goalPosition("goalPosition", 0x1E, 2, convEncode_PositionMx, convDecode_PositionMx, 0),
+			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedMx, convDecode_SpeedMx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
-			_position("position", 0x24, 2, convEncode_Position, convDecode_Position, 1),
-			_speed("speed", 0x26, 2, convEncode_Speed, convDecode_Speed, 1),
+			_position("position", 0x24, 2, convEncode_PositionMx, convDecode_PositionMx, 1),
+			_speed("speed", 0x26, 2, convEncode_SpeedMx, convDecode_SpeedMx, 1),
 			_load("load", 0x28, 2, convEncode_torque, convDecode_torque, 0),
 			_voltage("voltage", 0x2A, 1, convEncode_voltage, convDecode_voltage, 0),
 			_temperature("temperature", 0x2B, 1, convEncode_temperature, convDecode_temperature, 0),
@@ -147,7 +142,7 @@ class MX : public DXL
 			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_Acceleration, convDecode_Acceleration, 0)
+			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_AccelerationMx, convDecode_AccelerationMx, 0)
         {
         }
 
@@ -196,7 +191,6 @@ class MX : public DXL
 		virtual bool getTorqueEnable() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-		    std::cout << "Alive after lock" << std::endl;
 			return _torqueEnable.readValue().value;
 		}
 		virtual TimePoint getTorqueEnableTs() override
@@ -237,7 +231,12 @@ class MX : public DXL
 		virtual float getGoalPosition() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalPosition.readValue().value;
+			float value = _goalPosition.readValue().value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			value = value - _zero.value;
+			return value;
 		}
 		virtual TimePoint getGoalPositionTs() override
 		{
@@ -250,7 +249,12 @@ class MX : public DXL
 		virtual void setGoalPosition(float goalPosition) override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalPosition.writeValue(goalPosition);
+
+			float value = goalPosition + _zero.value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			_goalPosition.writeValue(value);
 		}
 
 		/**
@@ -265,7 +269,11 @@ class MX : public DXL
 		virtual float getGoalSpeed() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalSpeed.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _goalSpeed.readValue().value * direction;
 		}
 		virtual TimePoint getGoalSpeedTs() override
 		{
@@ -278,7 +286,11 @@ class MX : public DXL
 		virtual void setGoalSpeed(float goalSpeed) override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalSpeed.writeValue(goalSpeed);
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			_goalSpeed.writeValue(goalSpeed * direction);
 		}
 
 		/**
@@ -309,7 +321,12 @@ class MX : public DXL
 		virtual float getPosition() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _position.readValue().value;
+			float value = _position.readValue().value;
+			if (_inverted.value == true) {
+				value = value * -1;
+			}
+			value = value - _zero.value;
+			return value;
 		}
 		virtual TimePoint getPositionTs() override
 		{
@@ -323,7 +340,11 @@ class MX : public DXL
 		virtual float getSpeed() override
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _speed.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _speed.readValue().value * direction;
 		}
 		virtual TimePoint getSpeedTs() override
 		{
@@ -450,12 +471,12 @@ class MX : public DXL
 		/**
 		 * Returns the multiturn value
 		 */
-		inline int getMultitunOffset()
+		inline int getMultiturnOffset()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			return _multiTurnOffset.readValue().value;
 		}
-		inline TimePoint getMultitunOffsetTs()
+		inline TimePoint getMultiturnOffsetTs()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			return _multiTurnOffset.readValue().timestamp;
@@ -542,7 +563,11 @@ class MX : public DXL
 		inline float getGoalAcceleration()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			return _goalAcceleration.readValue().value;
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			return _goalAcceleration.readValue().value * direction;
 		}
 		inline TimePoint getGoalAccelerationTs()
 		{
@@ -552,7 +577,37 @@ class MX : public DXL
 		inline void setGoalAcceleration(float value)
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
-			_goalAcceleration.writeValue(value);
+			int direction = 1;
+			if (_inverted.value == true) {
+				direction = -1;
+			}
+			_goalAcceleration.writeValue(value * direction);
+		}
+
+		/**
+		 * Sets the angle limits to the maximum possible range
+		 */
+		virtual void setJointMode() override
+		{
+			float limits[2];
+			limits[0] = -180;
+			//Means "180 minus one step"
+			limits[1] = 180 - 360.0/4096.0;
+			setAngleLimits(limits);
+		}
+		virtual void setWheelMode() override
+		{
+			float limits[2];
+			limits[0] = -180;
+			limits[1] = -180;
+			setAngleLimits(limits);
+		}
+		inline void setMultiTurnMode()
+		{
+			float limits[2];
+			limits[0] = 180 - 360.0/4096.0;
+			limits[1] = 180 - 360.0/4096.0;
+			setAngleLimits(limits);
 		}
 
     protected:

@@ -2,8 +2,9 @@
 #include <cstdio>
 #include <string.h>
 #include "DynamixelV1.hpp"
+#include <iostream>
 
-
+#define DEBUG 0
 using namespace std;
 
 namespace RhAL
@@ -112,6 +113,18 @@ namespace RhAL
 
         Packet *response;
         auto code = receivePacket(response, id);
+#if DEBUG
+        if (response == NULL) {
+        	std::cout << "Response null" << endl;
+        } else {
+        	std::cout << "Receiving packet : ";
+			for (int i = 0; i < sizeof(response->buffer)/sizeof(*(response->buffer)); i++) {
+				std::cout << (int)response->buffer[i] << " ";
+			}
+			std::cout << ", code = " << (int)code << endl;
+			std::cout << std::endl;
+        }
+#endif
         if (code & ResponseOK) {
             memcpy(data, response->getParameters(), size);
             delete response;
@@ -166,10 +179,18 @@ namespace RhAL
 
     void DynamixelV1::sendPacket(Packet &packet)
     {
-        bus.flush();
-        bus.clearInputBuffer();
+    	bus.clearInputBuffer();
+//    	bus.flushInput();
         packet.prepare();
+#if DEBUG
+        std::cout << "Sending packet : ";
+        for (int i = 0; i < sizeof(packet.buffer)/sizeof(*packet.buffer); i++) {
+        	std::cout << (int)packet.buffer[i] << " ";
+        }
+        std::cout << std::endl;
+#endif
         bus.sendData(packet.buffer, packet.getSize());
+        bus.flush();
     }
 
     ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id, double timeout)
@@ -178,16 +199,13 @@ namespace RhAL
         response = NULL;
         TimePoint start = getTimePoint();
         size_t position = 0;
-
         while (getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count() <= timeout) {
             double t = timeout-(getTimeDuration<TimeDurationDouble>(start, getTimePoint()).count());
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];
                 bus.readData(data, n);
-//                printf("I have data boyz for id %d !\n", id);
                 for (size_t k=0; k<n; k++) {
-//                	printf ("byte %d : %d\n", k, data[k]);
                     uint8_t byte = data[k];
                     switch (position) {
                         case 0:

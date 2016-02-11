@@ -12,19 +12,19 @@ namespace RhAL {
 
 
 /**
- * RX64
+ * RX28
  *
- * Dynamixel RX-64 Device
+ * Dynamixel RX-28 Device
  * implementation
  */
-class RX64 : public RX
+class RX28 : public RX
 {
     public:
 
         /**
          * Initialization with name and id
          */
-        inline RX64(const std::string& name, id_t id) :
+        inline RX28(const std::string& name, id_t id) :
             RX(name, id)
         {
         }
@@ -46,21 +46,21 @@ class RX64 : public RX
 };
 
 /**
- * DeviceManager specialized for RX64
+ * DeviceManager specialized for RX28
  */
 template <>
-class ImplManager<RX64> : public BaseManager<RX64>
+class ImplManager<RX28> : public BaseManager<RX28>
 {
     public:
 
         inline static type_t typeNumber()
         {
-            return 0x0040;
+            return 0x001C;
         }
 
         inline static std::string typeName()
         {
-            return "RX64";
+            return "RX28";
         }
 };
 

@@ -31,7 +31,7 @@ class Device
          * device name and id
          */
         inline Device(const std::string& name, id_t id) :
-        	_mutex(),
+            _mutex(),
             _registersList(id),
             _parametersList(),
             _name(name),
@@ -205,7 +205,6 @@ class Device
          * on the bus
          */
         bool _isPresent;
-
 };
 
 }

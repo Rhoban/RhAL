@@ -6,6 +6,7 @@
 typedef RhAL::Manager<
     RhAL::ExampleDevice1,
 	RhAL::MX64,
+	RhAL::RX64,
     RhAL::ExampleDevice2> Manager;
 
 void printDevice(const RhAL::Device& dev)
@@ -40,124 +41,165 @@ void printDevice(const RhAL::Device& dev)
     }
 }
 
+void testRX64() {
+	Manager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+
+	    //Set Manager scheduling config mode
+	    //(default is true)
+	    manager.setScheduleMode(false);
+
+	    RhAL::RX64& dev = manager.dev<RhAL::RX64>(38);
+
+	    dev.enableTorque();
+
+	    float limits[2];
+		dev.getAngleLimits(limits);
+		std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+
+		float t = 0.0;
+		int delay = 20;
+		int slope = 1;
+		while (true) {
+	    	std::cout << "Setting slope to " << slope << std::endl;
+	    	int slopes[2] = {slope, slope};
+	    	dev.setComplianceSlopes(slopes);
+	    	dev.getComplianceSlopes(slopes);
+	    	std::cout << "Slopes read = " << slopes[0] << ", " << slopes[1] << std::endl;
+	    	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			while (true) {
+//				std::cout << "val " << 2*M_PI*2*t << std::endl;
+				dev.setGoalPosition(40*sin(2*M_PI*0.25*t));
+				std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+				t = t + delay/1000.0;
+				if (t >= 5.0) {
+					t = 0;
+					break;
+				}
+			}
+			slope++;
+			if (slope >= 8) {
+				slope = 1;
+			}
+		}
+}
+
+void testMX64() {
+	Manager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+	//    manager.setProtocolConfig(
+	//        "", 1000000, "FakeProtocol");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+	//    manager.devAdd<RhAL::MX64>(1, "devTest1");
+
+
+	    //Set Manager scheduling config mode
+	    //(default is true)
+	    manager.setScheduleMode(false);
+
+	    RhAL::MX64& dev = manager.dev<RhAL::MX64>(1);
+
+	//    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
+
+
+	    dev.enableTorque();
+
+	    float limits[2];
+	//    limits[0] = 0.0;
+	//    limits[1] = 0.0;
+	//    dev.setAngleLimits(limits);
+
+	//    dev.setWheelMode();
+		dev.getAngleLimits(limits);
+		std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+
+
+	//    std::cout << "Setting wheel mode !" << std::endl;
+	//    dev.setWheelMode();
+	//    std::cout << "Done." << std::endl;
+	//    dev.getAngleLimits(limits);
+	//    std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+	//
+	//    std::cout << "Setting speed command" << std::endl;
+	//    dev.setGoalSpeed(100);
+	//    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	//    dev.setGoalSpeed(0);
+	//
+	//    std::cout << "Setting joint mode = " << std::endl;
+	//    dev.setJointMode();
+	//	dev.getAngleLimits(limits);
+	//    std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+
+		float pos = 0.0;
+		int direction = 1;
+		// Going from 0 to 720 then 720 to 0 degrees
+		while (true) {
+			pos = pos + 20 * direction;
+			std::cout << "setting pos " << pos << std::endl;
+			dev.setGoalPosition(pos);
+			std::cout << "Position read = " << dev.getGoalPosition() << std::endl;
+			std::this_thread::sleep_for(std::chrono::milliseconds(400));
+			if (pos >= 720) {
+				direction = -1 * direction;
+			}
+		}
+	    int i = 0;
+	    while (true) {
+	    	pos = -20;
+	    	std::cout << "setting pos " << pos << std::endl;
+	    	dev.setGoalPosition(pos);
+	        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+	        pos = 0;
+			std::cout << "setting pos " << pos << std::endl;
+			dev.setGoalPosition(pos);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+			pos = 20;
+			std::cout << "setting pos " << pos << std::endl;
+			dev.setGoalPosition(pos);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+	        i++;
+	    	std::cout << "temp = " << dev.getTemperature() << std::endl;
+	    	std::cout << "voltage = " << dev.getVoltage() << std::endl;
+	    }
+	    return;
+}
 /**
  * Manager Devices manipulation example
  */
-int main()
-{
-    Manager manager;
-
-    manager.setProtocolConfig(
-        "/dev/ttyUSB0", 1000000, "DynamixelV1");
-//    manager.setProtocolConfig(
-//        "", 1000000, "FakeProtocol");
-
-    //Scan the bus
-    //(no response with FakeProtocol)
-    manager.scan();
-
-
-    //Export configuration in file
-    manager.writeConfig("/tmp/rhal.json");
-
-    //Import configuration in file
-    manager.readConfig("/tmp/rhal.json");
-
-
-    std::cout << manager.saveJSON().dump(4) << std::endl;
-
-//    manager.devAdd<RhAL::MX64>(1, "devTest1");
-
-
-    //Set Manager scheduling config mode
-    //(default is true)
-    manager.setScheduleMode(false);
-
-    RhAL::MX64& dev = manager.dev<RhAL::MX64>(1);
-
-    std::cout << "enableTorque = " << dev.getTorqueEnable() << std::endl;
-
-    dev.enableTorque();
-//    dev.disableTorque();
-
-    float limits[2];
-    limits[0] = 0.0;
-    limits[1] = 0.0;
-    dev.setAngleLimits(limits);
-
-    int i = 0;
-    float pos = 0.0;
-    while (true) {
-
-    	pos = 100;
-    	std::cout << "setting pos " << pos << std::endl;
-    	dev.setGoalPosition(pos);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        pos = -100;
-		std::cout << "setting pos " << pos << std::endl;
-		dev.setGoalPosition(pos);
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        i++;
-    	std::cout << "temp = " << dev.getTemperature() << std::endl;
-    	std::cout << "voltage = " << dev.getVoltage() << std::endl;
-    }
-
-
-    return 0;
-
-    //Add new Device with type, id and name
-    manager.devAdd<RhAL::ExampleDevice1>(2, "devTest2");
-    manager.devAdd<RhAL::ExampleDevice1>(3, "devTest3");
-    manager.devAdd<RhAL::ExampleDevice2>(5, "devTest5");
-
-    //Iterate over Manager Devices with types
-    for (const auto& it : manager.devContainer()) {
-        //Retrieve Device model number and model name
-        RhAL::type_t type = manager.devTypeNumberById(it.second->id());
-        RhAL::type_t typebis = manager.devTypeNumberByName(it.first);
-        std::string name = manager.devTypeName(it.second->name());
-        (void)typebis;
-        std::cout << "Device: name:" << it.first 
-            << " id:" << it.second->id() 
-            << " typeName:" << name
-            << " typeNumber:" << type
-            << std::endl;
-    }
-
-    //Device access
-    const RhAL::Device& dev2 = manager.dev(2);
-    const RhAL::Device& dev3 = manager.dev("devTest3");
-    //Derived Device access
-    const RhAL::ExampleDevice2& dev5 = manager.dev<RhAL::ExampleDevice2>(5);
-    const RhAL::ExampleDevice2& dev5bis = manager.dev<RhAL::ExampleDevice2>("devTest5");
-    //Base class of derived Device access (dynamic cast)
-    const RhAL::BaseExampleDevice1& dev2bis = manager.dev<RhAL::BaseExampleDevice1>(2);
-
-    //Check if a Device or Derived Device exists
-    bool isDev4 = manager.devExists(4);
-    bool isDev2 = manager.devExists<RhAL::ExampleDevice2>("devTest2");
-    std::cout << isDev4 << " " << isDev2 << std::endl;
-
-    //Iterate over all Device ExampleDevice1
-    for (const auto& it : manager.devContainer<RhAL::ExampleDevice1>()) {
-        const RhAL::ExampleDevice1* pt = it.second;
-        std::cout << "ExampleDevice1: " << pt->name() << std::endl;
-    }
-    std::unordered_map<std::string, RhAL::BaseExampleDevice1*> container = 
-        manager.devContainer<RhAL::BaseExampleDevice1>();
-    //Iterate over all Device BaseExampleDevice1
-    for (const auto& it : container) {
-        std::cout << "BaseExampleDevice1: " << it.second->name() << std::endl;
-    }
-
-    //Display Device registers and parameters
-    printDevice(dev2);
-
-    //Print Manager config
-    std::cout << manager.saveJSON().dump(4) << std::endl;
-
-    return 0;
+int main() {
+	testRX64();
 }
 
