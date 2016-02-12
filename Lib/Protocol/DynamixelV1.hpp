@@ -94,6 +94,15 @@ namespace RhAL
             void syncWrite(
                     const std::vector<id_t>& ids, addr_t address,
                     const std::vector<const uint8_t*>& datas, size_t size);
+            /**
+             * Broadcasts a "disable torque" command
+             */
+            void emergencyStop();
+
+            /**
+             * Broadcasts an "enable torque" command
+             */
+            void exitEmergencyState();
 
         protected:
             /**
