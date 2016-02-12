@@ -9,7 +9,7 @@ namespace RhAL
     class RhioBinding
     {
         public:
-            RhioBinding(Manager *manager, std::string node="rhal");
+            RhioBinding(Manager *manager, std::string node="lowlevel");
 
             void update();
 
