@@ -1,12 +1,11 @@
 #pragma once
 
-#include <unordered_map>
 #include <string>
 #include <vector>
 #include <json.hpp>
 #include <type_traits>
-#include "CallManager.hpp"
 #include "TypedManager.hpp"
+#include "BaseManager.hpp"
 #include "Device.hpp"
 
 namespace RhAL {
@@ -46,7 +45,7 @@ struct is_type_in_pack<T> : std::false_type {};
  * Add, check, access, iterate over Devices.
  */
 template <typename ... Types> 
-class AggregateManager : public CallManager, public ImplManager<Types>...
+class AggregateManager : public BaseManager, public ImplManager<Types>...
 {
     //Assert that variadic template given Types
     //is not empty
@@ -55,16 +54,6 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
 
     public:
         
-        /**
-         * Typedef for device container
-         */
-        template <typename T>
-        using DevicesByName = 
-            std::unordered_map<std::string, T*>;
-        template <typename T>
-        using DevicesById = 
-            std::unordered_map<id_t, T*>; 
-
         /**
          * Typedef for devById/Name() methods return type. 
          * Function return type is U given type.

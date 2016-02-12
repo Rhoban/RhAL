@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -296,7 +296,7 @@ class IMU : public Device
  * DeviceManager specialized for IMU
  */
 template <>
-class ImplManager<IMU> : public BaseManager<IMU>
+class ImplManager<IMU> : public TypedManager<IMU>
 {
     public:
 

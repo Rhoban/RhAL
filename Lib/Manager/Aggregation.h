@@ -23,29 +23,29 @@ enum AggregationPolicy {
  */
 namespace Impl {
     template <typename T>
-    T implAggregateLast(T oldValue, T newValue)
+    inline T implAggregateLast(T oldValue, T newValue)
     {
         (void)oldValue;
         return newValue;
     }
     template <typename T>
-    T implAggregateFirst(T oldValue, T newValue)
+    inline T implAggregateFirst(T oldValue, T newValue)
     {
         (void)newValue;
         return oldValue;
     }
     template <typename T>
-    T implAggregateSum(T oldValue, T newValue)
+    inline T implAggregateSum(T oldValue, T newValue)
     {
         return oldValue + newValue;
     }
     template <typename T>
-    T implAggregateMax(T oldValue, T newValue)
+    inline T implAggregateMax(T oldValue, T newValue)
     {
         return (oldValue > newValue) ? oldValue : newValue;
     }
     template <typename T>
-    T implAggregateMin(T oldValue, T newValue)
+    inline T implAggregateMin(T oldValue, T newValue)
     {
         return (oldValue < newValue) ? oldValue : newValue;
     }
@@ -53,17 +53,17 @@ namespace Impl {
      * Specialization for boolean
      */
     template <>
-    bool implAggregateSum(bool oldValue, bool newValue)
+    inline bool implAggregateSum(bool oldValue, bool newValue)
     {
         return oldValue || newValue;
     }
     template <>
-    bool implAggregateMax(bool oldValue, bool newValue)
+    inline bool implAggregateMax(bool oldValue, bool newValue)
     {
         return oldValue || newValue;
     }
     template <>
-    bool implAggregateMin(bool oldValue, bool newValue)
+    inline bool implAggregateMin(bool oldValue, bool newValue)
     {
         return oldValue && newValue;
     }
@@ -75,7 +75,7 @@ namespace Impl {
  * new written value
  */
 template <typename T>
-T aggregateValue(AggregationPolicy policy, 
+inline T aggregateValue(AggregationPolicy policy, 
     T oldValue, T newValue)
 {
     switch (policy) {

@@ -32,17 +32,19 @@
  * with all implemented Device
  */
 namespace RhAL {
-    typedef Manager<
-        MX106,
-        MX64,
-        MX28,
-		MX12,
-        RX64,
-        RX28,
-        AX18,
-        AX12,
-		IMU,
-		PressureSensor
-    > StandardManager;
+
+typedef Manager<
+    MX106,
+    MX64,
+    MX28,
+    MX12,
+    RX64,
+    RX28,
+    AX18,
+    AX12,
+    IMU,
+    PressureSensor
+> StandardManager;
+
 }
 
