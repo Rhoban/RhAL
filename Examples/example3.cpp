@@ -43,6 +43,16 @@ int main()
     RhAL::ExampleDevice1& dev3 = manager.dev<RhAL::ExampleDevice1>(3);
     RhAL::ExampleDevice2& dev5 = manager.dev<RhAL::ExampleDevice2>(5);
 
+    //
+    manager.dev(2).registersList().regFloat("goal").setCallbackWrite(
+        [](float val) {
+            std::cout << "Write callback: " << val << std::endl;
+        });
+    manager.dev(2).registersList().regFloat("position").setCallbackRead(
+        [](float val) {
+            std::cout << "Read callback: " << val << std::endl;
+        });
+
     //Display Device 2 state
     std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;
     std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;

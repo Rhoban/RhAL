@@ -393,7 +393,9 @@ class TypedRegister : public Register
             funcConvDecode(funcConvDecode),
             _valueRead(),
             _valueWrite(),
-            _aggregationPolicy(AggregateLast)
+            _aggregationPolicy(AggregateLast),
+            _callbackOnRead([](T val){(void)val;}),
+            _callbackOnWrite([](T val){(void)val;}) 
         {
         }
 
@@ -405,6 +407,22 @@ class TypedRegister : public Register
         {
             std::lock_guard<std::recursive_mutex> lock(_mutex);
             _aggregationPolicy = policy;
+        }
+
+        /**
+         * Set the on user write and on 
+         * manager read callback. The updated
+         * value is given as calback argument.
+         */
+        inline void setCallbackRead(std::function<void(T)> func)
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _callbackOnRead = func;
+        }
+        inline void setCallbackWrite(std::function<void(T)> func)
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _callbackOnWrite = func;
         }
 
         /**
@@ -430,8 +448,10 @@ class TypedRegister : public Register
          * between write operations, values are aggregated
          * according with current aggregation policy.
          * The register is marked to be written.
+         * If noCallback is true, the on write callback
+         * is not called.
          */
-        inline void writeValue(T val)
+        inline void writeValue(T val, bool noCallback = false)
         {
             std::unique_lock<std::recursive_mutex> lock(_mutex);
             
@@ -447,6 +467,10 @@ class TypedRegister : public Register
             _lastUserWrite = getTimePoint();
             //Mark as dirty
             _needWrite = true;
+            //Call user callback
+            if (!noCallback) {
+                _callbackOnWrite(val);
+            }
             //Unlock mutex
             lock.unlock();
             //Do immediate write on the bus
@@ -473,6 +497,8 @@ class TypedRegister : public Register
         inline virtual void doConvDecode() override
         {
             _valueRead = funcConvDecode(_dataBufferRead);
+            //Call user callback
+            _callbackOnRead(_valueRead);
         }
 
     private:
@@ -492,6 +518,16 @@ class TypedRegister : public Register
          * Value Aggregation policy
          */
         AggregationPolicy _aggregationPolicy;
+
+        /**
+         * User callback called on user write
+         * and on successfull manager read 
+         * (during swapRead).
+         * Written or read value is given 
+         * as callback argument
+         */
+        std::function<void(T)> _callbackOnRead;
+        std::function<void(T)> _callbackOnWrite;
 };
 
 /**
