@@ -29,6 +29,8 @@ class FakeProtocol : public Protocol
         virtual void syncWrite(
             const std::vector<id_t>& ids, addr_t address,
             const std::vector<const uint8_t*>& datas, size_t size) override;
+        virtual void emergencyStop() override;
+        virtual void exitEmergencyState() override;
 };
 
 }

@@ -105,6 +105,27 @@ class Manager : public AggregateManager<Types...>
         }
 
         /**
+         * Immediately sends a broadcasted signal
+         * to put all the devices in emergency mode
+         */
+        inline void emergencyStop()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.emergencyCount++;
+        	_protocol->emergencyStop();
+        }
+        /**
+         * Immediately sends a broadcasted signal
+         * to exit the emergency state in all the
+         * devices
+         */
+        inline void exitEmergencyState()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            _stats.exitEmergencyCount++;
+        	_protocol->exitEmergencyState();
+        }
+        /**
          * Declared cooperative user threads 
          * have to call this method at each end 
          * of their cycle to wait the next Manager

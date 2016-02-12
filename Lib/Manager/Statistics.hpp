@@ -46,6 +46,10 @@ struct Statistics
     //at nextFlush()
     TimeDurationMicro waitUsersDuration;
     TimeDurationMicro waitManagerDuration;
+    //Number of calls to Manager emergencyStop(),
+    //exitEmergencyState()
+    unsigned long emergencyCount;
+    unsigned long exitEmergencyCount;
 
     /**
      * Initialization
@@ -69,7 +73,9 @@ struct Statistics
         forceReadCount(0),
         forceWriteCount(0),
         waitUsersDuration(0),
-        waitManagerDuration(0)
+        waitManagerDuration(0),
+		emergencyCount(0),
+		exitEmergencyCount(0)
     {
     }
 
@@ -97,6 +103,8 @@ struct Statistics
         os << "WaitNextFlush() calls: " << waitNextFlushCount << std::endl;
         os << "ForceRead() calls: " << forceReadCount << std::endl;
         os << "ForceWrite() calls: " << forceWriteCount << std::endl;
+        os << "EmergencyStop() calls: " << emergencyCount << std::endl;
+        os << "ExitEmergencyState() calls: " << exitEmergencyCount << std::endl;
         os << "Read() spent time: " << std::chrono::duration_cast
             <TimeDurationDouble>(readDuration).count() << 
             "s" << std::endl;

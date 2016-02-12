@@ -278,6 +278,35 @@ class DXL : public Device
         {
 		}
 
+        /**
+         * Returns true if the servo's angular convention is inverted, false otherwise
+         */
+        inline bool getInverted()
+        {
+        	return _inverted.value;
+        }
+        /**
+         * Sets (true) or resets (false) the inversion of the angular convention
+         */
+        inline void setInverted(bool value) {
+        	_inverted.value = value;
+        }
+
+        /**
+         * Returns the angle that will be considered as 0 when talking to the servo
+         */
+        inline float getZero()
+        {
+        	return _zero.value;
+        }
+        /**
+         * Sets the angle that will be considered as 0 when talking to the servo
+         */
+        inline void setZero(float value)
+        {
+        	_zero.value = value;
+        }
+
         virtual uint16_t getModelNumber()
         {
         	std::lock_guard<std::mutex> lock(_mutex);
@@ -653,8 +682,8 @@ class DXL : public Device
 			Device::registersList().add(&_maxTorque);
 			Device::registersList().add(&_statusReturnLevel);
 			Device::registersList().add(&_alarmShutdown);
-                        Device::parametersList().add(&_inverted);
-                        Device::parametersList().add(&_zero);
+			Device::parametersList().add(&_inverted);
+			Device::parametersList().add(&_zero);
 		}
 
 };

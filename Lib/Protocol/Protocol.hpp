@@ -83,6 +83,17 @@ namespace RhAL
                     const std::vector<id_t>& ids, addr_t address,
                     const std::vector<const uint8_t*>& datas, size_t size)=0;
 
+            /**
+             * Sends a broadcasted signal to put all the devices
+             * in emergency stop mode.
+             */
+            virtual void emergencyStop() = 0;
+            /**
+             * Sends a broadcasted signal
+             * to exit the emergency state.
+             */
+            virtual void exitEmergencyState() = 0;
+
         protected:
             // Bus used for communication
             Bus &bus;
