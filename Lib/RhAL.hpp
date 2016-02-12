@@ -37,6 +37,6 @@ namespace RhAL {
         RX28,
         AX18,
         AX12
-    > StandartManager;
+    > StandardManager;
 }
 
