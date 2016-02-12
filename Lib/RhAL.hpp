@@ -21,5 +21,22 @@
 #include "Devices/MX28.hpp"
 #include "Devices/RX64.hpp"
 #include "Devices/RX28.hpp"
+#include "Devices/AX18.hpp"
 #include "Devices/AX12.hpp"
+
+/**
+ * Define classic Manager typedef
+ * with all implemented Device
+ */
+namespace RhAL {
+    typedef Manager<
+        MX106,
+        MX64,
+        MX28,
+        RX64,
+        RX28,
+        AX18,
+        AX12
+    > StandartManager;
+}
 
