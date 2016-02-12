@@ -314,8 +314,17 @@ class Device
         virtual void onInit() = 0;
 
         /**
-         * Manager and BaseManager 
-         * have access to listed 
+         * Callback to be override
+         * called at the begin of each
+         * flush() after swapRead()
+         */
+        virtual inline void onSwap()
+        {
+            //Empty default
+        }
+
+        /**
+         * Manager have access to listed 
          * Parameters and Registers
          */
         template <typename ... T>

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -58,7 +58,7 @@ class MX106 : public MX
  * DeviceManager specialized for MX106
  */
 template <>
-class ImplManager<MX106> : public BaseManager<MX106>
+class ImplManager<MX106> : public TypedManager<MX106>
 {
     public:
 

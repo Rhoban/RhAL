@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -40,6 +40,14 @@ class BaseExampleDevice1 : public Device
          * Registers
          */
         TypedRegisterFloat _voltage;
+
+        /**
+         * Test Inherit
+         */
+        virtual inline void onSwap() override
+        {
+            std::cout << "ExampleDevice1 onSwap() " << this->name() << std::endl;
+        }
 };
 
 /**
@@ -184,7 +192,7 @@ class ExampleDevice1 : public BaseExampleDevice1
  * DeviceManager specialized for ExampleDevice1
  */
 template <>
-class ImplManager<ExampleDevice1> : public BaseManager<ExampleDevice1>
+class ImplManager<ExampleDevice1> : public TypedManager<ExampleDevice1>
 {
     public:
 
