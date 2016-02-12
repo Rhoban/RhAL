@@ -187,6 +187,8 @@ class Manager : public AggregateManager<Types...>
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //Swap to apply last read change
             swapRead();
+            //Call all Devices onSwap() callback
+            swapCallBack();
             //Select registers for read and write
             //and compute operation batching
             std::vector<BatchedRegisters> batchsRead = 
@@ -361,8 +363,8 @@ class Manager : public AggregateManager<Types...>
                     "Manager protocol not initialized");
             }
             //Retrieve Register pointer
-            Register* reg = &(AggregateManager<Types...>
-                ::devById(id).registersList().reg(name));
+            Register* reg = &(this->devById(id)
+                .registersList().reg(name));
             //Reset read flags
             reg->readyForRead();
             //Read single register
@@ -416,8 +418,8 @@ class Manager : public AggregateManager<Types...>
                     "Manager protocol not initialized");
             }
             //Retrieve Register pointer
-            Register* reg = &(AggregateManager<Types...>
-                ::devById(id).registersList().reg(name));
+            Register* reg = &(this->devById(id)
+                .registersList().reg(name));
             //Export typed value into data buffer
             reg->selectForWrite();
             //Write the register
@@ -490,7 +492,7 @@ class Manager : public AggregateManager<Types...>
         inline nlohmann::json saveJSON() const
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
-            nlohmann::json j = AggregateManager<Types...>::saveAggregatedJSON();
+            nlohmann::json j = this->saveAggregatedJSON();
             j["Manager"] = _parametersList.saveJSON();
             return j;
         }
@@ -512,7 +514,7 @@ class Manager : public AggregateManager<Types...>
                 throw std::runtime_error(
                     "Manager load parameters root json malformed");
             }
-            AggregateManager<Types...>::loadAggregatedJSON(j);
+            this->loadAggregatedJSON(j);
             _parametersList.loadJSON(j.at("Manager"));
             //Reset low level communication (bus/protocol)
             initBus();
@@ -711,7 +713,8 @@ class Manager : public AggregateManager<Types...>
             }
             //Allocate Bus and Protocol
             if (_paramBusPort.value != "") {
-                _bus = new SerialBus(_paramBusPort.value, _paramBusBaudrate.value);
+                _bus = new SerialBus(
+                    _paramBusPort.value, _paramBusBaudrate.value);
             }
             _protocol = ProtocolFactory(_paramProtocolName.value, *_bus);
             //Check that Protocol implementation name is valid
@@ -960,6 +963,18 @@ class Manager : public AggregateManager<Types...>
         {
             for (size_t i=0;i<_sortedRegisters.size();i++) {
                 _sortedRegisters[i]->swapRead();
+            }
+        }
+
+        /**
+         * Iterate over all Devices and
+         * trigger Device onSwap() call back.
+         * (No thread protection)
+         */
+        inline void swapCallBack()
+        {
+            for (auto& it : this->_devicesById) {
+                it.second->onSwap();
             }
         }
 

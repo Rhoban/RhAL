@@ -40,6 +40,14 @@ class BaseExampleDevice1 : public Device
          * Registers
          */
         TypedRegisterFloat _voltage;
+
+        /**
+         * Test Inherit
+         */
+        virtual inline void onSwap() override
+        {
+            std::cout << "ExampleDevice1 onSwap() " << this->name() << std::endl;
+        }
 };
 
 /**
