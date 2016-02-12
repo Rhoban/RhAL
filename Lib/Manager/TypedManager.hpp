@@ -12,14 +12,14 @@
 namespace RhAL {
 
 /**
- * BaseManager
+ * TypedManager
  *
  * Base template class for Device 
  * type specialized manager.
  * T is the Device derived class
  */
 template <typename T>
-class BaseManager
+class TypedManager
 {
     public:
 
@@ -34,7 +34,7 @@ class BaseManager
         /**
          * Initialization
          */
-        inline BaseManager() :
+        inline TypedManager() :
             _parametersList(),
             _devicesByName(),
             _devicesById()
@@ -44,7 +44,7 @@ class BaseManager
         /**
          * Devices deallocation
          */
-        inline virtual ~BaseManager()
+        inline virtual ~TypedManager()
         {
             for (auto& dev : _devicesByName) {
                 delete dev.second;
@@ -58,8 +58,8 @@ class BaseManager
         /**
          * Copy and assignment are forbidden
          */
-        BaseManager(const BaseManager&) = delete;
-        BaseManager& operator=(const BaseManager&) = delete;
+        TypedManager(const TypedManager&) = delete;
+        TypedManager& operator=(const TypedManager&) = delete;
 
         /**
          * Add a new Device with given
@@ -75,7 +75,7 @@ class BaseManager
                 _devicesById.count(id) != 0
             ) {
                 throw std::logic_error(
-                    "BaseManager device name or id already added: " 
+                    "TypedManager device name or id already added: " 
                     + name);
             }
             T* dev = new T(name, id);
@@ -93,7 +93,7 @@ class BaseManager
         {
             if (!devExistsById(id)) {
                 throw std::logic_error(
-                    "BaseManager device id does not exists: " 
+                    "TypedManager device id does not exists: " 
                     + std::to_string(id));
             }
             return *(_devicesById.at(id));
@@ -102,7 +102,7 @@ class BaseManager
         {
             if (!devExistsById(id)) {
                 throw std::logic_error(
-                    "BaseManager device id does not exists: " 
+                    "TypedManager device id does not exists: " 
                     + std::to_string(id));
             }
             return *(_devicesById.at(id));
@@ -111,7 +111,7 @@ class BaseManager
         {
             if (!devExistsByName(name)) {
                 throw std::logic_error(
-                    "BaseManager device name does not exists: " 
+                    "TypedManager device name does not exists: " 
                     + name);
             }
             return *(_devicesByName.at(name));
@@ -120,7 +120,7 @@ class BaseManager
         {
             if (!devExistsByName(name)) {
                 throw std::logic_error(
-                    "BaseManager device name does not exists: " 
+                    "TypedManager device name does not exists: " 
                     + name);
             }
             return *(_devicesByName.at(name));

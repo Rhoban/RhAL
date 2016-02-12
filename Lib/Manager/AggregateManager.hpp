@@ -6,7 +6,7 @@
 #include <json.hpp>
 #include <type_traits>
 #include "CallManager.hpp"
-#include "BaseManager.hpp"
+#include "TypedManager.hpp"
 #include "Device.hpp"
 
 namespace RhAL {
@@ -775,7 +775,7 @@ class AggregateManager : public CallManager, public ImplManager<Types>...
                 throw std::runtime_error(
                     "AggregateManager load parameters json not object");
             }
-            //Load BaseManager parameters
+            //Load TypedManager parameters
             if (j.count("parameters") != 1) {
                 throw std::runtime_error(
                     "AggregateManager load parameters no parameters key");

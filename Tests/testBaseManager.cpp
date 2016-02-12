@@ -1,4 +1,4 @@
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Manager.hpp"
 #include "tests.h"
 #include "Devices/ExampleDevice1.hpp"
@@ -6,7 +6,7 @@
 int main()
 {
     RhAL::Manager<RhAL::ExampleDevice1> manager;
-    RhAL::BaseManager<RhAL::ExampleDevice1>* baseManager = &manager;
+    RhAL::TypedManager<RhAL::ExampleDevice1>* baseManager = &manager;
     
     assertEquals(baseManager->devExistsById(1), false);
     assertEquals(baseManager->devExistsByName("test1"), false);

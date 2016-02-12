@@ -173,8 +173,7 @@ class Device
         }
 
         /**
-         * Manager and BaseManager 
-         * have access to listed 
+         * Manager have access to listed 
          * Parameters and Registers
          */
         template <typename ... T>

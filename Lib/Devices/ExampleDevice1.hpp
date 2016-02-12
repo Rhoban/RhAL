@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -192,7 +192,7 @@ class ExampleDevice1 : public BaseExampleDevice1
  * DeviceManager specialized for ExampleDevice1
  */
 template <>
-class ImplManager<ExampleDevice1> : public BaseManager<ExampleDevice1>
+class ImplManager<ExampleDevice1> : public TypedManager<ExampleDevice1>
 {
     public:
 
