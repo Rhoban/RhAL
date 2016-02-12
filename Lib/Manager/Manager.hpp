@@ -99,7 +99,7 @@ class Manager : public AggregateManager<Types...>
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (_cooperativeThreadCount == 0) {
                 throw std::logic_error(
-                    "Manager cooperative threads add/remove mismatch");
+                        "Manager cooperative threads add/remove mismatch");
             }
             _cooperativeThreadCount--;
         }
@@ -110,10 +110,16 @@ class Manager : public AggregateManager<Types...>
          */
         inline void emergencyStop()
         {
+            //Check for bus inited
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             _stats.emergencyCount++;
-        	_protocol->emergencyStop();
+            _protocol->emergencyStop();
         }
+
         /**
          * Immediately sends a broadcasted signal
          * to exit the emergency state in all the
@@ -121,10 +127,16 @@ class Manager : public AggregateManager<Types...>
          */
         inline void exitEmergencyState()
         {
+            //Check for inited
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "Manager protocol not initialized");
+            }
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             _stats.exitEmergencyCount++;
-        	_protocol->exitEmergencyState();
+            _protocol->exitEmergencyState();
         }
+
         /**
          * Declared cooperative user threads 
          * have to call this method at each end 

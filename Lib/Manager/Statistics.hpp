@@ -46,8 +46,8 @@ struct Statistics
     //at nextFlush()
     TimeDurationMicro waitUsersDuration;
     TimeDurationMicro waitManagerDuration;
-    //Number of calls to Manager emergencyStop(),
-    //exitEmergencyState()
+    //Number of calls to Manager 
+    //emergencyStop(), exitEmergencyState()
     unsigned long emergencyCount;
     unsigned long exitEmergencyCount;
 
@@ -74,8 +74,8 @@ struct Statistics
         forceWriteCount(0),
         waitUsersDuration(0),
         waitManagerDuration(0),
-		emergencyCount(0),
-		exitEmergencyCount(0)
+        emergencyCount(0),
+        exitEmergencyCount(0)
     {
     }
 
