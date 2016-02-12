@@ -3,11 +3,7 @@
 #include <thread>
 
 
-typedef RhAL::Manager<
-    RhAL::ExampleDevice1,
-	RhAL::MX64,
-	RhAL::RX64,
-    RhAL::ExampleDevice2> Manager;
+namespace RhAL {
 
 void printDevice(const RhAL::Device& dev)
 {
@@ -42,7 +38,7 @@ void printDevice(const RhAL::Device& dev)
 }
 
 void testRX64() {
-	Manager manager;
+	StandardManager manager;
 
 	    manager.setProtocolConfig(
 	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
@@ -99,7 +95,7 @@ void testRX64() {
 }
 
 void testMX64() {
-	Manager manager;
+	StandardManager manager;
 
 	    manager.setProtocolConfig(
 	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
@@ -198,10 +194,10 @@ void testMX64() {
 }
 
 void testMX64AndDynaban() {
-	Manager manager;
+	StandardManager manager;
 
 	    manager.setProtocolConfig(
-	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+	        "/dev/ttyACM0", 1000000, "DynamixelV1");
 
 	    //Scan the bus
 	    //(no response with FakeProtocol)
@@ -220,33 +216,39 @@ void testMX64AndDynaban() {
 	    //Set Manager scheduling config mode
 	    manager.setScheduleMode(false);
 
-	    RhAL::MX64& dev1 = manager.dev<RhAL::MX64>(1);
-	    RhAL::MX64& dev2 = manager.dev<RhAL::MX64>(2);
+//	    RhAL::MX64& dev1 = manager.dev<RhAL::MX64>(1);
+//	    RhAL::MX64& dev2 = manager.dev<RhAL::MX64>(2);
 
 	    // Enables torque on all the devices
-	    manager.exitEmergencyState();
+//	    manager.exitEmergencyState();
+//
+//	    for (const auto& it : manager.devContainer<RhAL::DXL>()) {
+//	    	//Retrieve Device model number and model name
+//	    	RhAL::DXL * dev = it.second;
+//	    	dev->setGoalPosition(0);
+//	    }
+//	    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-	    for (const auto& it : manager.devContainer<RhAL::DXL>()) {
-	    	//Retrieve Device model number and model name
-	    	RhAL::DXL * dev = it.second;
-	    	dev->setGoalPosition(0);
-	    }
-	    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	    while(true)
+	    {
+			//Iterate over Manager Devices with types
+			for (const auto& it : manager.devContainer<RhAL::Device>()) {
+				RhAL::Device * dev = it.second;
 
-	    //Iterate over Manager Devices with types
-		for (const auto& it : manager.devContainer<RhAL::DXL>()) {
-			RhAL::DXL * dev = it.second;
-
-			if (manager.devTypeName(it.second->name()) == "MX64") {
-				//Unchecked cast
-				RhAL::MX * devMx = (RhAL::MX*) dev;
-				std::cout << "Position = " << devMx->getPositionRad() << std::endl;
-				devMx->setGoalPosition(180);
-			}
-//			RhAL::MX * devMx = (RhAL::MX*) dev;
-//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
+				if (manager.devTypeName(it.second->name()) == "MX64") {
+					//Unchecked cast
+					RhAL::MX * devMx = (RhAL::MX*) dev;
+					std::cout << "Position = " << devMx->getPositionRad() << std::endl;
+					devMx->setGoalPosition(180);
+				} else if (manager.devTypeName(it.second->name()) == "IMU") {
+					RhAL::IMU* devImu = (RhAL::IMU*) dev;
+					std::cout << "yaw = " << devImu->getYaw() << std::endl;
+				}
+	//			RhAL::MX * devMx = (RhAL::MX*) dev;
+	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
 		}
+	    }
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
 		std::cout << "Emergency stop ! " << std::endl;
@@ -258,10 +260,14 @@ void testMX64AndDynaban() {
 
 	    return;
 }
+
+}
+
 /**
  * Manager Devices manipulation example
  */
 int main() {
-	testMX64AndDynaban();
+	RhAL::testMX64AndDynaban();
+	return 0;
 }
 
