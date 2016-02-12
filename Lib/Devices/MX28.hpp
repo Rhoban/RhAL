@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -43,7 +43,7 @@ class MX28 : public MX
  * DeviceManager specialized for MX28
  */
 template <>
-class ImplManager<MX28> : public BaseManager<MX28>
+class ImplManager<MX28> : public TypedManager<MX28>
 {
     public:
 

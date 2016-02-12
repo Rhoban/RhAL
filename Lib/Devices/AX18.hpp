@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -49,7 +49,7 @@ class AX18 : public RX
  * DeviceManager specialized for AX18
  */
 template <>
-class ImplManager<AX18> : public BaseManager<AX18>
+class ImplManager<AX18> : public TypedManager<AX18>
 {
     public:
 

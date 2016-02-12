@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -49,7 +49,7 @@ class RX64 : public RX
  * DeviceManager specialized for RX64
  */
 template <>
-class ImplManager<RX64> : public BaseManager<RX64>
+class ImplManager<RX64> : public TypedManager<RX64>
 {
     public:
 
