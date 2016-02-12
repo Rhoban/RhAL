@@ -177,6 +177,26 @@ namespace RhAL
         sendPacket(packet);
     }
 
+    /**
+     * Broadcasts a "disable torque" command
+     */
+    void DynamixelV1::emergencyStop()
+    {
+    	uint8_t data[1];
+    	data[0] = 0;
+    	writeData(Broadcast, 0x18, data, 1);
+    }
+
+    /**
+     * Broadcasts an "enable torque" command
+     */
+    void DynamixelV1::exitEmergencyState()
+    {
+    	uint8_t data[1];
+    	data[0] = 1;
+    	writeData(Broadcast, 0x18, data, 1);
+    }
+
     void DynamixelV1::sendPacket(Packet &packet)
     {
     	bus.clearInputBuffer();

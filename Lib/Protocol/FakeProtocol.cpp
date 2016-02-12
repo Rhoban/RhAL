@@ -104,5 +104,14 @@ void FakeProtocol::syncWrite(
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
+void FakeProtocol::emergencyStop()
+{
+	std::cout << "Emergency stop not implemented" << std::endl;
+}
+void FakeProtocol::exitEmergencyState()
+{
+	std::cout << "Exit emergency state not implemented" << std::endl;
+}
+
 }
 
