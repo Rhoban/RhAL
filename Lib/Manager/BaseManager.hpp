@@ -207,7 +207,7 @@ class BaseManager : public CallManager
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (_cooperativeThreadCount == 0) {
                 throw std::logic_error(
-                        "BaseManager cooperative threads add/remove mismatch");
+                    "BaseManager cooperative threads add/remove mismatch");
             }
             _cooperativeThreadCount--;
         }
@@ -652,6 +652,8 @@ class BaseManager : public CallManager
         virtual type_t devTypeNumberById(id_t id) const = 0;
         virtual bool isTypeSupported(type_t type) const = 0;
         virtual void devAddByTypeNumber(id_t id, type_t type) = 0;
+        virtual void writeConfig(const std::string& filename) const = 0;
+        virtual void readConfig(const std::string& filename) = 0;
 
     protected:
         
@@ -694,7 +696,7 @@ class BaseManager : public CallManager
             //Check that Protocol implementation name is valid
             if (_protocol == nullptr) {
                 throw std::logic_error(
-                    "Manager invalid protocol name: " 
+                    "BaseManager invalid protocol name: " 
                     + _paramProtocolName.value);
             }
         }
@@ -939,7 +941,7 @@ class BaseManager : public CallManager
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
-                    "Manager protocol not initialized");
+                    "BaseManager protocol not initialized");
             }
             if (batch.ids.size() == 1) {
                 //Write single register
@@ -978,7 +980,7 @@ class BaseManager : public CallManager
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
-                    "Manager protocol not initialized");
+                    "BaseManager protocol not initialized");
             }
             //Reset read flags for all registers
             for (size_t i=0;i<batch.regs.size();i++) {
@@ -1067,7 +1069,7 @@ class BaseManager : public CallManager
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
-                    "Manager protocol not initialized");
+                    "BaseManager protocol not initialized");
             }
             //Read at static memory address
             data_t* pt = reinterpret_cast<data_t*>(&type);

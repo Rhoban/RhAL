@@ -65,12 +65,13 @@ class Manager : public AggregateManager<Types...>
          * configuration into given file 
          * in JSON format
          */
-        inline void writeConfig(const std::string& filename)
+        inline virtual void writeConfig(
+            const std::string& filename) const override
         {
             std::ofstream file;
             file.open(filename);
             if (!file.is_open()) {
-                std::runtime_error(
+                throw std::runtime_error(
                     "Manager unable to write file: " 
                     + filename);
             }
@@ -85,12 +86,13 @@ class Manager : public AggregateManager<Types...>
          * Throw std::runtime_error if given config
          * file is malformated
          */
-        inline void readConfig(const std::string& filename)
+        inline virtual void readConfig(
+            const std::string& filename) override
         {
             std::ifstream file;
             file.open(filename);
             if (!file.is_open()) {
-                std::runtime_error(
+                throw std::runtime_error(
                     "Manager unable to read file: " 
                     + filename);
             }
