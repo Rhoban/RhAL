@@ -177,8 +177,7 @@ class Device
          * Manager have access to listed 
          * Parameters and Registers
          */
-        template <typename ... T>
-        friend class Manager;
+        friend class BaseManager;
 
     private:
         

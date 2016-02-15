@@ -286,8 +286,7 @@ class Register
          * Manager has access to 
          * private members
          */
-        template <typename ... T>
-        friend class Manager;
+        friend class BaseManager;
         
         /**
          * Mark the register as selected for write.

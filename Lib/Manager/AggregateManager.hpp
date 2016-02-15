@@ -3,8 +3,8 @@
 #include <json.hpp>
 #include <type_traits>
 #include "Device.hpp"
-#include "BaseManager.hpp"
 #include "TypedManager.hpp"
+#include "BaseManager.hpp"
 
 namespace RhAL {
 
@@ -137,8 +137,8 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
          * id/name already exists or if given type
          * is not supported by the manager
          */
-        inline void devAddByTypeNumber(
-            id_t id, type_t type)
+        inline virtual void devAddByTypeNumber(
+            id_t id, type_t type) override
         {
             Impl<Types...>::runAddByType(this, id, type);
         }
@@ -147,7 +147,7 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
          * Return true if given Device type model
          * number is supported by the manager
          */
-        inline bool isTypeSupported(type_t type) const
+        inline virtual bool isTypeSupported(type_t type) const override
         {
             return Impl<Types...>::runIsTypeSupported(type);
         }
@@ -192,7 +192,7 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
             return devTypeNameByName(name);
         }
         //Implementations
-        inline type_t devTypeNumberById(id_t id) const
+        inline virtual type_t devTypeNumberById(id_t id) const override
         {
             return Impl<Types...>::runTypeNumberById(this, id);
         }

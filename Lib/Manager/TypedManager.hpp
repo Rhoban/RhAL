@@ -35,7 +35,7 @@ class TypedManager
          * Initialization
          */
         inline TypedManager() :
-            _parametersList(),
+            _paramsList(),
             _devsByName(),
             _devsById()
         {
@@ -156,7 +156,7 @@ class TypedManager
         inline nlohmann::json saveJSON() const
         {
             nlohmann::json j;
-            j["parameters"] = _parametersList.saveJSON();        
+            j["parameters"] = _paramsList.saveJSON();        
             j["devices"] = nlohmann::json::array();
             for (const auto& it : _devsById) {
                 nlohmann::json obj = nlohmann::json::object();
@@ -179,7 +179,7 @@ class TypedManager
          */
         inline void loadJSON(const nlohmann::json& j)
         {
-            _parametersList.loadJSON(j.at("parameters"));
+            _paramsList.loadJSON(j.at("parameters"));
             //Iterate over devices
             for (size_t i=0;i<j.at("devices").size();i++) {
                 const nlohmann::json& dev = j.at("devices").at(i);
@@ -196,11 +196,11 @@ class TypedManager
          */
         const ParametersList& parametersList() const
         {
-            return _parametersList;
+            return _paramsList;
         }
         ParametersList& parametersList()
         {
-            return _parametersList;
+            return _paramsList;
         }
 
     private:
@@ -209,7 +209,7 @@ class TypedManager
          * Container of bool, number and 
          * string device parameters
          */
-        ParametersList _parametersList;
+        ParametersList _paramsList;
         
         /**
          * Device container indexed by

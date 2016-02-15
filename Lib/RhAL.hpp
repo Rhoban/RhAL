@@ -10,6 +10,7 @@
 #include "Manager/ParametersList.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/TypedManager.hpp"
+#include "Manager/BaseManager.hpp"
 #include "Manager/AggregateManager.hpp"
 #include "Manager/Manager.hpp"
 
