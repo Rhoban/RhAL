@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
         manager.readConfig("rhal.json");
     } catch (...) {
     }
+    // Scanning 
+    manager.scan();
 
     // Running the binding
     RhioBinding binding(&manager);
