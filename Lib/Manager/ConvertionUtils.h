@@ -22,10 +22,10 @@ inline void write3BytesToBuffer(data_t* buffer, uint32_t value)
 }
 inline void writeFloatToBuffer(data_t* buffer, float value)
 {
-    //Attention ! This compile time assert checks 
-    //the size of the float but not its endianness. 
+    //Attention ! This compile time assert checks
+    //the size of the float but not its endianness.
     //This implementation might fail depending on the platform.
-    static_assert(sizeof(value) == 4, 
+    static_assert(sizeof(value) == 4,
         "Float is not 32 bit on this platform, I'm done !");
     //We need to do this in order to access the bits from our float
     unsigned char *c = reinterpret_cast<unsigned char *>(&value);
@@ -59,7 +59,7 @@ inline uint32_t read3BytesFromBuffer(const data_t* buffer)
 inline float readFloatFromBuffer(const data_t* buffer)
 {
     //Attention ! To be tested
-    uint32_t temp = (*(buffer + 3) << 24) | 
+    uint32_t temp = (*(buffer + 3) << 24) |
         (*(buffer + 2) << 16) | (*(buffer + 1) << 8) | (*(buffer));
     float* val = reinterpret_cast<float*>(&temp);
 
@@ -75,6 +75,7 @@ inline float readFloatFromBuffer(const data_t* buffer)
  * - "encode" is the conversion from the user to the hardware
  * - "decode" is the conversion from the hardware to the user
  */
+
 
 /**
  * Default bool encode (raw copy)
@@ -159,4 +160,3 @@ inline float convDecode_float(const data_t* buffer)
 }
 
 }
-

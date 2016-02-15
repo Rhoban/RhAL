@@ -9,5 +9,5 @@
     "binaries": "build",
     "libraries": "build",
     "includes": "Lib",
-    "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap"]
+    "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap", "rhoban/rhio"]
 }

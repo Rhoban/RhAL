@@ -183,6 +183,7 @@ class RX : public DXL
         inline RX(const std::string& name, id_t id) :
             DXL(name, id),
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
+                // ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
 			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
 			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
@@ -196,13 +197,13 @@ class RX : public DXL
 			_goalPosition("goalPosition", 0x1E, 2, convEncode_PositionRx, convDecode_PositionRx, 0),
 			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedRx, convDecode_SpeedRx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
-			_position("position", 0x24, 2, convEncode_PositionRx, convDecode_PositionRx, 1),
+			_position("position", 0x24, 2, convDecode_PositionRx, 1),
 			_speed("speed", 0x26, 2, convEncode_SpeedRx, convDecode_SpeedRx, 1),
-			_load("load", 0x28, 2, convEncode_torque, convDecode_torque, 0),
-			_voltage("voltage", 0x2A, 1, convEncode_voltage, convDecode_voltage, 0),
-			_temperature("temperature", 0x2B, 1, convEncode_temperature, convDecode_temperature, 0),
-			_registered("registered", 0x2C, 1, convEncode_Bool, convDecode_Bool, 0),
-			_moving("moving", 0x2E, 1, convEncode_Bool, convDecode_Bool, 0),
+			_load("load", 0x28, 2,  convDecode_torque, 0),
+			_voltage("voltage", 0x2A, 1,  convDecode_voltage, 0),
+			_temperature("temperature", 0x2B, 1,  convDecode_temperature, 0),
+			_registered("registered", 0x2C, 1,  convDecode_Bool, 0),
+			_moving("moving", 0x2E, 1,  convDecode_Bool, 0),
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0)
         {
@@ -673,5 +674,3 @@ class RX : public DXL
 
 
 }
-
-
