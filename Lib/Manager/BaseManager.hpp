@@ -652,6 +652,8 @@ class BaseManager : public CallManager
         virtual type_t devTypeNumberById(id_t id) const = 0;
         virtual bool isTypeSupported(type_t type) const = 0;
         virtual void devAddByTypeNumber(id_t id, type_t type) = 0;
+        virtual nlohmann::json saveJSON() const = 0;
+        virtual void loadJSON(const nlohmann::json& j) = 0;
         virtual void writeConfig(const std::string& filename) const = 0;
         virtual void readConfig(const std::string& filename) = 0;
 
