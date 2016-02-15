@@ -290,11 +290,7 @@ void testImuAndPins() {
 					std::cout << "magnY = " << devImu->getMagnY() << std::endl;
 					std::cout << "magnZ = " << devImu->getMagnZ() << std::endl;
 					std::cout << "magnAzimuth = " << devImu->getMagnAzimuth() << std::endl;
-					/**
-					 * TODO :
-					 * remove this function and everything I added to make it work. Once the IMU is fixed, test all the registers.
-					 */
-					devImu->getAll();
+
 				} else if (manager.devTypeName(it.second->name()) == "Pins") {
 					RhAL::Pins* devPins = (RhAL::Pins*) dev;
 					bool buttons[7];
