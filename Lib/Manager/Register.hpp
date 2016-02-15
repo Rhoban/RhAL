@@ -480,6 +480,17 @@ class TypedRegister : public Register
             }
         }
 
+        /**
+         * Return the current write value 
+         * that has been written by writeValue()
+         * and aggregation policy.
+         */
+        inline T getWrittenValue() 
+        {
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _valueWrite;
+        }
+
     protected:
 
         /**
