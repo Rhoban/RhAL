@@ -27,17 +27,17 @@ class TypedManager
          * Typedef for device container
          */
         typedef std::unordered_map<std::string, T*> 
-            DevicesByName;
+            DevsByName;
         typedef std::unordered_map<id_t, T*> 
-            DevicesById;
+            DevsById;
 
         /**
          * Initialization
          */
         inline TypedManager() :
             _parametersList(),
-            _devicesByName(),
-            _devicesById()
+            _devsByName(),
+            _devsById()
         {
         }
 
@@ -46,11 +46,11 @@ class TypedManager
          */
         inline virtual ~TypedManager()
         {
-            for (auto& dev : _devicesByName) {
+            for (auto& dev : _devsByName) {
                 delete dev.second;
                 dev.second = nullptr;
             }
-            for (auto& dev : _devicesById) {
+            for (auto& dev : _devsById) {
                 dev.second = nullptr;
             }
         }
@@ -71,16 +71,16 @@ class TypedManager
         inline void devAdd(const std::string& name, id_t id)
         {
             if (
-                _devicesByName.count(name) != 0 ||
-                _devicesById.count(id) != 0
+                _devsByName.count(name) != 0 ||
+                _devsById.count(id) != 0
             ) {
                 throw std::logic_error(
                     "TypedManager device name or id already added: " 
                     + name);
             }
             T* dev = new T(name, id);
-            _devicesByName[name] = dev;
-            _devicesById[id] = dev;
+            _devsByName[name] = dev;
+            _devsById[id] = dev;
         }
 
         /**
@@ -96,7 +96,7 @@ class TypedManager
                     "TypedManager device id does not exists: " 
                     + std::to_string(id));
             }
-            return *(_devicesById.at(id));
+            return *(_devsById.at(id));
         }
         inline T& devById(id_t id)
         {
@@ -105,7 +105,7 @@ class TypedManager
                     "TypedManager device id does not exists: " 
                     + std::to_string(id));
             }
-            return *(_devicesById.at(id));
+            return *(_devsById.at(id));
         }
         inline const T& devByName(const std::string& name) const
         {
@@ -114,7 +114,7 @@ class TypedManager
                     "TypedManager device name does not exists: " 
                     + name);
             }
-            return *(_devicesByName.at(name));
+            return *(_devsByName.at(name));
         }
         inline T& devByName(const std::string& name)
         {
@@ -123,7 +123,7 @@ class TypedManager
                     "TypedManager device name does not exists: " 
                     + name);
             }
-            return *(_devicesByName.at(name));
+            return *(_devsByName.at(name));
         }
 
         /**
@@ -132,20 +132,20 @@ class TypedManager
          */
         inline bool devExistsById(id_t id) const
         {
-            return _devicesById.count(id) != 0;
+            return _devsById.count(id) != 0;
         }
         inline bool devExistsByName(const std::string& name) const
         {
-            return _devicesByName.count(name) != 0;
+            return _devsByName.count(name) != 0;
         }
 
         /**
          * Direct read access to Device container
          * by indexed name for Device iteration
          */
-        inline const DevicesByName& devContainer() const
+        inline const DevsByName& devContainer() const
         {
-            return _devicesByName;
+            return _devsByName;
         }
 
         /**
@@ -158,7 +158,7 @@ class TypedManager
             nlohmann::json j;
             j["parameters"] = _parametersList.saveJSON();        
             j["devices"] = nlohmann::json::array();
-            for (const auto& it : _devicesById) {
+            for (const auto& it : _devsById) {
                 nlohmann::json obj = nlohmann::json::object();
                 obj["id"] = it.second->id();
                 obj["name"] = it.second->name();
@@ -186,7 +186,7 @@ class TypedManager
                 //Retrieve device id
                 id_t id = dev.at("id");
                 //Load parameters
-                _devicesById.at(id)->parametersList()
+                _devsById.at(id)->parametersList()
                     .loadJSON(dev.at("parameters"));
             }
         }
@@ -215,8 +215,8 @@ class TypedManager
          * Device container indexed by
          * their name and their id
          */
-        DevicesByName _devicesByName;
-        DevicesById _devicesById;
+        DevsByName _devsByName;
+        DevsById _devsById;
 };
 
 /**
