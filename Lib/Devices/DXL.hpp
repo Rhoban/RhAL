@@ -138,10 +138,11 @@ class DXL : public Device
 			 * Unfortunately, the XL-320 has different addresses starting from the 'goalTorque' register.
 			 * This messes up with the genericity of dxl devices and disables the elegant solution.
 			 * Therefore, we decided to declare here only the Eeprom/flash registers that are common among all the dxl devices.
+                         * ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
 			 */
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_modelNumber("modelNumber", 0x00, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
-			_firmwareVersion("firmwareVersion", 0x02, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_modelNumber("modelNumber", 0x00, 2, convDecode_2Bytes, 0, false, false, true),
+			_firmwareVersion("firmwareVersion", 0x02, 1, convDecode_1Byte, 0, false, false, true),
 			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			_baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0, false, false, true),
 			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0, false, false, true),
@@ -618,4 +619,3 @@ class DXL : public Device
 // (virtual )(\w+ )(get\w+)(.*;{1}[\n\r]{1})
 //Copy it and add a timestamp getter :
 // $1$2$3$4\t\t$1TimePoint $3Ts$4
-

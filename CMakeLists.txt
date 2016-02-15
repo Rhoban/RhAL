@@ -16,10 +16,10 @@ set(EXAMPLES_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Examples")
 
 # Enable C++11
-set(CMAKE_CXX_FLAGS 
+set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -std=c++11")
 # Enable compiler Warning
-set(CMAKE_CXX_FLAGS 
+set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -W -Wall")
 
 # Include sources directory
@@ -36,7 +36,7 @@ set(LIB_SOURCES
 )
 # Prefix with lib directory path
 foreach(SOURCE ${LIB_SOURCES})
-    set (PREFIXED_LIB_SOURCES 
+    set (PREFIXED_LIB_SOURCES
         ${PREFIXED_LIB_SOURCES}
         ${LIB_SOURCES_DIRECTORY}/${SOURCE}
     )
@@ -50,6 +50,7 @@ set(TESTS_SOURCES
     testDevice
     testBaseManager
     testManager
+    testReadWrite
 )
 
 # Examples source files
@@ -79,4 +80,3 @@ foreach(EXAMPLE ${EXAMPLES_SOURCES})
     add_executable(${EXAMPLE} "${EXAMPLES_SOURCES_DIRECTORY}/${EXAMPLE}.cpp")
     target_link_libraries(${EXAMPLE} LibRhAL)
 endforeach()
-

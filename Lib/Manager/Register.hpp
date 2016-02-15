@@ -6,12 +6,13 @@
 #include "types.h"
 #include "CallManager.hpp"
 #include "Aggregation.h"
+#include <iostream>
 
 namespace RhAL {
 
 /**
  * Compile time constante for
- * register data buffer maximum 
+ * register data buffer maximum
  * length in bytes
  */
 constexpr size_t MaxRegisterLength = 4;
@@ -24,6 +25,16 @@ template <typename T>
 using FuncConvEncode = std::function<void(data_t*, T)>;
 template <typename T>
 using FuncConvDecode = std::function<T(const data_t*)>;
+
+/**
+ * Dummy function. Does nothing, just for ReadOnly registers. Thanks Quentin.
+ */
+
+inline void dummyEncode(data_t* buffer, bool value)
+{
+    //TODO should probably do something clever
+    std::cerr<<"WARNING: trying to write on a ReadOnly register"<<std::endl;
+}
 
 /**
  * Typedef for conversion function working
@@ -52,7 +63,7 @@ class Register
          * Set by RegistersList
          */
         id_t id;
-        
+
         /**
          * Textual name
          */
@@ -84,13 +95,18 @@ class Register
         const bool isForceWrite;
 
         /**
-         * If true, a sleep delay will be added after 
+         * If true, a sleep delay will be added after
          * writing to the register
          */
         const bool isSlowRegister;
 
         /**
-         * Initialize and allocate a new register 
+         * If true, the register is read only, we don't write it
+         */
+        const bool isReadOnly;
+
+        /**
+         * Initialize and allocate a new register
          * with given:
          * name: textual name unique to the device.
          * addr: address in device memory.
@@ -99,18 +115,21 @@ class Register
          * read from hardware every given readFlush().
          * forceRead: Do not packed read operation.
          * forceWrite: Do not packed write operation.
-         * isSlowRegister : If true, marks the buffer as slow. 
+         * isSlowRegister : If true, marks the buffer as slow.
          * Some registers are slow to write on the hardware
          * (flash memory takes 20-40 ms to write).
+         * isReadOnly: if true we don't write this register.
+         * funcConvEncode is a dummy function.
          */
         inline Register(
-            const std::string& name, 
-            addr_t addr, 
-            size_t length, 
+            const std::string& name,
+            addr_t addr,
+            size_t length,
             unsigned int periodPackedRead = 0,
             bool isForceRead = false,
             bool isForceWrite = false,
-            bool isSlowRegister = false) :
+            bool isSlowRegister = false,
+            bool isReadOnly = false) :
             //Member init
             id(0),
             name(name),
@@ -120,6 +139,7 @@ class Register
             isForceRead(isForceRead),
             isForceWrite(isForceWrite),
             isSlowRegister(isSlowRegister),
+            isReadOnly(isReadOnly),
             _dataBufferRead(nullptr),
             _dataBufferWrite(nullptr),
             _lastDevReadUser(),
@@ -133,7 +153,7 @@ class Register
         {
             if (length > MaxRegisterLength) {
                 throw std::logic_error(
-                    "Register length invalid with static max length: " 
+                    "Register length invalid with static max length: "
                     + name);
             }
             if (addr+length >= AddrDevLen) {
@@ -144,22 +164,22 @@ class Register
         }
 
         /**
-         * Initialize the Register with the associated 
+         * Initialize the Register with the associated
          * Device id, the Manager pointer and pointer to
          * Device memory space buffer for read and write.
          */
-        inline void init(id_t tmpId, CallManager* manager, 
+        inline void init(id_t tmpId, CallManager* manager,
             data_t* bufferRead, data_t* bufferWrite)
         {
             std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (manager == nullptr) {
                 throw std::logic_error(
-                    "Register null manager pointer:" 
+                    "Register null manager pointer:"
                     + name);
             }
             if (bufferRead == nullptr || bufferWrite == nullptr) {
                 throw std::logic_error(
-                    "Register null buffer pointer:" 
+                    "Register null buffer pointer:"
                     + name);
             }
             id = tmpId;
@@ -169,7 +189,7 @@ class Register
         }
 
         /**
-         * Perform immediate read or write 
+         * Perform immediate read or write
          * operation on the bus
          */
         inline void forceRead()
@@ -177,7 +197,7 @@ class Register
             std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
-                    "Register null manager pointer:" 
+                    "Register null manager pointer:"
                     + name);
             }
             _manager->forceRegisterRead(id, name);
@@ -187,7 +207,7 @@ class Register
             std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
-                    "Register null manager pointer:" 
+                    "Register null manager pointer:"
                     + name);
             }
             _manager->forceRegisterWrite(id, name);
@@ -226,7 +246,7 @@ class Register
 
         /**
          * Raw data buffer pointer in
-         * Device memory for read and write 
+         * Device memory for read and write
          * operation.
          */
         data_t* _dataBufferRead;
@@ -248,8 +268,8 @@ class Register
 
         /**
          * Dirty flags.
-         * If true, the Register need 
-         * to be selected for Read or Write 
+         * If true, the Register need
+         * to be selected for Read or Write
          * on the bus.
          */
         bool _needRead;
@@ -257,13 +277,13 @@ class Register
 
         /**
          * If true, the data in read buffer are newer
-         * than current typed read value. 
+         * than current typed read value.
          * The Register has to be swap.
          */
         bool _needSwaping;
 
         /**
-         * Pointer to a base class 
+         * Pointer to a base class
          * used to call the main manager
          */
         CallManager* _manager;
@@ -283,11 +303,11 @@ class Register
         virtual void doConvDecode() = 0;
 
         /**
-         * Manager has access to 
+         * Manager has access to
          * private members
          */
         friend class BaseManager;
-        
+
         /**
          * Mark the register as selected for write.
          * Current write typed value is converted into
@@ -347,7 +367,7 @@ class Register
  *
  * Register view as a typed register
  * of template type bool, int or float.
- * Allow get and set typed value in and out 
+ * Allow get and set typed value in and out
  * of the register through conversion functions.
  */
 template <typename T>
@@ -360,7 +380,7 @@ class TypedRegister : public Register
          * typed value to data buffer
          */
         const FuncConvEncode<T> funcConvEncode;
-        
+
         /**
          * Conversion functions from
          * data buffer to typed value
@@ -368,7 +388,7 @@ class TypedRegister : public Register
         const FuncConvDecode<T> funcConvDecode;
 
         /**
-         * Initialization with Register 
+         * Initialization with Register
          * configuration and:
          * funcConvEncode: convertion function
          * from typed value to data buffer.
@@ -376,9 +396,9 @@ class TypedRegister : public Register
          * from data buffer to typed value.
          */
         TypedRegister(
-            const std::string& name, 
-            addr_t addr, 
-            size_t length, 
+            const std::string& name,
+            addr_t addr,
+            size_t length,
             FuncConvEncode<T> funcConvEncode,
             FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
@@ -386,7 +406,7 @@ class TypedRegister : public Register
             bool forceWrite = false,
             bool isSlowRegister = false) :
             //Member init
-            Register(name, addr, length, periodPackedRead, 
+            Register(name, addr, length, periodPackedRead,
                 forceRead, forceWrite, isSlowRegister),
             funcConvEncode(funcConvEncode),
             funcConvDecode(funcConvDecode),
@@ -394,9 +414,37 @@ class TypedRegister : public Register
             _valueWrite(),
             _aggregationPolicy(AggregateLast),
             _callbackOnRead([](T val){(void)val;}),
-            _callbackOnWrite([](T val){(void)val;}) 
+            _callbackOnWrite([](T val){(void)val;})
         {
         }
+
+        /**
+         * Constructor for ReadOnly register (funcConvEncode is dummy and bool isReadOnly=true)
+         */
+
+        TypedRegister(
+            const std::string& name,
+            addr_t addr,
+            size_t length,
+            FuncConvDecode<T> funcConvDecode,
+            unsigned int periodPackedRead = 0,
+            bool forceRead = false,
+            bool forceWrite = false,
+            bool isSlowRegister = false) :
+            //Member init
+            Register(name, addr, length, periodPackedRead,
+                     forceRead, forceWrite, isSlowRegister, true), //isReadOnly=true
+            funcConvEncode(dummyEncode),
+            funcConvDecode(funcConvDecode),
+            _valueRead(),
+            _valueWrite(),
+            _aggregationPolicy(AggregateLast),
+            _callbackOnRead([](T val){(void)val;}),
+            _callbackOnWrite([](T val){(void)val;})
+        {
+        }
+
+
 
         /**
          * Set the register
@@ -409,7 +457,7 @@ class TypedRegister : public Register
         }
 
         /**
-         * Set the on user write and on 
+         * Set the on user write and on
          * manager read callback. The updated
          * value is given as calback argument.
          */
@@ -442,7 +490,7 @@ class TypedRegister : public Register
         }
 
         /**
-         * Set the current contained typed value. 
+         * Set the current contained typed value.
          * If the register is written multiple times
          * between write operations, values are aggregated
          * according with current aggregation policy.
@@ -453,7 +501,7 @@ class TypedRegister : public Register
         inline void writeValue(T val, bool noCallback = false)
         {
             std::unique_lock<std::recursive_mutex> lock(_mutex);
-            
+
             //Compute aggregation if the value
             //has already been written
             if (_needWrite) {
@@ -481,11 +529,11 @@ class TypedRegister : public Register
         }
 
         /**
-         * Return the current write value 
+         * Return the current write value
          * that has been written by writeValue()
          * and aggregation policy.
          */
-        inline T getWrittenValue() 
+        inline T getWrittenValue()
         {
             std::lock_guard<std::recursive_mutex> lock(_mutex);
             return _valueWrite;
@@ -515,15 +563,15 @@ class TypedRegister : public Register
 
         /**
          * Typed Register value.
-         * ValueWrite is the user aggregated 
+         * ValueWrite is the user aggregated
          * last write.
-         * ValueRead is the current hardware 
+         * ValueRead is the current hardware
          * register read value. Possible newer value
          * is in data read buffer waiting for swapping.
          */
         T _valueRead;
         T _valueWrite;
-        
+
         /**
          * Value Aggregation policy
          */
@@ -531,9 +579,9 @@ class TypedRegister : public Register
 
         /**
          * User callback called on user write
-         * and on successfull manager read 
+         * and on successfull manager read
          * (during swapRead).
-         * Written or read value is given 
+         * Written or read value is given
          * as callback argument
          */
         std::function<void(T)> _callbackOnRead;
@@ -548,4 +596,3 @@ typedef TypedRegister<int> TypedRegisterInt;
 typedef TypedRegister<float> TypedRegisterFloat;
 
 }
-
