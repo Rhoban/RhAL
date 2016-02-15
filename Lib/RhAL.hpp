@@ -27,6 +27,7 @@
 #include "Devices/AX12.hpp"
 #include "Devices/IMU.hpp"
 #include "Devices/PressureSensor.hpp"
+#include "Devices/Pins.hpp"
 
 /**
  * Define classic Manager typedef
@@ -44,7 +45,8 @@ typedef Manager<
     AX18,
     AX12,
     IMU,
-    PressureSensor
+    PressureSensor,
+    Pins
 > StandardManager;
 
 }

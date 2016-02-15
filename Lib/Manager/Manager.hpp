@@ -29,7 +29,7 @@ class Manager : public AggregateManager<Types...>
          * Export as json object all Parameters
          * and derived Devices configurations.
          */
-        inline nlohmann::json saveJSON() const
+        inline virtual nlohmann::json saveJSON() const override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             nlohmann::json j = this->saveAggregatedJSON();
@@ -43,7 +43,7 @@ class Manager : public AggregateManager<Types...>
          * Throw std::runtime_error if 
          * given json is malformated.
          */
-        inline void loadJSON(const nlohmann::json& j)
+        inline virtual void loadJSON(const nlohmann::json& j) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (

@@ -1,23 +1,30 @@
 #pragma once
 
+#include <thread>
 #include <string>
 #include <RhIO.hpp>
 
 namespace RhAL
 {
-    class Manager;
+    class BaseManager;
     class RhioBinding
     {
         public:
-            RhioBinding(Manager *manager, std::string node="lowlevel");
+            RhioBinding(BaseManager *manager, std::string node="lowlevel");
+            virtual ~RhioBinding();
+            std::vector<Device*> getDevices();
 
+            void runScheduler();
             void update();
 
         protected:
-            Manager *manager;
-            RhIO::IONode *node;
+            bool over;
+            std::thread *thread;
+            BaseManager *manager;
+            RhIO::Bind bind;
 
             // RhIO commands
             std::string cmdScan();
+            std::string cmdReadDev(std::string name);
     };
 }

@@ -27,6 +27,7 @@ include_directories(${LIB_SOURCES_DIRECTORY})
 
 # Lib source files
 set(LIB_SOURCES
+    Bindings/RhioBinding.cpp
     Bus/Bus.cpp
     Bus/SerialBus.cpp
     Protocol/Protocol.cpp
@@ -67,7 +68,7 @@ target_link_libraries(LibRhAL serial pthread)
 
 # Build the utility binary
 add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-target_link_libraries(rhal LibRhAL)
+target_link_libraries(rhal LibRhAL zmq RhIO)
 
 # Build all Tests binary
 foreach(TEST ${TESTS_SOURCES})
