@@ -34,7 +34,6 @@
  * with all implemented Device
  */
 namespace RhAL {
-
 typedef Manager<
     MX106,
     MX64,
@@ -48,6 +47,5 @@ typedef Manager<
     PressureSensor,
     Pins
 > StandardManager;
-
 }
 
