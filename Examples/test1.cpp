@@ -197,6 +197,56 @@ void testMX64AndDynaban() {
 	StandardManager manager;
 
 	    manager.setProtocolConfig(
+	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+
+	    //Set Manager scheduling config mode
+	    manager.setScheduleMode(false);
+	    while(true)
+	    {
+			//Iterate over Manager Devices with types
+			for (const auto& it : manager.devContainer<RhAL::Device>()) {
+				RhAL::Device * dev = it.second;
+
+				if (manager.devTypeName(it.second->name()) == "MX64") {
+					//Unchecked cast instead of dynamic_cast because the check was hand made :)
+					RhAL::MX * devMx = (RhAL::MX*) dev;
+					std::cout << "Position = " << devMx->getPositionRad() << std::endl;
+					devMx->setGoalPosition(180);
+				}
+	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
+
+			}
+	    }
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+		std::cout << "Emergency stop ! " << std::endl;
+		manager.emergencyStop();
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+		std::cout << "Release stop ! " << std::endl;
+		manager.exitEmergencyState();
+
+	    return;
+}
+
+void testImuAndPins() {
+	StandardManager manager;
+
+	    manager.setProtocolConfig(
 	        "/dev/ttyACM0", 1000000, "DynamixelV1");
 
 	    //Scan the bus
@@ -216,47 +266,46 @@ void testMX64AndDynaban() {
 	    //Set Manager scheduling config mode
 	    manager.setScheduleMode(false);
 
-//	    RhAL::MX64& dev1 = manager.dev<RhAL::MX64>(1);
-//	    RhAL::MX64& dev2 = manager.dev<RhAL::MX64>(2);
-
-	    // Enables torque on all the devices
-//	    manager.exitEmergencyState();
-//
-//	    for (const auto& it : manager.devContainer<RhAL::DXL>()) {
-//	    	//Retrieve Device model number and model name
-//	    	RhAL::DXL * dev = it.second;
-//	    	dev->setGoalPosition(0);
-//	    }
-//	    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
 	    while(true)
 	    {
+	    	std::cout << "-_-'" << std::endl;
 			//Iterate over Manager Devices with types
 			for (const auto& it : manager.devContainer<RhAL::Device>()) {
 				RhAL::Device * dev = it.second;
 
-				if (manager.devTypeName(it.second->name()) == "MX64") {
-					//Unchecked cast
-					RhAL::MX * devMx = (RhAL::MX*) dev;
-					std::cout << "Position = " << devMx->getPositionRad() << std::endl;
-					devMx->setGoalPosition(180);
-				} else if (manager.devTypeName(it.second->name()) == "IMU") {
+				if (manager.devTypeName(it.second->name()) == "IMU") {
 					RhAL::IMU* devImu = (RhAL::IMU*) dev;
+
 					std::cout << "yaw = " << devImu->getYaw() << std::endl;
+					std::cout << "pitch = " << devImu->getPitch() << std::endl;
+					std::cout << "roll = " << devImu->getRoll() << std::endl;
+					std::cout << "accX = " << devImu->getAccX() << std::endl;
+					std::cout << "accY = " << devImu->getAccY() << std::endl;
+					std::cout << "accZ = " << devImu->getAccZ() << std::endl;
+					std::cout << "gyroX = " << devImu->getGyroX() << std::endl;
+					std::cout << "gyroY = " << devImu->getGyroY() << std::endl;
+					std::cout << "gyroZ = " << devImu->getGyroZ() << std::endl;
+					std::cout << "gyroYaw = " << devImu->getGyroYaw() << std::endl;
+					std::cout << "magnX = " << devImu->getMagnX() << std::endl;
+					std::cout << "magnY = " << devImu->getMagnY() << std::endl;
+					std::cout << "magnZ = " << devImu->getMagnZ() << std::endl;
+					std::cout << "magnAzimuth = " << devImu->getMagnAzimuth() << std::endl;
+					/**
+					 * TODO :
+					 * remove this function and everything I added to make it work. Once the IMU is fixed, test all the registers.
+					 */
+					devImu->getAll();
+				} else if (manager.devTypeName(it.second->name()) == "Pins") {
+					RhAL::Pins* devPins = (RhAL::Pins*) dev;
+					bool buttons[7];
+					devPins->getButtons(buttons);
+					std::cout << "Buttons = " << buttons[0] << ", " << buttons[1] << ", " << buttons[2]
+					<< ", " << buttons[3] << ", " << buttons[4] << ", " << buttons[5] << ", " << buttons[6] << std::endl;
 				}
-	//			RhAL::MX * devMx = (RhAL::MX*) dev;
-	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
-		}
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	    }
-		std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-		std::cout << "Emergency stop ! " << std::endl;
-		manager.emergencyStop();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-		std::cout << "Release stop ! " << std::endl;
-		manager.exitEmergencyState();
 
 	    return;
 }
@@ -267,7 +316,7 @@ void testMX64AndDynaban() {
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::testMX64AndDynaban();
+	RhAL::testImuAndPins();
 	return 0;
 }
 

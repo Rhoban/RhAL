@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mutex>
-#include "Manager/BaseManager.hpp"
+#include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
@@ -182,7 +182,7 @@ class PressureSensor : public Device
  * DeviceManager specialized for PressureSensor
  */
 template <>
-class ImplManager<PressureSensor> : public BaseManager<PressureSensor>
+class ImplManager<PressureSensor> : public TypedManager<PressureSensor>
 {
     public:
 

@@ -44,18 +44,30 @@ inline void writeFloatToBuffer(data_t* buffer, float value)
 /**
  * Read from buffer
  */
+/**
+ * This function reads and returns 8 bits of data. The fact that the return value should be signed or unsigned is beyond this function responsibility,
+ * and should be handled by the caller (ie : remember to cast to signed if you're expecting a signed value)
+ */
 inline uint8_t read1ByteFromBuffer(const data_t* buffer)
 {
     uint8_t val;
     val = *(buffer);
     return val;
 }
+/**
+ * This function reads and returns 16 bits of data. The fact that the return value should be signed or unsigned is beyond this function responsibility,
+ * and should be handled by the caller (ie : remember to cast to signed if you're expecting a signed value)
+ */
 inline uint16_t read2BytesFromBuffer(const data_t* buffer)
 {
     uint16_t val = 0;
     val = (*(buffer + 1) << 8) | (*(buffer));
     return val;
 }
+/**
+ * This function reads and returns 32 bits of data. The fact that the return value should be signed or unsigned is beyond this function responsibility,
+ * and should be handled by the caller (ie : remember to cast to signed if you're expecting a signed value)
+ */
 inline uint32_t read3BytesFromBuffer(const data_t* buffer)
 {
     uint32_t val = 0;
@@ -69,6 +81,12 @@ inline float readFloatFromBuffer(const data_t* buffer)
     float* val = reinterpret_cast<float*>(&temp);
 
     return *val;
+}
+inline void readNBytesFromBuffer(const data_t* buffer, uint8_t * result, int n)
+{
+	for (uint8_t i = 0; i < n; i++) {
+		result[i] = *(buffer + i);
+	}
 }
 
 /**
