@@ -67,7 +67,7 @@ target_link_libraries(LibRhAL serial pthread)
 
 # Build the utility binary
 add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-target_link_libraries(rhal LibRhAL zmq RhIO)
+target_link_libraries(rhal LibRhAL RhIO zmq)
 
 # Build all Tests binary
 foreach(TEST ${TESTS_SOURCES})

@@ -298,7 +298,7 @@ void testImuAndPins() {
 				} else if (manager.devTypeName(it.second->name()) == "Pins") {
 					RhAL::Pins* devPins = (RhAL::Pins*) dev;
 					bool buttons[7];
-					devPins->getButtons(buttons);
+					devPins->getPins(buttons);
 					std::cout << "Buttons = " << buttons[0] << ", " << buttons[1] << ", " << buttons[2]
 					<< ", " << buttons[3] << ", " << buttons[4] << ", " << buttons[5] << ", " << buttons[6] << std::endl;
 				}

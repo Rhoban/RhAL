@@ -25,10 +25,17 @@ namespace RhAL {
         {
         }
             
-        inline float getPins(int pin)
+        inline void getPins(bool pins[7])
         {
             std::lock_guard<std::mutex> lock(_mutex);
-            return (_pins.readValue().value >> pin) != 0;
+            uint8_t value = _pins.readValue().value;
+            for (int i = 0; i < 7; i++) {
+            	if (value & (1<<i)) {
+            		pins[i] = true;
+            	} else {
+            		pins[i] = false;
+            	}
+            }
         }
 
         protected:
@@ -36,7 +43,7 @@ namespace RhAL {
              * Register
              */
             //The following comments specify the register size and address in the hardware.
-            TypedRegisterInt 	_pins;   			//3 0x24
+            TypedRegisterInt 	_pins;   			//1 0x24
 
             /**
              * Inherit.
