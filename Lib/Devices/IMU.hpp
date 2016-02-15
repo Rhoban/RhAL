@@ -32,19 +32,6 @@ inline float convDecode_gyro(const data_t* buffer)
 	return (int16_t)read2BytesFromBuffer(buffer)/50.0;
 }
 
-inline int convDecode_everythingAtOnce(const data_t* buffer)
-{
-	uint8_t result[28];
-	readNBytesFromBuffer(buffer,result, 28);
-	static int16_t output[14];
-	for (int i = 0; i < 14; i++) {
-		output[i] = (result[i+1] << 8) + result[i];
-	}
-	for (int i = 0; i < 14; i++) {
-		std::cout << "value = " << output[i] << std::endl;
-	}
-	return 1;
-}
 
 /**
  * Inertial Measurement Unit (IMU)
@@ -73,17 +60,10 @@ class IMU : public Device
 			_magnX("magnX", 0x38, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
 			_magnY("magnY", 0x3A, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
 			_magnZ("magnZ", 0x3C, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_magnAzimuth("magnAzimuth", 0x3E, 2, convEncode_2Bytes, convDecode_100th_degrees, 1),
-			_all("all", 0x24, 28, convEncode_2Bytes, convDecode_everythingAtOnce, 1)
+			_magnAzimuth("magnAzimuth", 0x3E, 2, convEncode_2Bytes, convDecode_100th_degrees, 1)
         {
 		}
 
-        inline int getAll()
-        {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
-        	return _all.readValue().value;
-        }
         inline float getYaw()
         {
         	std::lock_guard<std::mutex> lock(_mutex);
@@ -285,7 +265,6 @@ class IMU : public Device
 		TypedRegisterInt 	_magnY;		 			//2 0x3A
 		TypedRegisterInt 	_magnZ;		 			//2 0x3C
 		TypedRegisterFloat 	_magnAzimuth; 			//2 0x3E
-		TypedRegisterInt	_all;
 
 		/**
 		 * Inherit.
@@ -307,7 +286,6 @@ class IMU : public Device
 			Device::registersList().add(&_magnY);
 			Device::registersList().add(&_magnZ);
 			Device::registersList().add(&_magnAzimuth);
-			Device::registersList().add(&_all);
 
 		}
 
