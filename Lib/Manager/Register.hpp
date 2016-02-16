@@ -535,6 +535,26 @@ class TypedRegister : public Register
             return _valueWrite;
         }
 
+        /**
+         * Return the value really written after conversion
+         */
+        inline T getReallyWrittenValue()
+        {
+            if(!isReadOnly)
+            {
+                data_t tmpbuf[16]; //yep, should be ok
+                funcConvEncode(tmpbuf,_valueWrite);
+                return funcConvDecode(tmpbuf);
+            }
+            else
+            {
+                std::cerr<<"WARNING: looking for ReallyWritten value on a ReadOnly register"<<std::endl;
+                return 0;
+            }
+        }
+
+
+
     protected:
 
         /**
