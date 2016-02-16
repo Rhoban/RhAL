@@ -26,15 +26,6 @@ using FuncConvEncode = std::function<void(data_t*, T)>;
 template <typename T>
 using FuncConvDecode = std::function<T(const data_t*)>;
 
-/**
- * Dummy function. Does nothing, just for ReadOnly registers. Thanks Quentin.
- */
-
-inline void dummyEncode(data_t* buffer, bool value)
-{
-    //TODO should probably do something clever
-    std::cerr<<"WARNING: trying to write on a ReadOnly register"<<std::endl;
-}
 
 /**
  * Typedef for conversion function working
@@ -434,7 +425,6 @@ class TypedRegister : public Register
             //Member init
             Register(name, addr, length, periodPackedRead,
                      forceRead, forceWrite, isSlowRegister, true), //isReadOnly=true
-            funcConvEncode(dummyEncode),
             funcConvDecode(funcConvDecode),
             _valueRead(),
             _valueWrite(),
@@ -500,32 +490,38 @@ class TypedRegister : public Register
          */
         inline void writeValue(T val, bool noCallback = false)
         {
-            std::unique_lock<std::recursive_mutex> lock(_mutex);
+            if(!isReadOnly)
+            {
+                std::unique_lock<std::recursive_mutex> lock(_mutex);
 
-            //Compute aggregation if the value
-            //has already been written
-            if (_needWrite) {
-                _valueWrite = aggregateValue(
-                    _aggregationPolicy, _valueWrite, val);
-            } else {
-                _valueWrite = val;
+                //Compute aggregation if the value
+                //has already been written
+                if (_needWrite) {
+                    _valueWrite = aggregateValue(
+                        _aggregationPolicy, _valueWrite, val);
+                } else {
+                    _valueWrite = val;
+                }
+                //Assign the timestamp
+                _lastUserWrite = getTimePoint();
+                //Mark as dirty
+                _needWrite = true;
+                //Call user callback
+                if (!noCallback) {
+                    _callbackOnWrite(val);
+                }
+                //Unlock mutex
+                lock.unlock();
+                //Do immediate write on the bus
+                //is the register is configured to forceWrite
+                //or given Manager send mode
+                if (isForceWrite || !_manager->isScheduleMode()) {
+                    forceWrite();
+                }
             }
-            //Assign the timestamp
-            _lastUserWrite = getTimePoint();
-            //Mark as dirty
-            _needWrite = true;
-            //Call user callback
-            if (!noCallback) {
-                _callbackOnWrite(val);
-            }
-            //Unlock mutex
-            lock.unlock();
-            //Do immediate write on the bus
-            //is the register is configured to forceWrite
-            //or given Manager send mode
-            if (isForceWrite || !_manager->isScheduleMode()) {
-                forceWrite();
-            }
+            else
+                std::cerr<<"WARNING: trying to write on a ReadOnly register"<<std::endl;
+
         }
 
         /**

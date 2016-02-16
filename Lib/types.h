@@ -19,13 +19,13 @@ constexpr id_t IdDevBegin = 1;
 constexpr id_t IdDevEnd = 253;
 
 /**
- * Number of milliseconds that will be waited 
+ * Number of milliseconds that will be waited
  * after writing to a slow register
  */
 constexpr unsigned int SlowRegisterDelayMs = 100;
 
 /**
- * Number of consecutive trials when trying 
+ * Number of consecutive trials when trying
  * to immediate read before abording
  */
 constexpr unsigned int MaxForceReadTries = 20;
@@ -42,7 +42,7 @@ typedef size_t addr_t;
 constexpr size_t AddrDevLen = 0xFF;
 
 /**
- * Static register address of model 
+ * Static register address of model
  * number on all Devices
  */
 constexpr addr_t AddrDevTypeNumber = 0x00;
@@ -63,11 +63,11 @@ typedef uint8_t data_t;
 typedef std::chrono::time_point<std::chrono::steady_clock> TimePoint;
 
 /**
- * Duration typedef in micro, milli 
+ * Duration typedef in micro, milli
  * and seconds
  */
-typedef std::chrono::milliseconds TimeDurationMicro;
-typedef std::chrono::microseconds TimeDurationMilli;
+typedef std::chrono::milliseconds TimeDurationMilli;
+typedef std::chrono::microseconds TimeDurationMicro;
 typedef std::chrono::seconds TimeDurationSec;
 typedef std::chrono::duration<double, std::ratio<1>> TimeDurationDouble;
 
@@ -90,8 +90,14 @@ inline T getTimeDuration(const TimePoint& p1, const TimePoint& p2)
     return std::chrono::duration_cast<T>(p2 - p1);
 }
 
+template <typename T>
+inline T getTimeDuration(const TimePoint& p1)
+{
+    return std::chrono::duration_cast<T>(p1.time_since_epoch());
+}
+
 /**
- * A value associated with 
+ * A value associated with
  * a timestamp
  */
 template <typename T>
@@ -115,4 +121,3 @@ typedef TimedValue<int> TimedValueInt;
 typedef TimedValue<float> TimedValueFloat;
 
 }
-
