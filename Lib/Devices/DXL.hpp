@@ -66,14 +66,14 @@ inline int convDecode_returnDelayTime(const data_t* buffer)
 /**
  * Encode function for the temperature, input in degrees Celsius
  */
-inline void convEncode_temperature(data_t* buffer, float value)
+inline void convEncode_temperature(data_t* buffer, unsigned int value)
 {
 	write1ByteToBuffer(buffer, (uint8_t) value);
 }
 /**
  * Decode function for the temperature, output in degrees Celsius
  */
-inline float convDecode_temperature(const data_t* buffer)
+inline unsigned int convDecode_temperature(const data_t* buffer)
 {
 	return read1ByteFromBuffer(buffer);
 }
@@ -83,8 +83,9 @@ inline float convDecode_temperature(const data_t* buffer)
  */
 inline void convEncode_voltage(data_t* buffer, float value)
 {
-	if (value > 25.5) {
-		value = 25.5;
+    //The max is in fact 15V or 16V depending on the motor. Lazy solution...
+	if (value > 16.0) {
+		value = 16.0;
 	} else if (value < 0) {
 		value = 0.0;
 	}
@@ -105,11 +106,13 @@ inline float convDecode_voltage(const data_t* buffer)
  */
 inline void convEncode_torque(data_t* buffer, float value)
 {
-	uint16_t result = value * 1023;
-	if (result > 1023) {
-		result = 1023;
-	}
-	write2BytesToBuffer(buffer, result);
+    if(value<0.0)
+        value=0.0;
+    uint16_t result = value * 1023;
+    if (result > 1023) {
+        result = 1023;
+    }
+    write2BytesToBuffer(buffer, result);
 }
 /**
  * Decode function for the torque, output in % of max
@@ -156,7 +159,23 @@ class DXL : public Device
 			_inverted("inverse", false),
 			_zero("zero", 0.0)
         {
-		}
+            _temperatureLimit.setMinValue(0);
+            _temperatureLimit.setMaxValue(255); //uint8 but you should not go to 255°!!
+            _temperatureLimit.setStepValue(1);
+
+            _voltageLowLimit.setMinValue(5.0);
+            _voltageLowLimit.setMaxValue(16.0);
+            _voltageLowLimit.setStepValue(0.1);
+
+            _voltageHighLimit.setMinValue(5.0);
+            _voltageHighLimit.setMaxValue(16.0);
+            _voltageHighLimit.setStepValue(0.1);
+
+            _maxTorque.setMinValue(0.0);
+            _maxTorque.setMaxValue(1.0);
+            _maxTorque.setStepValue(0.000977517); // 1.0/1023
+
+        }
 
         /**
          * Returns true if the servo's angular convention is inverted, false otherwise
@@ -536,7 +555,7 @@ class DXL : public Device
 		TypedRegisterInt 	_id;					//1 03
 		TypedRegisterInt 	_baudrate;				//1 04
 		TypedRegisterInt 	_returnDelayTime;		//1 05
-		TypedRegisterFloat 	_temperatureLimit;		//1 0B
+		TypedRegisterInt 	_temperatureLimit;		//1 0B
 		TypedRegisterFloat 	_voltageLowLimit;		//1 0C
 		TypedRegisterFloat 	_voltageHighLimit;		//1 0D
 		TypedRegisterFloat 	_maxTorque;				//2 0E

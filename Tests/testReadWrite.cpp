@@ -21,20 +21,28 @@ void printDevice(RhAL::Device* dev)
     std::cout << "    RegistersBool:" << std::endl;
     for (const auto& it : dev->registersList().containerBool()) {
         // std::cout<<"    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        // std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        auto t0=getTimePoint();
+        auto val=it.second->readValue();
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
 
     }
     std::cout << "\n    RegistersInt:" << std::endl;
     for (const auto& it : dev->registersList().containerInt()) {
         // std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        // std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        auto t0=getTimePoint();
+        auto val=it.second->readValue();
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
     std::cout << "\n    RegistersFloat:" << std::endl;
     for (const auto& it : dev->registersList().containerFloat()) {
         // std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        auto t0=getTimePoint();
+        auto val=it.second->readValue();
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
 
@@ -64,7 +72,7 @@ void testDevice(RhAL::Device* dev)
             if(tmpval2.value!=tmpval.value)
                 res=true;
 
-            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote "<<(tmpval.value?"(false)":"(true)")<<" read "<<(tmpval2.value?"(true)":"(false)")<<" time ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote "<<(tmpval.value?"(false)":"(true)")<<" read "<<(tmpval2.value?"(true)":"(false)")<<" time ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us"<<(it.second->isSlowRegister?" slow register) ":") ");
             // std::cout<<(res?"PASS":"FAIL")<<std::endl;
             if(res)
                 std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
@@ -95,7 +103,7 @@ void testDevice(RhAL::Device* dev)
             if(tmpval2.value==(tmpval.value+delta))
                 res=true;
 
-            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<tmpval.value+delta<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";//<<(res?"PASS":"FAIL")<<std::endl;
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<tmpval.value+delta<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us"<<(it.second->isSlowRegister?" slow register) ":") ");
 
             if(res)
                 std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
@@ -118,10 +126,13 @@ void testDevice(RhAL::Device* dev)
             // for(int i=0;i<10;i++)
             {
             bool res=false;
-            float delta=0.1;
+            float delta=it.second->getStepValue();
+            if(delta==0.0)
+                std::cerr<<"Warning: StepValue=0.0"<<delta<<std::endl;
             auto tmpval=it.second->readValue();
 
-            it.second->writeValue(tmpval.value+delta);
+            float towrite=(tmpval.value<it.second->getMaxValue()?(tmpval.value+delta):(tmpval.value-delta));
+            it.second->writeValue(towrite);
 
             auto tmpval2=it.second->readValue();
             /*
@@ -132,9 +143,9 @@ void testDevice(RhAL::Device* dev)
             if(tmpval2.value==reallywritten)
                 res=true;
 
-            float lost=fabs(tmpval.value+delta-reallywritten);
+            float lost=fabs(towrite-reallywritten);
 
-            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<tmpval.value+delta<<") read ("<<tmpval2.value<<") really written ("<<reallywritten<<") lost in conversion ("<<lost<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";//<<(res?"PASS":"FAIL")<<std::endl;
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<towrite<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us"<<(it.second->isSlowRegister?" slow register) ":") ");
             /*
             if(res)
             {
@@ -173,7 +184,7 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
 
     //Scan the bus
     manager.scan();
-    std::cout << manager.saveJSON().dump(4) << std::endl;
+    // std::cout << manager.saveJSON().dump(4) << std::endl;
 
 
     //Iterate over Manager Devices with types
@@ -182,7 +193,7 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
         printDevice(dev);
         testDevice(dev);
     }
-    manager.getStatistics().print();
+    // manager.getStatistics().print();
 
 }
 

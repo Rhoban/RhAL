@@ -198,7 +198,7 @@ class RX : public DXL
 			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedRx, convDecode_SpeedRx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
 			_position("position", 0x24, 2, convDecode_PositionRx, 1),
-			_speed("speed", 0x26, 2, convEncode_SpeedRx, convDecode_SpeedRx, 1),
+			_speed("speed", 0x26, 2,  convDecode_SpeedRx, 1),
 			_load("load", 0x28, 2,  convDecode_torque, 0),
 			_voltage("voltage", 0x2A, 1,  convDecode_voltage, 0),
 			_temperature("temperature", 0x2B, 1,  convDecode_temperature, 0),
@@ -207,6 +207,54 @@ class RX : public DXL
 			_lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0),
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0)
         {
+            _angleLimitCW.setMinValue(-150.0);
+            _angleLimitCW.setMaxValue(150.0-0.29296875);
+            _angleLimitCW.setStepValue(0.29296875); // 300/1024
+
+            _angleLimitCCW.setMinValue(-150.0);
+            _angleLimitCCW.setMaxValue(150.0-0.29296875);
+            _angleLimitCCW.setStepValue(0.29296875); // 300/1024
+
+            _complianceMarginCW.setMinValue(0.0);
+            _complianceMarginCW.setMaxValue(74.7);
+            _complianceMarginCW.setStepValue(0.29296875); // 300/1024
+
+            _complianceMarginCCW.setMinValue(0.0);
+            _complianceMarginCCW.setMaxValue(74.7);
+            _complianceMarginCCW.setStepValue(0.29296875); // 300/1024
+
+            _complianceSlopeCW.setMinValue(0);
+            _complianceSlopeCW.setMaxValue(7);
+            _complianceSlopeCW.setStepValue(1);
+
+            _complianceSlopeCCW.setMinValue(0);
+            _complianceSlopeCCW.setMaxValue(7);
+            _complianceSlopeCCW.setStepValue(1);
+
+            _goalPosition.setMinValue(-150.0);
+            _goalPosition.setMaxValue(150.0-0.29296875);
+            _goalPosition.setStepValue(0.29296875);
+
+            _goalSpeed.setMinValue(-702.42);
+            _goalSpeed.setMaxValue(702.42);
+            _goalSpeed.setStepValue(0.68662);
+
+            _position.setMinValue(-150.0);
+            _position.setMaxValue(150.0-0.29296875);
+            _position.setStepValue(0.29296875);
+
+            _speed.setMinValue(-702.42);
+            _speed.setMaxValue(702.42);
+            _speed.setStepValue(0.68662);
+
+            _punch.setMinValue(32);
+            _punch.setMaxValue(1023);
+            _punch.setStepValue(1);
+
+            _torqueLimit.setMinValue(0.0);
+            _torqueLimit.setMaxValue(1.0);
+            _torqueLimit.setStepValue(0.000977517); // 1.0/1023
+
         }
 
 
@@ -665,7 +713,7 @@ class RX : public DXL
 		TypedRegisterFloat 	_speed;					//2	26
 		TypedRegisterFloat 	_load;					//2 28
 		TypedRegisterFloat 	_voltage;				//1 2A
-		TypedRegisterFloat 	_temperature;			//1 2B
+		TypedRegisterInt 	_temperature;			//1 2B
 		TypedRegisterBool 	_registered;			//1 2C
 		TypedRegisterBool 	_moving;				//1 2E
 		TypedRegisterBool 	_lockEeprom;			//1 2F

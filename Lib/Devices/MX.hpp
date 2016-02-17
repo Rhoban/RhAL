@@ -74,7 +74,7 @@ inline float convDecode_SpeedMx(const data_t* buffer)
 }
 
 /**
- * Encode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
+ * Encode function for acceleration, input in degrees/s^2 [0, 2180] (precision : 8.583 Degree / sec^2)
  */
 inline void convEncode_AccelerationMx(data_t* buffer, float value)
 {
@@ -91,7 +91,7 @@ inline void convEncode_AccelerationMx(data_t* buffer, float value)
 	write1ByteToBuffer(buffer, accel);
 }
 /**
- * Decode function for speed, input in degrees/s [0, 2180] (precision : 8.583 Degree / sec^2)
+ * Decode function for acceleration, input in degrees/s^2 [0, 2180] (precision : 8.583 Degree / sec^2)
  */
 inline float convDecode_AccelerationMx(const data_t* buffer)
 {
@@ -135,7 +135,7 @@ class MX : public DXL
 			_goalSpeed("goalSpeed", 0x20, 2, convEncode_SpeedMx, convDecode_SpeedMx, 0),
 			_torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0),
 			_position("position", 0x24, 2, convDecode_PositionMx, 1),
-			_speed("speed", 0x26, 2, convEncode_SpeedMx, convDecode_SpeedMx, 1),
+			_speed("speed", 0x26, 2,  convDecode_SpeedMx, 1),
 			_load("load", 0x28, 2,  convDecode_torque, 0),
 			_voltage("voltage", 0x2A, 1,  convDecode_voltage, 0),
 			_temperature("temperature", 0x2B, 1, convDecode_temperature, 0),
@@ -145,6 +145,41 @@ class MX : public DXL
 			_punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
 			_goalAcceleration("goalAcceleration", 0x49, 1, convEncode_AccelerationMx, convDecode_AccelerationMx, 0)
         {
+
+            _angleLimitCW.setMinValue(-180.0);
+            _angleLimitCW.setMaxValue(180.0-0.087890625);
+            _angleLimitCW.setStepValue(0.087890625);
+
+            _goalPosition.setMinValue(-180.0);
+            _goalPosition.setMaxValue(180.0-0.087890625);
+            _goalPosition.setStepValue(0.087890625);
+
+            _goalSpeed.setMinValue(-702.42);
+            _goalSpeed.setMaxValue(702.42);
+            _goalSpeed.setStepValue(0.68662);
+
+            _position.setMinValue(-180.0);
+            _position.setMaxValue(180.0-0.087890625);
+            _position.setStepValue(0.087890625);
+
+            _speed.setMinValue(-702.42);
+            _speed.setMaxValue(702.42);
+            _speed.setStepValue(0.68662);
+
+            _goalAcceleration.setMinValue(0.0);
+            _goalAcceleration.setMaxValue(2800.0);
+            _goalAcceleration.setStepValue(8.583);
+
+            _punch.setMinValue(0);
+            _punch.setMaxValue(1023);
+            _punch.setStepValue(1);
+
+            _torqueLimit.setMinValue(0.0);
+            _torqueLimit.setMaxValue(1.0);
+            _torqueLimit.setStepValue(0.000977517); // 1.0/1023
+
+
+
         }
 
 
@@ -673,7 +708,7 @@ class MX : public DXL
 		TypedRegisterFloat 	_speed;					//2	26
 		TypedRegisterFloat 	_load;					//2 28
 		TypedRegisterFloat 	_voltage;				//1 2A
-		TypedRegisterFloat 	_temperature;			//1 2B
+		TypedRegisterInt 	_temperature;			//1 2B
 		TypedRegisterBool 	_registered;			//1 2C
 		TypedRegisterBool 	_moving;				//1 2E
 		TypedRegisterBool 	_lockEeprom;			//1 2F
