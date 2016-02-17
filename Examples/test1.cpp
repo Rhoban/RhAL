@@ -306,13 +306,35 @@ void testImuAndPins() {
 	    return;
 }
 
+void testCM510() {
+	StandardManager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyS0", 1000000, "DynamixelV1");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+	    return;
+}
+
 }
 
 /**
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::testImuAndPins();
+	RhAL::testCM510();
 	return 0;
 }
 
