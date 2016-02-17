@@ -3,6 +3,12 @@
 #include "RhAL.hpp"
 #include <thread>
 
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define DEFAULT "\033[39m"
+
 using namespace RhAL;
 
 void printDevice(RhAL::Device* dev)
@@ -11,18 +17,146 @@ void printDevice(RhAL::Device* dev)
         << "Dev: id:" << dev->id()
         << " name:" << dev->name()
         << std::endl;
+    // std::cout<<std::setfill('*');
     std::cout << "    RegistersBool:" << std::endl;
     for (const auto& it : dev->registersList().containerBool()) {
-        std::cout<<"    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        // std::cout<<"    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+
     }
-    std::cout << "    RegistersInt:" << std::endl;
+    std::cout << "\n    RegistersInt:" << std::endl;
     for (const auto& it : dev->registersList().containerInt()) {
-        std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        // std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
-    std::cout << "    RegistersFloat:" << std::endl;
+    std::cout << "\n    RegistersFloat:" << std::endl;
     for (const auto& it : dev->registersList().containerFloat()) {
-        std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        // std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
+        std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
+
+}
+
+void testDevice(RhAL::Device* dev)
+{
+    std::cout<<"\nTesting read/write\n"
+        << "Dev: id:" << dev->id()
+        << " name:" << dev->name()
+        << std::endl;
+
+    std::cout << "\n    RegistersBool:" << std::endl;
+    for (const auto& it : dev->registersList().containerBool()) {
+
+        if(!it.second->isReadOnly && it.first.compare("lockEeprom"))
+        {
+
+            // for(int i=0;i<10;i++)
+            {
+            bool res=false;
+            auto tmpval=it.second->readValue();
+
+            it.second->writeValue(!(tmpval.value));
+
+            auto tmpval2=it.second->readValue();
+            if(tmpval2.value!=tmpval.value)
+                res=true;
+
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote "<<(tmpval.value?"(false)":"(true)")<<" read "<<(tmpval2.value?"(true)":"(false)")<<" time ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";
+            // std::cout<<(res?"PASS":"FAIL")<<std::endl;
+            if(res)
+                std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
+            else
+                std::cout<<RED<<"FAIL"<<DEFAULT<<std::endl;
+
+            //try to restore
+            it.second->writeValue(tmpval.value);
+            }
+        }
+
+    }
+
+
+    std::cout << "\n    RegistersInt:" << std::endl;
+    for (const auto& it : dev->registersList().containerInt()) {
+        if(!it.second->isReadOnly && it.first.compare("statusReturnLevel") && it.first.compare("baudrate") && it.first.compare("returnDelayTime")&& it.first.compare("id"))
+        {
+
+            // for(int i=0;i<10;i++)
+            {
+            bool res=false;
+            auto tmpval=it.second->readValue();
+            int delta=1;
+            it.second->writeValue((tmpval.value)+delta);
+
+            auto tmpval2=it.second->readValue();
+            if(tmpval2.value==(tmpval.value+delta))
+                res=true;
+
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<tmpval.value+delta<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";//<<(res?"PASS":"FAIL")<<std::endl;
+
+            if(res)
+                std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
+            else
+                std::cout<<RED<<"FAIL"<<DEFAULT<<std::endl;
+
+            //try to restore
+            it.second->writeValue(tmpval.value);
+            }
+        }
+
+    }
+
+    std::cout << "\n    RegistersFloat:" << std::endl;
+    for (const auto& it : dev->registersList().containerFloat()) {
+
+        if(!it.second->isReadOnly)
+        {
+
+            // for(int i=0;i<10;i++)
+            {
+            bool res=false;
+            float delta=0.1;
+            auto tmpval=it.second->readValue();
+
+            it.second->writeValue(tmpval.value+delta);
+
+            auto tmpval2=it.second->readValue();
+            /*
+            if(tmpval2.value==(tmpval.value+delta))
+                res=true;
+            */
+            float reallywritten=it.second->getReallyWrittenValue();
+            if(tmpval2.value==reallywritten)
+                res=true;
+
+            float lost=fabs(tmpval.value+delta-reallywritten);
+
+            std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<tmpval.value+delta<<") read ("<<tmpval2.value<<") really written ("<<reallywritten<<") lost in conversion ("<<lost<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us) ";//<<(res?"PASS":"FAIL")<<std::endl;
+            /*
+            if(res)
+            {
+                if(lost<0.001)
+                    std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
+                else
+                    std::cout<<YELLOW<<"MAYBE"<<DEFAULT<<std::endl;
+            }
+            */
+            if(res && lost<0.001)
+                std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
+            else
+                std::cout<<RED<<"FAIL"<<DEFAULT<<std::endl;
+
+            //try to restore
+            it.second->writeValue(tmpval.value);
+            }
+        }
+
+    }
+
+    std::cout<<std::endl;
 
 }
 
@@ -46,7 +180,9 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
     for (const auto& it : manager.devContainer<RhAL::Device>()) {
         RhAL::Device * dev = it.second;
         printDevice(dev);
+        testDevice(dev);
     }
+    manager.getStatistics().print();
 
 }
 

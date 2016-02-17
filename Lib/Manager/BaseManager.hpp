@@ -25,22 +25,22 @@ namespace RhAL {
  *
  * Implement lowlevel
  * hardware device communication.
- * Implement all Device access non 
+ * Implement all Device access non
  * derived Device specific
  */
 class BaseManager : public CallManager
 {
     public:
-        
+
         /**
          * Typedef for device container
          */
         template <typename T>
-        using DevicesByName = 
+        using DevicesByName =
             std::unordered_map<std::string, T*>;
         template <typename T>
-        using DevicesById = 
-            std::unordered_map<id_t, T*>; 
+        using DevicesById =
+            std::unordered_map<id_t, T*>;
 
         /**
          * Initialization
@@ -95,9 +95,9 @@ class BaseManager : public CallManager
                 _bus = nullptr;
             }
         }
-        
+
         /**
-         * Return a Device with given id or name 
+         * Return a Device with given id or name
          * (all derived types are searched).
          * Throw std::logic_error if asked Device
          * with given type is not found.
@@ -124,7 +124,7 @@ class BaseManager : public CallManager
         {
             if (_devicesById.count(id) == 0) {
                 throw std::logic_error(
-                    "BaseManager Device id not found: " 
+                    "BaseManager Device id not found: "
                     + std::to_string(id));
             }
             return *(_devicesById.at(id));
@@ -133,7 +133,7 @@ class BaseManager : public CallManager
         {
             if (_devicesById.count(id) == 0) {
                 throw std::logic_error(
-                    "BaseManager Device id not found: " 
+                    "BaseManager Device id not found: "
                     + std::to_string(id));
             }
             return *(_devicesById.at(id));
@@ -142,7 +142,7 @@ class BaseManager : public CallManager
         {
             if (_devicesByName.count(name) == 0) {
                 throw std::logic_error(
-                    "BaseManager Device name not found: " 
+                    "BaseManager Device name not found: "
                     + name);
             }
             return *(_devicesByName.at(name));
@@ -151,12 +151,12 @@ class BaseManager : public CallManager
         {
             if (_devicesByName.count(name) == 0) {
                 throw std::logic_error(
-                    "BaseManager Device name not found: " 
+                    "BaseManager Device name not found: "
                     + name);
             }
             return *(_devicesByName.at(name));
         }
-        
+
         /**
          * Return true if a device is already contained with
          * given name or id for all Device types
@@ -179,9 +179,9 @@ class BaseManager : public CallManager
         {
             return (_devicesByName.count(name) > 0);
         }
-        
+
         /**
-         * Access to internal map of pointers 
+         * Access to internal map of pointers
          * to all contained Devices for all types.
          * Device are indexed by their name.
          */
@@ -192,8 +192,8 @@ class BaseManager : public CallManager
 
         /**
          * Add or remove one cooperative
-         * thread. At the beginning of each 
-         * main flush() operation, others 
+         * thread. At the beginning of each
+         * main flush() operation, others
          * declared cooperative threads are waited
          * until all have called waitNextFlush() method.
          */
@@ -246,14 +246,14 @@ class BaseManager : public CallManager
         }
 
         /**
-         * Declared cooperative user threads 
-         * have to call this method at each end 
+         * Declared cooperative user threads
+         * have to call this method at each end
          * of their cycle to wait the next Manager
          * flush() operation.
          */
         inline void waitNextFlush()
         {
-            //No cooperative thread if 
+            //No cooperative thread if
             //scheduling mode is disable
             if (!CallManager::isScheduleMode()) {
                 //Do nothing
@@ -270,12 +270,12 @@ class BaseManager : public CallManager
             //Wait for the end of flush() barrier.
             //(during wait, the shared mutex is released)
             TimePoint pStart = getTimePoint();
-            _userWaitManager.wait(lock, 
+            _userWaitManager.wait(lock,
                 [this](){return !_isManagerFlushing;});
             TimePoint pStop = getTimePoint();
-            _stats.waitManagerDuration += 
+            _stats.waitManagerDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
-            //The lock is re acquire. Decrease the number 
+            //The lock is re acquire. Decrease the number
             //of waiting thread.
             _currentThreadWaiting--;
             //Release the shared mutex
@@ -288,7 +288,7 @@ class BaseManager : public CallManager
          * its own low level thread if other user
          * thread are using the manager.
          * Following operations are done:
-         * - Wait for all declared cooperative user 
+         * - Wait for all declared cooperative user
          *   thread for having called waitNextFlush().
          *   Here, the only running thread is the Manager.
          * - Apply to all registers read value from
@@ -300,12 +300,12 @@ class BaseManager : public CallManager
          *   Here, all threads are running.
          * - Perform all read operation.
          * - Perform all write operations.
-         * - Optionnaly swap Registers (if isForceSwap is true) 
+         * - Optionnaly swap Registers (if isForceSwap is true)
          *   to apply immediatly read values.
          */
         inline void flush(bool isForceSwap = false)
         {
-            //No cooperative thread if 
+            //No cooperative thread if
             //scheduling mode is disabled
             if (!CallManager::isScheduleMode()) {
                 //Do nothing
@@ -319,12 +319,12 @@ class BaseManager : public CallManager
             _stats.flushCount++;
             _isManagerFlushing = true;
             TimePoint pStart = getTimePoint();
-            _managerWaitUser.wait(lock, 
+            _managerWaitUser.wait(lock,
                 [this](){
                     return _currentThreadWaiting == _cooperativeThreadCount;
                 });
             TimePoint pStop = getTimePoint();
-            _stats.waitUsersDuration += 
+            _stats.waitUsersDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //Swap to apply last read change
             swapRead();
@@ -332,9 +332,9 @@ class BaseManager : public CallManager
             swapCallBack();
             //Select registers for read and write
             //and compute operation batching
-            std::vector<BatchedRegisters> batchsRead = 
+            std::vector<BatchedRegisters> batchsRead =
                 computeBatchedRegisters(true);
-            std::vector<BatchedRegisters> batchsWrite = 
+            std::vector<BatchedRegisters> batchsWrite =
                 computeBatchedRegisters(false);
             //Wake up cooperative user threads waiting
             //in waitNextFlush()
@@ -362,7 +362,7 @@ class BaseManager : public CallManager
             if (isForceSwap) {
                 forceSwap();
             }
-            //If a slow register was written, we need 
+            //If a slow register was written, we need
             //to wait a big amount of time
             if (needsToWait) {
                 std::this_thread::sleep_for(
@@ -371,7 +371,7 @@ class BaseManager : public CallManager
         }
 
         /**
-         * Force all Registers to swap in order to 
+         * Force all Registers to swap in order to
          * apply immediately read values
          */
         inline void forceSwap()
@@ -418,25 +418,25 @@ class BaseManager : public CallManager
                         //Throw exception if scanned Device id
                         //is already known with a different type
                         throw std::logic_error(
-                            "BaseManager scan type mismatch: " 
+                            "BaseManager scan type mismatch: "
                             + std::to_string(i));
                     } else if (isExist) {
-                        //If no type problem mark 
+                        //If no type problem mark
                         //the Device as present
                         devById(i).setPresent(true);
                     } else {
-                        //Check if the type number is suppoerted 
+                        //Check if the type number is suppoerted
                         //by the manager
                         if (!this->isTypeSupported(type)) {
                             //The type is not supported
                             if (_paramThrowErrorOnScan.value) {
                                 throw std::runtime_error(
-                                    "BaseManager type found in scan() not supported: " 
+                                    "BaseManager type found in scan() not supported: "
                                     + std::to_string(type));
                             } else {
-                                std::cerr << 
-                                    "BaseManager type found in scan() not supported: " 
-                                    << "id=" << i << " type=" 
+                                std::cerr <<
+                                    "BaseManager type found in scan() not supported: "
+                                    << "id=" << i << " type="
                                     << std::to_string(type) << std::endl;
                                 continue;
                             }
@@ -455,12 +455,12 @@ class BaseManager : public CallManager
                 }
             }
         }
-        
+
         /**
          * Inherit.
-         * Call when a register is declared 
+         * Call when a register is declared
          * to the Device. Use to build up
-         * in Manager the set of all sorted 
+         * in Manager the set of all sorted
          * Register pointers.
          * Register are given by its Device id
          * and its name
@@ -470,7 +470,7 @@ class BaseManager : public CallManager
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
-            //Retrieve the next register and 
+            //Retrieve the next register and
             //add the pointer to the container
             _sortedRegisters.push_back(
                 &(devById(id).registersList().reg(name)));
@@ -485,10 +485,10 @@ class BaseManager : public CallManager
                     }
                 });
         }
-        
+
         /**
          * Inherit
-         * Call the Manager to force the immediate 
+         * Call the Manager to force the immediate
          * Read or Write of the Register given by its
          * Device id and name.
          * (Called by register, not by user)
@@ -513,14 +513,14 @@ class BaseManager : public CallManager
             while (true) {
                 TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
-                    reg->id, 
-                    reg->addr, 
-                    reg->_dataBufferRead, 
+                    reg->id,
+                    reg->addr,
+                    reg->_dataBufferRead,
                     reg->length);
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
                 _stats.readLength += reg->length;
-                _stats.readDuration += 
+                _stats.readDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //TODO check response
                 if (state == ResponseOK) {
@@ -530,11 +530,11 @@ class BaseManager : public CallManager
                     if (nbFails >= MaxForceReadTries) {
                         if (_paramThrowErrorOnRead.value) {
                             throw std::runtime_error(
-                                "BaseManager max tries reached when read error: " 
+                                "BaseManager max tries reached when read error: "
                                 + reg->name);
                         } else {
                             std::cerr <<
-                                "BaseManager max tries reached when read error: " 
+                                "BaseManager max tries reached when read error: "
                                 << reg->name << std::endl;
                             return;
                         }
@@ -566,14 +566,14 @@ class BaseManager : public CallManager
             //Write the register
             TimePoint pStart = getTimePoint();
             _protocol->writeData(
-                reg->id, 
-                reg->addr, 
-                reg->_dataBufferWrite, 
+                reg->id,
+                reg->addr,
+                reg->_dataBufferWrite,
                 reg->length);
             TimePoint pStop = getTimePoint();
             _stats.writeCount++;
             _stats.writeLength += reg->length;
-            _stats.writeDuration += 
+            _stats.writeDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
             //Wait delay in case of slow register
             if (reg->isSlowRegister) {
@@ -609,8 +609,8 @@ class BaseManager : public CallManager
          * and protocol name.
          */
         inline void setProtocolConfig(
-            const std::string& port, 
-            unsigned long baudrate, 
+            const std::string& port,
+            unsigned long baudrate,
             const std::string& protocol)
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
@@ -620,7 +620,7 @@ class BaseManager : public CallManager
             //Reset low level communication (bus/protocol)
             initBus();
         }
-        
+
         /**
          * Manager Parameters setters
          */
@@ -644,9 +644,9 @@ class BaseManager : public CallManager
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             _paramThrowErrorOnRead.value = isEnable;
         }
-        
+
         /**
-         * The BaseManager has to call some 
+         * The BaseManager has to call some
          * functions of AggregateManager
          */
         virtual type_t devTypeNumberById(id_t id) const = 0;
@@ -658,16 +658,16 @@ class BaseManager : public CallManager
         virtual void readConfig(const std::string& filename) = 0;
 
     protected:
-        
+
         /**
          * Device container indexed by
          * their name and their id
          */
         DevicesByName<Device> _devicesByName;
         DevicesById<Device> _devicesById;
-        
+
         /**
-         * Container of bool, number and 
+         * Container of bool, number and
          * string device parameters
          */
         ParametersList _parametersList;
@@ -675,7 +675,7 @@ class BaseManager : public CallManager
         /**
          * Reset and initialize the
          * Bus and Protocol instance.
-         * (Need to be called after any 
+         * (Need to be called after any
          * bus/protocol parameters update)
          */
         inline void initBus()
@@ -698,7 +698,7 @@ class BaseManager : public CallManager
             //Check that Protocol implementation name is valid
             if (_protocol == nullptr) {
                 throw std::logic_error(
-                    "BaseManager invalid protocol name: " 
+                    "BaseManager invalid protocol name: "
                     + _paramProtocolName.value);
             }
         }
@@ -706,7 +706,7 @@ class BaseManager : public CallManager
     private:
 
         /**
-         * Internal structure 
+         * Internal structure
          * for a batch of registers
          */
         struct BatchedRegisters {
@@ -714,17 +714,17 @@ class BaseManager : public CallManager
             addr_t addr;
             //Batch length
             size_t length;
-            //Container of 
+            //Container of
             //registers batched
             std::vector<Register*> regs;
-            //Container of all unique ids 
+            //Container of all unique ids
             //of batched registers
             std::vector<id_t> ids;
         };
-        
+
         /**
          * Container of all Register pointers
-         * sorted by their id and then by address 
+         * sorted by their id and then by address
          * for fast packets batching
          */
         std::vector<Register*> _sortedRegisters;
@@ -761,7 +761,7 @@ class BaseManager : public CallManager
 
         /**
          * The number of user cooperative
-         * threads currently waiting in 
+         * threads currently waiting in
          * waitNextFlush() methods.
          */
         unsigned int _currentThreadWaiting;
@@ -800,22 +800,22 @@ class BaseManager : public CallManager
          * Exception error configuration.
          * If true, an std::runtime_error exception
          * is thrown if:
-         * ThrowErrorOnScan: unknown device type 
+         * ThrowErrorOnScan: unknown device type
          * is found while scanning.
-         * ThrowErrorOnRead: maximum read tries is 
+         * ThrowErrorOnRead: maximum read tries is
          * reached while force read fails.
          */
         ParameterBool _paramThrowErrorOnScan;
         ParameterBool _paramThrowErrorOnRead;
-        
+
         /**
          * Return true if given Register pointer
          * is mark has to be read or write
          */
         inline bool isNeedRead(Register* reg)
         {
-            return 
-                reg->needRead() || 
+            return
+                reg->needRead() ||
                 (reg->periodPackedRead > 0 &&
                 (_readCycleCount % reg->periodPackedRead == 0));
         }
@@ -831,9 +831,9 @@ class BaseManager : public CallManager
         }
 
         /**
-         * Iterate over all registers and batch them 
+         * Iterate over all registers and batch them
          * into compatible groups (address and length).
-         * If isReadOrWrite is true, registers needing 
+         * If isReadOrWrite is true, registers needing
          * read are selected.
          * If isReadOrWrite is false, registers needing
          * write are selected.
@@ -844,24 +844,24 @@ class BaseManager : public CallManager
             //Batched registers container
             std::vector<BatchedRegisters> container;
 
-            //Merge the given temporary batch to 
+            //Merge the given temporary batch to
             //final batches by merging by id
             auto mergeById = [&container, isReadOrWrite, this]
             (const BatchedRegisters& tmpBatch) {
                 //SyncRead/Write is enable whenether
                 //configuration boolean are set
-                bool isSyncEnable = 
+                bool isSyncEnable =
                     (isReadOrWrite && this->_paramEnableSyncRead.value) ||
                     (!isReadOrWrite && this->_paramEnableSyncWrite.value);
                 bool found = false;
                 //Already added final batch are iterated
                 //to find if the current batch can be merge
-                //with another batch by id with constant address 
+                //with another batch by id with constant address
                 //and length.
                 for (size_t j=0;j<container.size();j++) {
                     if (
                         isSyncEnable &&
-                        container[j].addr == tmpBatch.addr && 
+                        container[j].addr == tmpBatch.addr &&
                         container[j].length == tmpBatch.length
                     ) {
                         for (size_t k=0;k<tmpBatch.regs.size();k++) {
@@ -872,14 +872,14 @@ class BaseManager : public CallManager
                         break;
                     }
                 }
-                //If no compatible final batch are 
+                //If no compatible final batch are
                 //found a new one is created
                 if (!found) {
                     container.push_back(tmpBatch);
                 }
             };
 
-            //Iterate over all sorted Registers 
+            //Iterate over all sorted Registers
             //by id and then by address
             BatchedRegisters tmpBatch;
             for (size_t i=0;i<_sortedRegisters.size();i++) {
@@ -899,7 +899,7 @@ class BaseManager : public CallManager
                         //And continue to next register
                         continue;
                     }
-                    bool isContigious = 
+                    bool isContigious =
                         (tmpBatch.addr + tmpBatch.length == reg->addr) &&
                         (reg->id == tmpBatch.ids.front());
                     if (isContigious) {
@@ -934,7 +934,7 @@ class BaseManager : public CallManager
         }
 
         /**
-         * Actually Write and Read on the bus 
+         * Actually Write and Read on the bus
          * given batched Registers
          * TODO handle error.........XXX
          */
@@ -949,14 +949,14 @@ class BaseManager : public CallManager
                 //Write single register
                 TimePoint pStart = getTimePoint();
                 _protocol->writeData(
-                    batch.ids.front(), 
-                    batch.addr, 
-                    batch.regs.front()->_dataBufferWrite, 
+                    batch.ids.front(),
+                    batch.addr,
+                    batch.regs.front()->_dataBufferWrite,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.writeCount++;
                 _stats.writeLength += batch.length;
-                _stats.writeDuration += 
+                _stats.writeDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
             } else {
                 //Synch Write multiple registers
@@ -966,14 +966,14 @@ class BaseManager : public CallManager
                 }
                 TimePoint pStart = getTimePoint();
                 _protocol->syncWrite(
-                    batch.ids, 
+                    batch.ids,
                     batch.addr,
                     datas,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.syncWriteCount++;
                 _stats.syncWriteLength += batch.length;
-                _stats.syncWriteDuration += 
+                _stats.syncWriteDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
             }
         }
@@ -992,14 +992,14 @@ class BaseManager : public CallManager
                 //Read single register
                 TimePoint pStart = getTimePoint();
                 ResponseState state = _protocol->readData(
-                    batch.ids.front(), 
-                    batch.addr, 
-                    batch.regs.front()->_dataBufferRead, 
+                    batch.ids.front(),
+                    batch.addr,
+                    batch.regs.front()->_dataBufferRead,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
                 _stats.readLength += batch.length;
-                _stats.readDuration += 
+                _stats.readDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                 if (state != ResponseOK) {
@@ -1014,14 +1014,14 @@ class BaseManager : public CallManager
                 }
                 TimePoint pStart = getTimePoint();
                 std::vector<ResponseState> states = _protocol->syncRead(
-                    batch.ids, 
+                    batch.ids,
                     batch.addr,
                     datas,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.syncReadCount++;
                 _stats.syncReadLength += batch.length;
-                _stats.syncReadDuration += 
+                _stats.syncReadDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
                     //TODO XXX XXX XXX handle response code
@@ -1038,7 +1038,7 @@ class BaseManager : public CallManager
 
         /**
          * Iterate over all registers and
-         * swap then to apply read change if 
+         * swap then to apply read change if
          * needed.
          * (No thread protection)
          */
@@ -1084,4 +1084,3 @@ class BaseManager : public CallManager
 };
 
 }
-

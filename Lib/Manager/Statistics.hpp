@@ -16,18 +16,18 @@ struct Statistics
     //Date at Manager instantiation
     TimePoint managerStart;
     //Number of calls to Protocol
-    //read/write/syncRead/syncWrite 
+    //read/write/syncRead/syncWrite
     unsigned long readCount;
     unsigned long writeCount;
     unsigned long syncReadCount;
     unsigned long syncWriteCount;
-    //Total length of data read or write using 
+    //Total length of data read or write using
     //Protocol read/write/syncRead/syncWrite calls
     unsigned long readLength;
     unsigned long writeLength;
     unsigned long syncReadLength;
     unsigned long syncWriteLength;
-    //Total time duration spent during Protocol 
+    //Total time duration spent during Protocol
     //read/write/syncRead/syncWrite calls
     TimeDurationMicro readDuration;
     TimeDurationMicro writeDuration;
@@ -42,11 +42,11 @@ struct Statistics
     //Total time duration spent during
     //Manager waiting for cooperative users
     //threads at flush() begining and
-    //during users waiting for Manager 
+    //during users waiting for Manager
     //at nextFlush()
     TimeDurationMicro waitUsersDuration;
     TimeDurationMicro waitManagerDuration;
-    //Number of calls to Manager 
+    //Number of calls to Manager
     //emergencyStop(), exitEmergencyState()
     unsigned long emergencyCount;
     unsigned long exitEmergencyCount;
@@ -89,7 +89,7 @@ struct Statistics
         TimePoint now = getTimePoint();
         os << "RhAL Manager Statistics:" << std::endl;
         os << "Time since Manager creation: " << getTimeDuration
-            <TimeDurationMicro>(managerStart, now).count() << 
+            <TimeDurationDouble>(managerStart, now).count() <<
             "s" << std::endl;
         os << "Read() calls: " << readCount << std::endl;
         os << "Write() calls: " << writeCount << std::endl;
@@ -106,25 +106,24 @@ struct Statistics
         os << "EmergencyStop() calls: " << emergencyCount << std::endl;
         os << "ExitEmergencyState() calls: " << exitEmergencyCount << std::endl;
         os << "Read() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(readDuration).count() << 
+            <TimeDurationDouble>(readDuration).count() <<
             "s" << std::endl;
         os << "Write() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(writeDuration).count() << 
+            <TimeDurationDouble>(writeDuration).count() <<
             "s" << std::endl;
         os << "SyncRead() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(syncReadDuration).count() << 
+            <TimeDurationDouble>(syncReadDuration).count() <<
             "s" << std::endl;
         os << "SyncWrite() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(syncWriteDuration).count() << 
+            <TimeDurationDouble>(syncWriteDuration).count() <<
             "s" << std::endl;
         os << "Waiting Users spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(waitUsersDuration).count() << 
+            <TimeDurationDouble>(waitUsersDuration).count() <<
             "s" << std::endl;
         os << "Waiting Manager spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(waitManagerDuration).count() << 
+            <TimeDurationDouble>(waitManagerDuration).count() <<
             "s" << std::endl;
     }
 };
 
 }
-
