@@ -379,6 +379,14 @@ class TypedRegister : public Register
         const FuncConvDecode<T> funcConvDecode;
 
         /**
+         * Range values and minimum step value for the register.
+         * Useful mainly for the Float type
+         */
+        T minValue;
+        T maxValue;
+        T stepValue;
+
+        /**
          * Initialization with Register
          * configuration and:
          * funcConvEncode: convertion function
@@ -434,7 +442,40 @@ class TypedRegister : public Register
         {
         }
 
+        /**
+         * Getters and setters for range and step values
+         * setters will be called after the constructor.
+         */
 
+        inline void setMinValue(T val)
+        {
+            minValue=val;
+        }
+
+        inline void setMaxValue(T val)
+        {
+            maxValue=val;
+        }
+
+        inline void setStepValue(T val)
+        {
+            stepValue=val;
+        }
+
+        inline T getMinValue()
+        {
+            return minValue;
+        }
+
+        inline T getMaxValue()
+        {
+            return maxValue;
+        }
+
+        inline T getStepValue()
+        {
+            return stepValue;
+        }
 
         /**
          * Set the register

@@ -111,6 +111,28 @@ struct TimedValue {
         value(val)
     {
     }
+    //Returns an unsigned long (std::(u)int64_t) usable value of milliseconds from epoch.
+    unsigned long timestamp_to_ms()
+    {
+        return getTimeDuration<TimeDurationMilli>(timestamp).count();
+    }
+
+    unsigned long timestamp_to_ms(const TimePoint& p1)
+    {
+        return getTimeDuration<TimeDurationMilli>(p1,timestamp).count();
+    }
+
+    unsigned long timestamp_to_us()
+    {
+        return getTimeDuration<TimeDurationMicro>(timestamp).count();
+    }
+
+    unsigned long timestamp_to_us(const TimePoint& p1)
+    {
+        return getTimeDuration<TimeDurationMicro>(p1,timestamp).count();
+    }
+
+
 };
 
 /**
