@@ -38,7 +38,7 @@ inline float convDecode_Current(const data_t* buffer)
  * Encode function for goal torque, input in bullshits (precision 1/2048 bullshits).
  * Actually expects a value between -1 and 1
  */
-inline void convEncode_GoalTorque(data_t* buffer, float value)
+inline void convEncode_GoalCurrent(data_t* buffer, float value)
 {
 	if (value > 1.0) {
 		value = 1.0;
@@ -58,7 +58,7 @@ inline void convEncode_GoalTorque(data_t* buffer, float value)
  * Decode function for current, output in bullshit (precision 1/2048 bullshit).
  * Actually outputs a value between -1 and 1
  */
-inline float convDecode_GoalTorque(const data_t* buffer)
+inline float convDecode_GoalCurrent(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
 	if (val < 2048) {
@@ -85,7 +85,7 @@ class MX64 : public MX
             MX(name, id),
 			_current("current", 0x44, 2, convEncode_Current, convDecode_Current, 0),
 			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
-			_goalTorque("goalTorque", 0x47, 2, convEncode_GoalTorque, convDecode_GoalTorque, 0)
+			_goalCurrent("goalCurrent", 0x47, 2, convEncode_GoalCurrent, convDecode_GoalCurrent, 0)
         {
         }
     protected :
@@ -98,7 +98,7 @@ class MX64 : public MX
         	MX::onInit();
         	Device::registersList().add(&_current);
         	Device::registersList().add(&_torqueControlModeEnable);
-        	Device::registersList().add(&_goalTorque);
+        	Device::registersList().add(&_goalCurrent);
         }
 
         /**
@@ -107,7 +107,7 @@ class MX64 : public MX
         //The following comments specify the register size and address in the hardware. A '*' means that the register is not present in the all of the MX children.
 		TypedRegisterFloat 	_current;					//2 44
 		TypedRegisterBool	_torqueControlModeEnable;	//1 46
-		TypedRegisterFloat 	_goalTorque;				//2 47
+		TypedRegisterFloat 	_goalCurrent;				//2 47
 
 };
 
