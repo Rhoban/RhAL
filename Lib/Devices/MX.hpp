@@ -698,9 +698,9 @@ class MX : public DXL
 
 		TypedRegisterBool 	_torqueEnable;			//1 18
 		TypedRegisterBool 	_led;					//1 19
-		TypedRegisterFloat	_DGain;					//1 1A *
-		TypedRegisterFloat	_IGain;					//1 1B *
-		TypedRegisterFloat	_PGain;					//1	1C *
+		TypedRegisterInt	_DGain;					//1 1A *
+		TypedRegisterInt	_IGain;					//1 1B *
+		TypedRegisterInt	_PGain;					//1	1C *
 		TypedRegisterFloat 	_goalPosition;			//2	1E
 		TypedRegisterFloat 	_goalSpeed;				//2	20
 		TypedRegisterFloat 	_torqueLimit;			//2	22
