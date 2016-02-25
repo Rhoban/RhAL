@@ -38,7 +38,7 @@ namespace RhAL {
 
 typedef Manager<
     MX106,
-    MX64,
+//    MX64, // MX64 is so has been
     MX28,
     MX12,
     RX64,

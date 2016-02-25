@@ -7,6 +7,7 @@
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include "Devices/MX64.hpp"
+#include "types.h"
 
 namespace RhAL {
 
@@ -106,7 +107,7 @@ class Dynaban64 : public MX64
 			_torque1a3("torque1a3", 0x6C, 4, convEncode_float, convDecode_float, 0),
 			_torque1a4("torque1a4", 0x70, 4, convEncode_float, convDecode_float, 0),
 			_duration1("duration1", 0x75, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
-			_trajPoly2Size("trajPoly2Size", 0x76, 1, convEncode_float, convDecode_float, 0),
+			_trajPoly2Size("trajPoly2Size", 0x76, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_traj2a0("traj2a0", 0x77, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a1("traj2a1", 0x7B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a2("traj2a2", 0x7F, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
@@ -152,15 +153,124 @@ class Dynaban64 : public MX64
             _speedCalculationDelay.setMinValue(0);
             _speedCalculationDelay.setMaxValue(6.5);
             _speedCalculationDelay.setStepValue(0.001);
+        	const TimePoint tp  = getTimePoint();
+        	t0 = duration_float(tp);
 
         }
 
+        /**
+         * Helpers for trajectories
+         */
+        /**
+         * This function will send to the servo the first position trajectory and torque trajectory with their durations.
+         * Once this is done, call startFirstTrajectoryNow to start the trajectory.
+         * If you want the trajectory to be continued by an other one call updateNextTrajectory.
+         */
+        inline void prepareFirstTrajectory(float * positionCoefs, int nbPositionCoefs,
+        									float * torqueCoefs, int nbTorqueCoefs,
+											float duration)
+        {
+        	// Common duration for position and torque trajectory
+        	setDuration1(duration);
 
-		inline int getPositionTrajectory1Size()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _trajPoly1Size.readValue().value;
-		}
+        	float fivePositionCoefs[5];
+        	for (int i = 0; i < nbPositionCoefs; i++) {
+        		fivePositionCoefs[i] = positionCoefs[i];
+        	}
+        	for (int i = nbPositionCoefs; i < 5; i++) {
+        		fivePositionCoefs[i] = 0.0;
+        	}
+        	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+        	setPositionTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+        	setPositionTrajectory1Size(nbPositionCoefs);
+
+        	//Same goes for the torque coefs, unless there are none
+        	if (nbTorqueCoefs != 0) {
+            	for (int i = 0; i < nbTorqueCoefs; i++) {
+            		fivePositionCoefs[i] = torqueCoefs[i];
+            	}
+            	for (int i = nbTorqueCoefs; i < 5; i++) {
+            		fivePositionCoefs[i] = 0.0;
+            	}
+            	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+            	setPositionTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setPositionTrajectory1Size(nbTorqueCoefs);
+        	}
+        	/*
+        	 * We set copy next buffer to 0, this means that if nothing is done the movement will stop at the end of the current traj.
+        	 *But it also means that the firmware is ready to receive a second trajectory that, if transmitted, will be used once the first one has ended.
+        	 */
+        	setCopyNextBuffer(0);
+        }
+
+        /*As of 25/02/2016 :
+		 *1 : Predictive command only. Follows the trajectory set in the traj1 fields but only relying on the model of the motor. This mode can be useful when calibrating the model
+		 *2 : PID only. Follows the trajectory set in the traj1 fields but only relying on the PID.
+		 *3 : PID and predictive command. Follows the trajectory set in the traj1 fields using both the PID and the predictive command. This should be the default mode when following a trajectory
+		 */
+        inline void startFirstTrajectoryNow(int mode)
+        {
+        	setMode(mode);
+        }
+
+        inline bool isReadyForNextTrajectory()
+        {
+        	if (getCopyNextBuffer()) {
+        		return false;
+        	}
+        	return true;
+        }
+
+    	/*
+    	 * This function should be called only if copyNextBuffer is false, which means that Dynaban is ready to receive a trajectory (that will be bufferized until the current
+    	 * trajectory is finished).
+    	 * The only situation where it'd make sense to call this function if copyNextBuffer is true is if we've sent a continuation trajectory
+    	 * that hasn't yet been used and we want to change it before Dynaban finishes its current traj. Ofc, not recommended.
+    	 */
+        inline void updateNextTrajectory(float * positionCoefs, int nbPositionCoefs,
+				float * torqueCoefs, int nbTorqueCoefs,
+				float duration)
+        {
+
+        	// Common duration for position and torque trajectory
+        	setDuration2(duration);
+
+        	float fivePositionCoefs[5];
+        	for (int i = 0; i < nbPositionCoefs; i++) {
+        		fivePositionCoefs[i] = positionCoefs[i];
+        	}
+        	for (int i = nbPositionCoefs; i < 5; i++) {
+        		fivePositionCoefs[i] = 0.0;
+        	}
+        	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+        	setPositionTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+        	setPositionTrajectory2Size(nbPositionCoefs);
+
+        	//Same goes for the torque coefs, unless there are none
+        	if (nbTorqueCoefs != 0) {
+            	for (int i = 0; i < nbTorqueCoefs; i++) {
+            		fivePositionCoefs[i] = torqueCoefs[i];
+            	}
+            	for (int i = nbTorqueCoefs; i < 5; i++) {
+            		fivePositionCoefs[i] = 0.0;
+            	}
+            	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+            	setPositionTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setPositionTrajectory2Size(nbTorqueCoefs);
+        	}
+        	/*
+        	 * We set copy next buffer to 1, this tells dynaban to use our new trajectory once the last one has finished.
+        	 * The copy next buffer will be reset to 0 once dynaban starts using the new trajectory.
+        	 */
+        	setCopyNextBuffer(1);
+        }
+
+
+        /**
+         * Getters of hell.
+         */
+
+
 		/**
 		 * Sets the size of the position trajectory polynomial. 5 is the maximum value.
 		 * e.g if set to 3, the firmware will only consider a0, a1, a2.
@@ -253,17 +363,6 @@ class Dynaban64 : public MX64
 		}
 
 
-		inline int getTrajPoly2Size()
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _trajPoly1Size.readValue().value;
-		}
-		inline void setTrajPoly2Size(const int value)
-		{
-			std::lock_guard<std::mutex> lock(_mutex);
-			_trajPoly1Size.writeValue(value);
-		}
-
 		inline int getPositionTrajectory2Size()
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
@@ -273,11 +372,12 @@ class Dynaban64 : public MX64
 		 * Sets the size of the position trajectory polynomial 2. 5 is the maximum value.
 		 * e.g if set to 3, the firmware will only consider a0, a1, a2.
 		 */
-		inline void setPositionTrajector21Size(const int value)
+		inline void setPositionTrajectory2Size(const int value)
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 			_trajPoly2Size.writeValue(value);
 		}
+
 		/**
 		 * Fills an array of floats containing the coefficients of the position trajectory2 : [a0, a1, a2, a3, a4]
 		 */
@@ -692,10 +792,11 @@ class Dynaban64 : public MX64
 			Device::registersList().add(&_goalTorque);
         }
 
-        inline virtual onSwap() override
+        inline virtual void onSwap() override
        	{
-        	if time >= limit
-			swaapPoly
+        	const TimePoint tp  = getTimePoint();
+        	t = duration_float(tp);
+
   		}
 		// Dynaban specific registers :
 
@@ -752,6 +853,10 @@ class Dynaban64 : public MX64
 		TypedRegisterBool	_useValuesNow;				//1 CF
 		TypedRegisterInt	_torqueKp;					//2 D0
 		TypedRegisterFloat  _goalTorque;				//4 D2
+
+		//Value used to measure time since last polynomial swap
+		double t0;
+		double t;
 
 };
 
