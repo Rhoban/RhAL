@@ -66,7 +66,6 @@ class Device
          */
         inline void setManager(CallManager* manager)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
             if (manager == nullptr) {
                 throw std::logic_error(
                     "Device null manager pointer: "
@@ -195,12 +194,12 @@ class Device
         /**
          * Device unique name
          */
-        std::string _name;
+        const std::string _name;
 
         /**
          * Device unique id on the bus
          */
-        id_t _id;
+        const id_t _id;
 
         /**
          * Pointer to the base class Manager

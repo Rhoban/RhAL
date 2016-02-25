@@ -88,6 +88,7 @@ struct Statistics
     {
         TimePoint now = getTimePoint();
         os << "RhAL Manager Statistics:" << std::endl;
+        os << "------------------------" << std::endl;
         os << "Time since Manager creation: " << 
             duration_float(managerStart, now) << "s" << std::endl;
         os << "Read() calls: " << readCount << std::endl;

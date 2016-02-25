@@ -153,8 +153,8 @@ class Manager : public AggregateManager<Types...>
     private:
 
         /**
-         * Pointer to Manager thread instance 
-         * and continue state
+         * Pointer to Manager thread 
+         * instance and thread continue state
          */
         std::thread* _managerThread;
         bool _managerThreadContinue;

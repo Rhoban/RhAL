@@ -161,7 +161,6 @@ class Register
         inline void init(id_t tmpId, CallManager* manager,
             data_t* bufferRead, data_t* bufferWrite)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (manager == nullptr) {
                 throw std::logic_error(
                     "Register null manager pointer:"
@@ -184,7 +183,6 @@ class Register
          */
         inline void forceRead()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
                     "Register null manager pointer:"
@@ -194,7 +192,6 @@ class Register
         }
         inline void forceWrite()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
             if (_manager == nullptr) {
                 throw std::logic_error(
                     "Register null manager pointer:"
@@ -208,12 +205,12 @@ class Register
          */
         inline void askRead()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _needRead = true;
         }
         inline void askWrite()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _needWrite = true;
         }
 
@@ -223,12 +220,12 @@ class Register
          */
         inline bool needRead() const
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _needRead;
         }
         inline bool needWrite() const
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _needWrite;
         }
 
@@ -281,7 +278,7 @@ class Register
         /**
          * Mutex protecting Register member
          */
-        mutable std::recursive_mutex _mutex;
+        mutable std::mutex _mutex;
 
         /**
          * Request conversion by derived TypedRegister
@@ -307,7 +304,7 @@ class Register
          */
         inline void selectForWrite()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             doConvEncode();
             _needWrite = false;
         }
@@ -315,10 +312,11 @@ class Register
         /**
          * Mark the register as read operation
          * has begins. Reset read dirty flag.
+         * (Call by manager)
          */
         inline void readyForRead()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _needRead = false;
         }
 
@@ -326,10 +324,11 @@ class Register
          * Mark the register as read end and need
          * swapping.
          * Given timestamp is the date at read receive.
-         * (Call by manager so doesn't need for thread protection)
+         * (Call by manager)
          */
         inline void finishRead(TimePoint timestamp)
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             _needSwaping = true;
             _lastDevReadManager = timestamp;
         }
@@ -342,7 +341,7 @@ class Register
          */
         inline void swapRead()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             if (!_needSwaping) {
                 return;
             }
@@ -450,32 +449,32 @@ class TypedRegister : public Register
          */
         inline void setMinValue(T val)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _minValue = val;
         }
         inline void setMaxValue(T val)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _maxValue = val;
         }
         inline void setStepValue(T val)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _stepValue = val;
         }
         inline T getMinValue() const
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _minValue;
         }
         inline T getMaxValue() const
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _maxValue;
         }
         inline T getStepValue() const
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _stepValue;
         }
 
@@ -485,7 +484,7 @@ class TypedRegister : public Register
          */
         inline void setAggregationPolicy(AggregationPolicy policy)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _aggregationPolicy = policy;
         }
 
@@ -496,12 +495,12 @@ class TypedRegister : public Register
          */
         inline void setCallbackRead(std::function<void(T)> func)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _callbackOnRead = func;
         }
         inline void setCallbackWrite(std::function<void(T)> func)
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             _callbackOnWrite = func;
         }
 
@@ -518,7 +517,7 @@ class TypedRegister : public Register
             if (isForceRead || !_manager->isScheduleMode()) {
                 forceRead();
             }
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return TimedValue<T>(_lastDevReadUser, _valueRead);
         }
 
@@ -540,7 +539,7 @@ class TypedRegister : public Register
                     + name);
             }
 
-            std::unique_lock<std::recursive_mutex> lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
 
             //Compute aggregation if the value
             //has already been written
@@ -575,7 +574,7 @@ class TypedRegister : public Register
          */
         inline T getWrittenValue()
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             return _valueWrite;
         }
 
@@ -593,7 +592,7 @@ class TypedRegister : public Register
                     + name);
             }
 
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
 
             //Encode and re Decode the current write balue
             data_t tmpbuffer[AddrDevLen];

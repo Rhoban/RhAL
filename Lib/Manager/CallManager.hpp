@@ -93,8 +93,9 @@ class CallManager
         ParameterBool _paramScheduleMode;
 
         /**
-         * Mutex protected threaded Manager access
-         * (for bus/protocol, flush wait, etc)
+         * Mutex protecting threaded Manager state access,
+         * cooperative threads synchronisation
+         * but not protecting the bus access
          */
         mutable std::mutex _mutex;
 };
