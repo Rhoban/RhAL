@@ -82,11 +82,12 @@ int main()
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::thread t2(userThread);
 
-    for (size_t k=0;k<3;k++) {
-        std::cout << "---- Manager cycle " << k << std::endl;
-        manager.flush();
+    manager.startManagerThread([](){
+        std::cout << "---- Manager cycle " << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    }
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(4*2000));
+    manager.stopManagerThread();
 
     t1.join();
     t2.join();

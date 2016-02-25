@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+#include <functional>
 #include <json.hpp>
 #include "AggregateManager.hpp"
 
@@ -23,6 +25,14 @@ class Manager : public AggregateManager<Types...>
         inline Manager() :
             AggregateManager<Types...>()
         {
+        }
+
+        /**
+         * End of pending Manager thread
+         */
+        inline ~Manager()
+        {
+            stopManagerThread();
         }
         
         /**
@@ -105,6 +115,47 @@ class Manager : public AggregateManager<Types...>
             loadJSON(j);
             file.close();
         }
+
+        /**
+         * Start and stop the Manager thread
+         * continiously calling flush() on 
+         * manager instance. 
+         * An optional callback function can 
+         * be given and will be called at each
+         * Manager cycle.
+         */
+        inline void startManagerThread(
+            std::function<void()> callback = [](){})
+        {
+            if (_managerThread == nullptr) {
+                _managerThreadContinue = true;
+                _managerThread = new std::thread(
+                    [this, &callback](){
+                        while (this->_managerThreadContinue) {
+                            this->flush();
+                            callback();
+                        }
+                    });
+            }
+        }
+        inline void stopManagerThread()
+        {
+            if (_managerThread != nullptr) {
+                _managerThreadContinue = false;
+                _managerThread->join();
+                delete _managerThread;
+                _managerThread = nullptr;
+            }
+        }
+
+    private:
+
+        /**
+         * Pointer to Manager thread instance 
+         * and continue state
+         */
+        std::thread* _managerThread;
+        bool _managerThreadContinue;
 };
 
 }
