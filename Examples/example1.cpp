@@ -3,6 +3,7 @@
 
 typedef RhAL::Manager<
     RhAL::ExampleDevice1, 
+    RhAL::RX64, 
     RhAL::ExampleDevice2> Manager;
 
 void printDevice(const RhAL::Device& dev)

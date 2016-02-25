@@ -23,7 +23,9 @@ class Manager : public AggregateManager<Types...>
          * Initialization
          */
         inline Manager() :
-            AggregateManager<Types...>()
+            AggregateManager<Types...>(),
+            _managerThread(nullptr),
+            _managerThreadContinue(false)
         {
         }
 
@@ -58,7 +60,7 @@ class Manager : public AggregateManager<Types...>
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (
                 !j.is_object() ||
-                j.size() != sizeof...(Types) + 1 ||
+                j.size() > sizeof...(Types) + 1 ||
                 j.count("Manager") != 1
             ) {
                 throw std::runtime_error(
