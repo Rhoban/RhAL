@@ -76,7 +76,6 @@ inline float readFloatFromBuffer(const data_t* buffer)
  * - "decode" is the conversion from the hardware to the user
  */
 
-
 /**
  * Default bool encode (raw copy)
  */
@@ -95,6 +94,7 @@ inline void convEncode_1Byte(data_t* buffer, uint8_t value)
 {
     write1ByteToBuffer(buffer, value);
 }
+
 /**
  * Default 2Bytes encode (raw copy)
  */
@@ -102,6 +102,7 @@ inline void convEncode_2Bytes(data_t* buffer, uint16_t value)
 {
     write2BytesToBuffer(buffer, value);
 }
+
 /**
  * Default 3Bytes encode (raw copy)
  */
@@ -109,6 +110,7 @@ inline void convEncode_3Bytes(data_t* buffer, uint32_t value)
 {
     write3BytesToBuffer(buffer, value);
 }
+
 /**
  * Default float encode (raw copy)
  */
@@ -130,6 +132,7 @@ inline bool convDecode_Bool(const data_t* buffer)
 
     return result;
 }
+
 /**
  * Default 1Byte decode (raw copy)
  */
@@ -137,6 +140,7 @@ inline uint8_t convDecode_1Byte(const data_t* buffer)
 {
     return read1ByteFromBuffer(buffer);
 }
+
 /**
  * Default 2Bytes decode (raw copy)
  */
@@ -144,6 +148,7 @@ inline uint16_t convDecode_2Bytes(const data_t* buffer)
 {
     return read2BytesFromBuffer(buffer);
 }
+
 /**
  * Default 3Bytes decode (raw copy)
  */
@@ -151,6 +156,7 @@ inline uint32_t convDecode_3Bytes(const data_t* buffer)
 {
     return read2BytesFromBuffer(buffer);
 }
+
 /**
  * Default float decode (raw copy)
  */
@@ -160,3 +166,4 @@ inline float convDecode_float(const data_t* buffer)
 }
 
 }
+

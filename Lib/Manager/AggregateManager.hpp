@@ -538,26 +538,25 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
                 const AggregateManager<Types...>* ptr, 
                 nlohmann::json& j)
             {
-                j[ImplManager<T>::typeName()] = 
-                    ptr->ImplManager<T>::saveJSON();
+                nlohmann::json tmpJ = ptr->ImplManager<T>::saveJSON();
+                if (tmpJ["devices"].size() > 0) {
+                    j[ImplManager<T>::typeName()] = tmpJ;
+                }
             }
             //Load JSON
             inline static void runLoadJSON(
                 AggregateManager<Types...>* ptr, 
                 const nlohmann::json& j)
             {
-                if (j.count(ImplManager<T>::typeName()) != 1) {
-                    throw std::runtime_error(
-                        "AggregateManager load parameters no Device type: "
-                        + ImplManager<T>::typeName());
+                if (j.count(ImplManager<T>::typeName()) == 1) {
+                    //Check json format and 
+                    //add non existing devices
+                    ptr->checkDevicesJSON<T>(
+                        j.at(ImplManager<T>::typeName()));
+                    //Load parameters
+                    ptr->ImplManager<T>::loadJSON(
+                        j.at(ImplManager<T>::typeName()));
                 }
-                //Check json format and 
-                //add non existing devices
-                ptr->checkDevicesJSON<T>(
-                    j.at(ImplManager<T>::typeName()));
-                //Load parameters
-                ptr->ImplManager<T>::loadJSON(
-                    j.at(ImplManager<T>::typeName()));
             }
         };
         //General iteration case
@@ -633,8 +632,10 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
                 const AggregateManager<Types...>* ptr, 
                 nlohmann::json& j)
             {
-                j[ImplManager<T>::typeName()] = 
-                    ptr->ImplManager<T>::saveJSON();
+                nlohmann::json tmpJ = ptr->ImplManager<T>::saveJSON();
+                if (tmpJ["devices"].size() > 0) {
+                    j[ImplManager<T>::typeName()] = tmpJ;
+                }
                 Impl<Ts...>::runSaveJSON(ptr, j);
             }
             //Load JSON
@@ -642,18 +643,15 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
                 AggregateManager<Types...>* ptr, 
                 const nlohmann::json& j)
             {
-                if (j.count(ImplManager<T>::typeName()) != 1) {
-                    throw std::runtime_error(
-                        "AggregateManager load parameters no Device type: "
-                        + ImplManager<T>::typeName());
+                if (j.count(ImplManager<T>::typeName()) == 1) {
+                    //Check json format and 
+                    //add non existing devices
+                    ptr->checkDevicesJSON<T>(
+                        j.at(ImplManager<T>::typeName()));
+                    //Load parameters
+                    ptr->ImplManager<T>::loadJSON(
+                        j.at(ImplManager<T>::typeName()));
                 }
-                //Check json format and 
-                //add non existing devices
-                ptr->checkDevicesJSON<T>(
-                    j.at(ImplManager<T>::typeName()));
-                //Load parameters
-                ptr->ImplManager<T>::loadJSON(
-                    j.at(ImplManager<T>::typeName()));
                 //Continue on other types
                 Impl<Ts...>::runLoadJSON(ptr, j);
             }

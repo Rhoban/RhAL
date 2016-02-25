@@ -88,9 +88,9 @@ struct Statistics
     {
         TimePoint now = getTimePoint();
         os << "RhAL Manager Statistics:" << std::endl;
-        os << "Time since Manager creation: " << getTimeDuration
-            <TimeDurationDouble>(managerStart, now).count() <<
-            "s" << std::endl;
+        os << "------------------------" << std::endl;
+        os << "Time since Manager creation: " << 
+            duration_float(managerStart, now) << "s" << std::endl;
         os << "Read() calls: " << readCount << std::endl;
         os << "Write() calls: " << writeCount << std::endl;
         os << "SyncRead() calls: " << syncReadCount << std::endl;
@@ -105,24 +105,18 @@ struct Statistics
         os << "ForceWrite() calls: " << forceWriteCount << std::endl;
         os << "EmergencyStop() calls: " << emergencyCount << std::endl;
         os << "ExitEmergencyState() calls: " << exitEmergencyCount << std::endl;
-        os << "Read() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(readDuration).count() <<
-            "s" << std::endl;
-        os << "Write() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(writeDuration).count() <<
-            "s" << std::endl;
-        os << "SyncRead() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(syncReadDuration).count() <<
-            "s" << std::endl;
-        os << "SyncWrite() spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(syncWriteDuration).count() <<
-            "s" << std::endl;
-        os << "Waiting Users spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(waitUsersDuration).count() <<
-            "s" << std::endl;
-        os << "Waiting Manager spent time: " << std::chrono::duration_cast
-            <TimeDurationDouble>(waitManagerDuration).count() <<
-            "s" << std::endl;
+        os << "Read() spent time: " << 
+            duration_float(readDuration) << "s" << std::endl;
+        os << "Write() spent time: " << 
+            duration_float(writeDuration) << "s" << std::endl;
+        os << "SyncRead() spent time: " << 
+            duration_float(syncReadDuration) << "s" << std::endl;
+        os << "SyncWrite() spent time: " << 
+            duration_float(syncWriteDuration) << "s" << std::endl;
+        os << "Waiting Users spent time: " << 
+            duration_float(waitUsersDuration) << "s" << std::endl;
+        os << "Waiting Manager spent time: " << 
+            duration_float(waitManagerDuration) << "s" << std::endl;
     }
 };
 

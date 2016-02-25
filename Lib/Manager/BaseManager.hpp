@@ -50,6 +50,7 @@ class BaseManager : public CallManager
             _devicesByName(),
             _devicesById(),
             _parametersList(),
+            _mutexBus(),
             _sortedRegisters(),
             _readCycleCount(0),
             _managerWaitUser(),
@@ -224,6 +225,7 @@ class BaseManager : public CallManager
                     "BaseManager protocol not initialized");
             }
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             _stats.emergencyCount++;
             _protocol->emergencyStop();
         }
@@ -241,6 +243,7 @@ class BaseManager : public CallManager
                     "BaseManager protocol not initialized");
             }
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             _stats.exitEmergencyCount++;
             _protocol->exitEmergencyState();
         }
@@ -390,7 +393,8 @@ class BaseManager : public CallManager
          */
         inline void scan()
         {
-            std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -425,7 +429,7 @@ class BaseManager : public CallManager
                         //the Device as present
                         devById(i).setPresent(true);
                     } else {
-                        //Check if the type number is suppoerted
+                        //Check if the type number is supported
                         //by the manager
                         if (!this->isTypeSupported(type)) {
                             //The type is not supported
@@ -441,14 +445,9 @@ class BaseManager : public CallManager
                                 continue;
                             }
                         }
-                        //Unlock the mutex to prevent dead lock
-                        //when onNewRegister() will be called
-                        lock.unlock();
                         //The Device is not yet present,
                         //it is created
                         this->devAddByTypeNumber(i, type);
-                        //Relock the mutex
-                        lock.lock();
                         //Set it as present
                         devById(i).setPresent(true);
                     }
@@ -469,7 +468,6 @@ class BaseManager : public CallManager
         inline virtual void onNewRegister(
             id_t id, const std::string& name) override
         {
-            std::lock_guard<std::mutex> lock(CallManager::_mutex);
             //Retrieve the next register and
             //add the pointer to the container
             _sortedRegisters.push_back(
@@ -497,6 +495,7 @@ class BaseManager : public CallManager
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             _stats.forceReadCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
@@ -552,6 +551,7 @@ class BaseManager : public CallManager
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             _stats.forceWriteCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
@@ -680,6 +680,7 @@ class BaseManager : public CallManager
          */
         inline void initBus()
         {
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             //Free existing instance
             if (_protocol != nullptr) {
                 delete _protocol;
@@ -721,6 +722,12 @@ class BaseManager : public CallManager
             //of batched registers
             std::vector<id_t> ids;
         };
+
+        /**
+         * Mutex protecting the shared
+         * communication bus
+         */
+        mutable std::mutex _mutexBus;
 
         /**
          * Container of all Register pointers
@@ -940,6 +947,7 @@ class BaseManager : public CallManager
          */
         inline void writeBatch(BatchedRegisters& batch)
         {
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -979,6 +987,7 @@ class BaseManager : public CallManager
         }
         inline void readBatch(BatchedRegisters& batch)
         {
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
             //Check for initBus() called
             if (_protocol == nullptr) {
                 throw std::logic_error(
@@ -1065,6 +1074,7 @@ class BaseManager : public CallManager
          * Try to read the Device model number
          * from given id and assign into given type.
          * True is returned if read is successful.
+         * (The bus access is supposed to be locked)
          */
         inline bool retrieveTypeNumber(id_t id, type_t& type)
         {
