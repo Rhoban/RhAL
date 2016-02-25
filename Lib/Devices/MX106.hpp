@@ -28,7 +28,7 @@ class MX106 : public MX
             MX(name, id),
 			_current("current", 0x44, 2, convEncode_Current, convDecode_Current, 0),
 			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
-			_goalTorque("goalTorque", 0x47, 2, convEncode_GoalTorque, convDecode_GoalTorque, 0)
+			_goalTorque("goalTorque", 0x47, 2, convEncode_GoalCurrent, convDecode_GoalCurrent, 0)
         {
         }
     protected :
