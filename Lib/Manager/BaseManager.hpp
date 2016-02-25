@@ -425,7 +425,7 @@ class BaseManager : public CallManager
                         //the Device as present
                         devById(i).setPresent(true);
                     } else {
-                        //Check if the type number is suppoerted
+                        //Check if the type number is supported
                         //by the manager
                         if (!this->isTypeSupported(type)) {
                             //The type is not supported

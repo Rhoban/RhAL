@@ -69,7 +69,7 @@ typedef std::chrono::time_point<std::chrono::steady_clock> TimePoint;
 typedef std::chrono::milliseconds TimeDurationMilli;
 typedef std::chrono::microseconds TimeDurationMicro;
 typedef std::chrono::seconds TimeDurationSec;
-typedef std::chrono::duration<double, std::ratio<1>> TimeDurationDouble;
+typedef std::chrono::duration<double, std::ratio<1>> TimeDurationFloat;
 
 /**
  * Return the current date as TimePoint
@@ -90,10 +90,77 @@ inline T getTimeDuration(const TimePoint& p1, const TimePoint& p2)
     return std::chrono::duration_cast<T>(p2 - p1);
 }
 
+/**
+ * Return the duration in given template
+ * Duration type of given TimePoint since epoch
+ */
 template <typename T>
 inline T getTimeDuration(const TimePoint& p1)
 {
     return std::chrono::duration_cast<T>(p1.time_since_epoch());
+}
+
+/**
+ * Return the duration tick in micro/milli/ seconds
+ * of given TimePoint since epoch or between the two
+ * given TimePoint.
+ */
+inline TimeDurationMicro::rep duration_us(const TimePoint& p)
+{
+    return getTimeDuration<TimeDurationMicro>(p).count();
+}
+inline TimeDurationMicro::rep duration_us(const TimePoint& p1, const TimePoint& p2)
+{
+    return getTimeDuration<TimeDurationMicro>(p1, p2).count();
+}
+inline TimeDurationMilli::rep duration_ms(const TimePoint& p)
+{
+    return getTimeDuration<TimeDurationMilli>(p).count();
+}
+inline TimeDurationMilli::rep duration_ms(const TimePoint& p1, const TimePoint& p2)
+{
+    return getTimeDuration<TimeDurationMilli>(p1, p2).count();
+}
+inline TimeDurationSec::rep duration_s(const TimePoint& p)
+{
+    return getTimeDuration<TimeDurationSec>(p).count();
+}
+inline TimeDurationSec::rep duration_s(const TimePoint& p1, const TimePoint& p2)
+{
+    return getTimeDuration<TimeDurationSec>(p1, p2).count();
+}
+inline TimeDurationFloat::rep duration_float(const TimePoint& p)
+{
+    return getTimeDuration<TimeDurationFloat>(p).count();
+}
+inline TimeDurationFloat::rep duration_float(const TimePoint& p1, const TimePoint& p2)
+{
+    return getTimeDuration<TimeDurationFloat>(p1, p2).count();
+}
+
+/**
+ * Return the duration tick in micro/milli/ seconds
+ * of given Duration
+ */
+template <typename T>
+inline TimeDurationMicro::rep duration_us(const T& d)
+{
+    return std::chrono::duration_cast<TimeDurationMicro>(d).count();
+}
+template <typename T>
+inline TimeDurationMilli::rep duration_ms(const T& d)
+{
+    return std::chrono::duration_cast<TimeDurationMilli>(d).count();
+}
+template <typename T>
+inline TimeDurationSec::rep duration_s(const T& d)
+{
+    return std::chrono::duration_cast<TimeDurationSec>(d).count();
+}
+template <typename T>
+inline TimeDurationFloat::rep duration_float(const T& d)
+{
+    return std::chrono::duration_cast<TimeDurationFloat>(d).count();
 }
 
 /**
@@ -111,28 +178,6 @@ struct TimedValue {
         value(val)
     {
     }
-    //Returns an unsigned long (std::(u)int64_t) usable value of milliseconds from epoch.
-    unsigned long timestamp_to_ms()
-    {
-        return getTimeDuration<TimeDurationMilli>(timestamp).count();
-    }
-
-    unsigned long timestamp_to_ms(const TimePoint& p1)
-    {
-        return getTimeDuration<TimeDurationMilli>(p1,timestamp).count();
-    }
-
-    unsigned long timestamp_to_us()
-    {
-        return getTimeDuration<TimeDurationMicro>(timestamp).count();
-    }
-
-    unsigned long timestamp_to_us(const TimePoint& p1)
-    {
-        return getTimeDuration<TimeDurationMicro>(p1,timestamp).count();
-    }
-
-
 };
 
 /**

@@ -6,7 +6,6 @@
 #include "types.h"
 #include "CallManager.hpp"
 #include "Aggregation.h"
-#include <iostream>
 
 namespace RhAL {
 
@@ -25,7 +24,6 @@ template <typename T>
 using FuncConvEncode = std::function<void(data_t*, T)>;
 template <typename T>
 using FuncConvDecode = std::function<T(const data_t*)>;
-
 
 /**
  * Typedef for conversion function working
@@ -92,7 +90,8 @@ class Register
         const bool isSlowRegister;
 
         /**
-         * If true, the register is read only, we don't write it
+         * If true, the register is read only. 
+         * Write operations are disallowed.
          */
         const bool isReadOnly;
 
@@ -109,8 +108,8 @@ class Register
          * isSlowRegister : If true, marks the buffer as slow.
          * Some registers are slow to write on the hardware
          * (flash memory takes 20-40 ms to write).
-         * isReadOnly: if true we don't write this register.
-         * funcConvEncode is a dummy function.
+         * isReadOnly: if true, write operation 
+         * are disallowed on this register. 
          */
         inline Register(
             const std::string& name,
@@ -379,14 +378,6 @@ class TypedRegister : public Register
         const FuncConvDecode<T> funcConvDecode;
 
         /**
-         * Range values and minimum step value for the register.
-         * Useful mainly for the Float type
-         */
-        T minValue;
-        T maxValue;
-        T stepValue;
-
-        /**
          * Initialization with Register
          * configuration and:
          * funcConvEncode: convertion function
@@ -409,6 +400,9 @@ class TypedRegister : public Register
                 forceRead, forceWrite, isSlowRegister),
             funcConvEncode(funcConvEncode),
             funcConvDecode(funcConvDecode),
+            _minValue(T(0)),
+            _maxValue(T(0)),
+            _stepValue(T(0)),
             _valueRead(),
             _valueWrite(),
             _aggregationPolicy(AggregateLast),
@@ -418,9 +412,11 @@ class TypedRegister : public Register
         }
 
         /**
-         * Constructor for ReadOnly register (funcConvEncode is dummy and bool isReadOnly=true)
+         * Initialization for ReadOnly Register and 
+         * configuration.
+         * funcConvEncode is not initialized and bool 
+         * isReadOnly is true.
          */
-
         TypedRegister(
             const std::string& name,
             addr_t addr,
@@ -432,8 +428,12 @@ class TypedRegister : public Register
             bool isSlowRegister = false) :
             //Member init
             Register(name, addr, length, periodPackedRead,
-                     forceRead, forceWrite, isSlowRegister, true), //isReadOnly=true
+                forceRead, forceWrite, isSlowRegister, true),
+            funcConvEncode(),
             funcConvDecode(funcConvDecode),
+            _minValue(T(0)),
+            _maxValue(T(0)),
+            _stepValue(T(0)),
             _valueRead(),
             _valueWrite(),
             _aggregationPolicy(AggregateLast),
@@ -443,38 +443,40 @@ class TypedRegister : public Register
         }
 
         /**
-         * Getters and setters for range and step values
-         * setters will be called after the constructor.
+         * Read and write access for range 
+         * and step values.
+         * Values are considered non defined if
+         * they are all equals to 0 (T(0)).
          */
-
         inline void setMinValue(T val)
         {
-            minValue=val;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _minValue = val;
         }
-
         inline void setMaxValue(T val)
         {
-            maxValue=val;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _maxValue = val;
         }
-
         inline void setStepValue(T val)
         {
-            stepValue=val;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            _stepValue = val;
         }
-
-        inline T getMinValue()
+        inline T getMinValue() const
         {
-            return minValue;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _minValue;
         }
-
-        inline T getMaxValue()
+        inline T getMaxValue() const
         {
-            return maxValue;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _maxValue;
         }
-
-        inline T getStepValue()
+        inline T getStepValue() const
         {
-            return stepValue;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            return _stepValue;
         }
 
         /**
@@ -531,38 +533,39 @@ class TypedRegister : public Register
          */
         inline void writeValue(T val, bool noCallback = false)
         {
-            if(!isReadOnly)
-            {
-                std::unique_lock<std::recursive_mutex> lock(_mutex);
-
-                //Compute aggregation if the value
-                //has already been written
-                if (_needWrite) {
-                    _valueWrite = aggregateValue(
-                        _aggregationPolicy, _valueWrite, val);
-                } else {
-                    _valueWrite = val;
-                }
-                //Assign the timestamp
-                _lastUserWrite = getTimePoint();
-                //Mark as dirty
-                _needWrite = true;
-                //Call user callback
-                if (!noCallback) {
-                    _callbackOnWrite(val);
-                }
-                //Unlock mutex
-                lock.unlock();
-                //Do immediate write on the bus
-                //is the register is configured to forceWrite
-                //or given Manager send mode
-                if (isForceWrite || !_manager->isScheduleMode()) {
-                    forceWrite();
-                }
+            //Check read only
+            if(isReadOnly) {
+                throw std::logic_error(
+                    "TypedRegister write to read only Register: " 
+                    + name);
             }
-            else
-                std::cerr<<"WARNING: trying to write on a ReadOnly register"<<std::endl;
 
+            std::unique_lock<std::recursive_mutex> lock(_mutex);
+
+            //Compute aggregation if the value
+            //has already been written
+            if (_needWrite) {
+                _valueWrite = aggregateValue(
+                    _aggregationPolicy, _valueWrite, val);
+            } else {
+                _valueWrite = val;
+            }
+            //Assign the timestamp
+            _lastUserWrite = getTimePoint();
+            //Mark as dirty
+            _needWrite = true;
+            //Call user callback
+            if (!noCallback) {
+                _callbackOnWrite(val);
+            }
+            //Unlock mutex
+            lock.unlock();
+            //Do immediate write on the bus
+            //is the register is configured to forceWrite
+            //or given Manager send mode
+            if (isForceWrite || !_manager->isScheduleMode()) {
+                forceWrite();
+            }
         }
 
         /**
@@ -577,24 +580,26 @@ class TypedRegister : public Register
         }
 
         /**
-         * Return the value really written after conversion
+         * Return the value set by user
+         * Encode and Decode really send 
+         * on the bus.
          */
-        inline T getReallyWrittenValue()
+        inline T getWrittenValueAfterEncode()
         {
-            if(!isReadOnly)
-            {
-                data_t tmpbuf[16]; //yep, should be ok
-                funcConvEncode(tmpbuf,_valueWrite);
-                return funcConvDecode(tmpbuf);
+            //Check read only
+            if (isReadOnly) {
+                throw std::logic_error(
+                    "TypedRegister get write value on read only Register: " 
+                    + name);
             }
-            else
-            {
-                std::cerr<<"WARNING: looking for ReallyWritten value on a ReadOnly register"<<std::endl;
-                return 0;
-            }
+
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+            //Encode and re Decode the current write balue
+            data_t tmpbuffer[AddrDevLen];
+            funcConvEncode(tmpbuffer, _valueWrite);
+            return funcConvDecode(tmpbuffer);
         }
-
-
 
     protected:
 
@@ -607,6 +612,12 @@ class TypedRegister : public Register
          */
         inline virtual void doConvEncode() override
         {
+            //Check read only
+            if (isReadOnly) {
+                throw std::logic_error(
+                    "TypedRegister conv encode on read only Register: " 
+                    + name);
+            }
             funcConvEncode(_dataBufferWrite, _valueWrite);
         }
         inline virtual void doConvDecode() override
@@ -617,6 +628,17 @@ class TypedRegister : public Register
         }
 
     private:
+
+        /**
+         * Additional optional range values and minimum 
+         * step value for the register.
+         * Useful mainly for the Float Register type.
+         * The values are supposed non defined if they are
+         * all equals to 0 (T(0)).
+         */
+        T _minValue;
+        T _maxValue;
+        T _stepValue;
 
         /**
          * Typed Register value.
@@ -653,3 +675,4 @@ typedef TypedRegister<int> TypedRegisterInt;
 typedef TypedRegister<float> TypedRegisterFloat;
 
 }
+

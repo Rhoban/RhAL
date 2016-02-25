@@ -24,7 +24,7 @@ void printDevice(RhAL::Device* dev)
         // std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
         auto t0=getTimePoint();
         auto val=it.second->readValue();
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<duration_us(t0, val.timestamp)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
 
     }
@@ -34,7 +34,7 @@ void printDevice(RhAL::Device* dev)
         // std::cout<<std::right<<std::setw(25)<<it.first<<": "<<it.second->readValue().value<<" ";
         auto t0=getTimePoint();
         auto val=it.second->readValue();
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<duration_us(t0, val.timestamp)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
     std::cout << "\n    RegistersFloat:" << std::endl;
@@ -42,7 +42,7 @@ void printDevice(RhAL::Device* dev)
         // std::cout << "    --" << it.first <<": "<<it.second->readValue().value<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
         auto t0=getTimePoint();
         auto val=it.second->readValue();
-        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<val.timestamp_to_us(t0)<<")";
+        std::cout<<std::right<<std::setw(25)<<it.first<<": "<<val.value<<" ("<<duration_us(t0, val.timestamp)<<")";
         std::cout<<std::right<<std::setw(25)<<" ReadOnly: "<<it.second->isReadOnly<< std::endl;
     }
 
@@ -139,7 +139,7 @@ void testDevice(RhAL::Device* dev)
             if(tmpval2.value==(tmpval.value+delta))
                 res=true;
             */
-            float reallywritten=it.second->getReallyWrittenValue();
+            float reallywritten=it.second->getWrittenValueAfterEncode();
             if(tmpval2.value==reallywritten)
                 res=true;
 
