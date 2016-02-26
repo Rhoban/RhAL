@@ -529,6 +529,7 @@ class BaseManager : public CallManager
                     break;
                 } else {
                     //Error case
+                    reg->readError();
                     nbFails++;
                     if (nbFails >= MaxForceReadTries) {
                         if (_paramThrowErrorOnRead.value) {
@@ -1023,7 +1024,7 @@ class BaseManager : public CallManager
                     //Error case
                     //Re-ask the value at next cycle
                     for (size_t j=0;j<batch.regs.front().size();j++) {
-                        batch.regs.front()[j]->askRead();
+                        batch.regs.front()[j]->readError();
                     }
                 } else {
                     //Valid case
@@ -1060,7 +1061,7 @@ class BaseManager : public CallManager
                         //Error case
                         //Re-ask the value at next cycle
                         for (size_t j=0;j<batch.regs[i].size();j++) {
-                            batch.regs[i][j]->askRead();
+                            batch.regs[i][j]->readError();
                         }
                     } else {
                         //Valid case

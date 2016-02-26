@@ -138,6 +138,7 @@ class Register
             _needRead(false),
             _needWrite(false),
             _needSwaping(false),
+            _isLastError(true),
             _manager(nullptr),
             _mutex()
         {
@@ -270,6 +271,15 @@ class Register
         bool _needSwaping;
 
         /**
+         * If true, the last read attempt
+         * on this register has failed
+         * (read error). 
+         * If false, the current user 
+         * read value has not been updated
+         */
+        bool _isLastError;
+
+        /**
          * Pointer to a base class
          * used to call the main manager
          */
@@ -334,6 +344,19 @@ class Register
         }
 
         /**
+         * Mark the register as last read 
+         * operation has failed.
+         * Re mark the register to be read again.
+         * (Call by Manager)
+         */
+        inline void readError()
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _isLastError = true;
+            _needRead = true;
+        }
+
+        /**
          * If the register swap is needed,
          * convert the read data buffer into
          * typed read value and assign the new timestamp.
@@ -346,6 +369,7 @@ class Register
                 return;
             }
             _needSwaping = false;
+            _isLastError = false;
             doConvDecode();
             _lastDevReadUser = _lastDevReadManager;
         }
@@ -509,7 +533,7 @@ class TypedRegister : public Register
          * the hardware. The returned timestamp
          * is the time when data are received from the bus.
          */
-        inline TimedValue<T> readValue()
+        inline ReadValue<T> readValue()
         {
             //Do immediate read on the bus
             //is the register is configured to forceWrite
@@ -518,7 +542,7 @@ class TypedRegister : public Register
                 forceRead();
             }
             std::lock_guard<std::mutex> lock(_mutex);
-            return TimedValue<T>(_lastDevReadUser, _valueRead);
+            return ReadValue<T>(_lastDevReadUser, _valueRead, _isLastError);
         }
 
         /**

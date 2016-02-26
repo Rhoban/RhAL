@@ -56,7 +56,7 @@ class ExampleDevice2 : public BaseExampleDevice2
         /**
          * Force immediate read of pitch and returned it
          */
-        inline TimedValueFloat forcePitchRead()
+        inline ReadValueFloat forcePitchRead()
         {
             std::lock_guard<std::mutex> lock(_mutex);
             _pitch.forceRead();
@@ -66,7 +66,7 @@ class ExampleDevice2 : public BaseExampleDevice2
         /**
          * Return current pitch value
          */
-        inline TimedValueFloat getPitch()
+        inline ReadValueFloat getPitch()
         {
             std::lock_guard<std::mutex> lock(_mutex);
             return _pitch.readValue();
@@ -75,7 +75,7 @@ class ExampleDevice2 : public BaseExampleDevice2
         /**
          * Read roll (immediate roll)
          */
-        inline TimedValueFloat getRoll()
+        inline ReadValueFloat getRoll()
         {
             std::lock_guard<std::mutex> lock(_mutex);
             return _roll.readValue();
