@@ -356,12 +356,53 @@ void testDynaban() {
 		std::cout << "inverted = " << dev.getInverted() << std::endl;
 
 
-		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
-		dev.setGoalPosition(90);
-		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
-		dev.setGoalPosition(-90);
-		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+
+	    manager.exitEmergencyState();
+	    float r = (float)2*M_PI/4096.0;
+
+	    // Sinus in 1 poly :
+//		float coefs[5] = {-29.674*r, 984.059*r, -1405.654*r, 438.301*r, 13.613*r};
+//		dev.prepareFirstTrajectory(coefs, 5, nullptr, 0, 2.0);
+//		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+//		std::cout << "Go " << std::endl;
+//		dev.startFirstTrajectoryNow(3);
+//		while(true) {
+//			while(!dev.isReadyForNextTrajectory());
+//			std::cout << "New poly " << std::endl;
+//			dev.updateNextTrajectory(coefs, 5, nullptr, 0, 2.0);
+//		}
+
+		// Sinus in 4 poly
+		float coefs1[5] = {169.9973127875532*r, 1.2118904739507608*r, -859.49525560910968*r, 109.93882674890278*r, 489.17556618589202*r};
+		float coefs2[5] = {0.0, -532.49287882689202*r, -29.078490997017791*r, 1058.1470413492527*r, -459.36643296722087*r};
+		float coefs3[5] = {-169.99731278755326*r, -1.2118904739506096*r, 859.49525560910888*r, -109.93882674889758*r, -489.17556618590021*r};
+		float coefs4[5] = {0.0, 532.49287882689293*r, 29.07849099701108*r, -1058.1470413492355*r, 459.3664329672057*r};
+
+		dev.prepareFirstTrajectory(coefs4, 5, nullptr, 0, 0.5);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::cout << "Go " << std::endl;
+		dev.startFirstTrajectoryNow(3);
+		while(true) {
+			while(!dev.isReadyForNextTrajectory());
+			std::cout << "New poly 1" << std::endl;
+			dev.updateNextTrajectory(coefs1, 5, nullptr, 0, 0.5);
+
+			while(!dev.isReadyForNextTrajectory());
+			std::cout << "New poly 2" << std::endl;
+			dev.updateNextTrajectory(coefs2, 5, nullptr, 0, 0.5);
+
+			while(!dev.isReadyForNextTrajectory());
+			std::cout << "New poly 3" << std::endl;
+			dev.updateNextTrajectory(coefs3, 5, nullptr, 0, 0.5);
+
+			while(!dev.isReadyForNextTrajectory());
+			std::cout << "New poly 4" << std::endl;
+			dev.updateNextTrajectory(coefs4, 5, nullptr, 0, 0.5);
+		}
+
 		while(true);
+
 	    // Allowing torque
 	    manager.exitEmergencyState();
 		std::cout << "Position = " << dev.getPosition() << std::endl;
@@ -485,9 +526,9 @@ void test() {
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::test();
+//	RhAL::test();
 
-//	RhAL::testDynaban();
+	RhAL::testDynaban();
 	return 0;
 }
 

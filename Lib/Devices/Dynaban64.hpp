@@ -164,6 +164,7 @@ class Dynaban64 : public MX64
          */
         /**
          * This function will send to the servo the first position trajectory and torque trajectory with their durations.
+         * Units are SI (rads, seconds)
          * Once this is done, call startFirstTrajectoryNow to start the trajectory.
          * If you want the trajectory to be continued by an other one call updateNextTrajectory.
          */
@@ -278,7 +279,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setPositionTrajectory1Size(const int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_trajPoly1Size.writeValue(value);
 		}
 		/**
@@ -286,7 +286,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void getPositionTrajectory1(float coefs[5])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			coefs[0] = _traj1a0.readValue().value;
 			coefs[1] = _traj1a1.readValue().value;
 			coefs[2] = _traj1a2.readValue().value;
@@ -298,7 +297,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setPositionTrajectory1(const float a0, const float a1, const float a2, const float a3, const float a4)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_traj1a0.writeValue(a0);
 			_traj1a1.writeValue(a1);
 			_traj1a2.writeValue(a2);
@@ -309,7 +307,6 @@ class Dynaban64 : public MX64
 
 		inline int getTorqueTrajectory1Size()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torquePoly1Size.readValue().value;
 		}
 		/**
@@ -318,7 +315,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setTorqueTrajectory1Size(const int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torquePoly1Size.writeValue(value);
 		}
 		/**
@@ -326,7 +322,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void getTorqueTrajectory1(float coefs[5])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			coefs[0] = _torque1a0.readValue().value;
 			coefs[1] = _torque1a1.readValue().value;
 			coefs[2] = _torque1a2.readValue().value;
@@ -338,7 +333,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setTorqueTrajectory1(const float a0, const float a1, const float a2, const float a3, const float a4)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torque1a0.writeValue(a0);
 			_torque1a1.writeValue(a1);
 			_torque1a2.writeValue(a2);
@@ -351,7 +345,6 @@ class Dynaban64 : public MX64
          */
 		inline float getDuration1()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _duration1.readValue().value;
 		}
 		/**
@@ -359,14 +352,12 @@ class Dynaban64 : public MX64
    		 */
 		inline void setDuration1(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_duration1.writeValue(value);
 		}
 
 
 		inline int getPositionTrajectory2Size()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _trajPoly2Size.readValue().value;
 		}
 		/**
@@ -375,7 +366,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setPositionTrajectory2Size(const int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_trajPoly2Size.writeValue(value);
 		}
 
@@ -384,7 +374,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void getPositionTrajectory2(float coefs[5])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			coefs[0] = _traj2a0.readValue().value;
 			coefs[1] = _traj2a1.readValue().value;
 			coefs[2] = _traj2a2.readValue().value;
@@ -396,7 +385,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setPositionTrajectory2(const float a0, const float a1, const float a2, const float a3, const float a4)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_traj2a0.writeValue(a0);
 			_traj2a1.writeValue(a1);
 			_traj2a2.writeValue(a2);
@@ -406,7 +394,6 @@ class Dynaban64 : public MX64
 
 		inline int getTorqueTrajectory2Size()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torquePoly2Size.readValue().value;
 		}
 		/**
@@ -415,7 +402,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setTorqueTrajectory2Size(const int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torquePoly2Size.writeValue(value);
 		}
 
@@ -424,7 +410,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void getTorqueTrajectory2(float coefs[5])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			coefs[0] = _torque2a0.readValue().value;
 			coefs[1] = _torque2a1.readValue().value;
 			coefs[2] = _torque2a2.readValue().value;
@@ -436,7 +421,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setTorqueTrajectory2(const float a0, const float a1, const float a2, const float a3, const float a4)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torque2a0.writeValue(a0);
 			_torque2a1.writeValue(a1);
 			_torque2a2.writeValue(a2);
@@ -450,7 +434,6 @@ class Dynaban64 : public MX64
          */
 		inline float getDuration2()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _duration2.readValue().value;
 		}
 		/**
@@ -458,7 +441,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setDuration2(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_duration1.writeValue(value);
 		}
 
@@ -472,7 +454,6 @@ class Dynaban64 : public MX64
 		 */
 		inline int getMode()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _mode.readValue().value;
 		}
 		/**
@@ -485,51 +466,42 @@ class Dynaban64 : public MX64
 		 */
 		inline void setMode(const int mode)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_mode.writeValue(mode);
 		}
 
 		inline int getCopyNextBuffer()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _copyNextBuffer.readValue().value;
 		}
 		inline void setCopyNextBuffer(int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _copyNextBuffer.writeValue(value);
 		}
 
 		inline bool getPositionTrackerOn()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _positionTrackerOn.readValue().value;
 		}
 		inline void setPositionTrackerOn(bool value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _positionTrackerOn.writeValue(value);
 		}
 
 		inline bool getDebugOn()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _debugOn.readValue().value;
 		}
 		inline void setDebugOn(bool value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _debugOn.writeValue(value);
 		}
 
 		inline int getUnused()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _unused.readValue().value;
 		}
 		inline void setUnused(int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _unused.writeValue(value);
 		}
 
@@ -538,7 +510,6 @@ class Dynaban64 : public MX64
          */
 		inline float getI0()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _i0.readValue().value;
 		}
 		/**
@@ -546,7 +517,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setI0(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_i0.writeValue(value);
 		}
 
@@ -555,7 +525,6 @@ class Dynaban64 : public MX64
          */
 		inline float getR()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _r.readValue().value;
 		}
 		/**
@@ -563,7 +532,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setR(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_r.writeValue(value);
 		}
 
@@ -572,7 +540,6 @@ class Dynaban64 : public MX64
          */
 		inline float getKe()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _ke.readValue().value;
 		}
 		/**
@@ -580,7 +547,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setKe(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_ke.writeValue(value);
 		}
 
@@ -589,7 +555,6 @@ class Dynaban64 : public MX64
          */
 		inline float getKvis()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _kvis.readValue().value;
 		}
 		/**
@@ -597,7 +562,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setKvis(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_kvis.writeValue(value);
 		}
 
@@ -606,7 +570,6 @@ class Dynaban64 : public MX64
          */
 		inline float getKstat()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _kstat.readValue().value;
 		}
 		/**
@@ -614,7 +577,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setKstat(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_kstat.writeValue(value);
 		}
 
@@ -623,7 +585,6 @@ class Dynaban64 : public MX64
          */
 		inline float getKcoul()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _kcoul.readValue().value;
 		}
 		/**
@@ -631,7 +592,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setKcoul(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_kcoul.writeValue(value);
 		}
 
@@ -640,7 +600,6 @@ class Dynaban64 : public MX64
          */
 		inline float getLinearTransition()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _linearTransition.readValue().value;
 		}
 		/**
@@ -648,7 +607,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setLinearTransition(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_linearTransition.writeValue(value);
 		}
 
@@ -657,7 +615,6 @@ class Dynaban64 : public MX64
          */
 		inline float getSpeedCalculationDelay()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _speedCalculationDelay.readValue().value;
 		}
 		/**
@@ -665,7 +622,6 @@ class Dynaban64 : public MX64
    		 */
 		inline void setSpeedCalculationDelay(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_speedCalculationDelay.writeValue(value);
 		}
 
@@ -674,7 +630,6 @@ class Dynaban64 : public MX64
          */
 		inline float getOutputTorque()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _outputTorque.readValue().value;
 		}
 
@@ -683,41 +638,34 @@ class Dynaban64 : public MX64
          */
 		inline float getElectricalTorque()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _electricalTorque.readValue().value;
 		}
 
 
 		inline bool getFrozenRamOn()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _frozenRamOn.readValue().value;
 		}
 		inline void setFrozenRamOn(const bool value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_frozenRamOn.writeValue(value);
 		}
 
 		inline bool getUseValuesNow()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _useValuesNow.readValue().value;
 		}
 		inline void setUseValuesNow(const bool value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_useValuesNow.writeValue(value);
 		}
 
 		inline int getTorqueKp()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torqueKp.readValue().value;
 		}
 		inline void setTorqueKp(const int value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torqueKp.writeValue(value);
 		}
 
@@ -726,7 +674,6 @@ class Dynaban64 : public MX64
 		 */
 		inline float getGoalTorque()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _goalTorque.readValue().value;
 		}
 		/**
@@ -734,7 +681,6 @@ class Dynaban64 : public MX64
 		 */
 		inline void setGoalTorque(const float value)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_goalTorque.writeValue(value);
 		}
 

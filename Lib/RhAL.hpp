@@ -38,7 +38,7 @@ namespace RhAL {
 
 typedef Manager<
     MX106,
-    MX64, // MX64 is so has been
+//    MX64, // MX64 is so has been
     MX28,
     MX12,
     RX64,
@@ -47,8 +47,8 @@ typedef Manager<
     AX12,
     IMU,
     PressureSensor,
-    Pins
-//	Dynaban64
+    Pins,
+	Dynaban64
 > StandardManager;
 
 }

@@ -520,8 +520,8 @@ class BaseManager : public CallManager
                     reg->addr,
                     reg->_dataBufferRead,
                     reg->length);
-                printf("data read = %x\n", *reg->_dataBufferRead);
-                fflush(stdout);
+//                printf("data read = %x\n", *reg->_dataBufferRead);
+//                fflush(stdout);
 
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
