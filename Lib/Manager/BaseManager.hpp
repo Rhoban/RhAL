@@ -355,9 +355,11 @@ class BaseManager : public CallManager
             for (size_t i=0;i<batchsWrite.size();i++) {
                 writeBatch(batchsWrite[i]);
                 //Check if a written register is slow
-                for(auto const& reg : batchsWrite[i].regs) {
-                    if (reg->isSlowRegister) {
-                        needsToWait = true;
+                for(size_t j=0;j<batchsWrite[i].regs.size();j++) {
+                    for(size_t k=0;k<batchsWrite[i].regs[j].size();k++) {
+                        if (batchsWrite[i].regs[j][k]->isSlowRegister) {
+                            needsToWait = true;
+                        }
                     }
                 }
             }
@@ -521,10 +523,13 @@ class BaseManager : public CallManager
                 _stats.readLength += reg->length;
                 _stats.readDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
-                //TODO check response
-                if (state == ResponseOK) {
+                //Check response
+                if (checkResponseState(state, _devicesById.at(id))) {
+                    //Valid case
                     break;
                 } else {
+                    //Error case
+                    reg->readError();
                     nbFails++;
                     if (nbFails >= MaxForceReadTries) {
                         if (_paramThrowErrorOnRead.value) {
@@ -601,6 +606,28 @@ class BaseManager : public CallManager
         ParametersList& parametersList()
         {
             return _parametersList;
+        }
+        
+        /**
+         * Read/Write access to Protocol Parameters list
+         */
+        const ParametersList& protocolParametersList() const
+        {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            return _protocol->parametersList();
+        }
+        ParametersList& protocolParametersList()
+        {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            return _protocol->parametersList();
         }
 
         /**
@@ -716,8 +743,10 @@ class BaseManager : public CallManager
             //Batch length
             size_t length;
             //Container of
-            //registers batched
-            std::vector<Register*> regs;
+            //registers batched for 
+            //each device id sorted by Register
+            //address
+            std::vector<std::vector<Register*>> regs;
             //Container of all unique ids
             //of batched registers
             std::vector<id_t> ids;
@@ -871,10 +900,11 @@ class BaseManager : public CallManager
                         container[j].addr == tmpBatch.addr &&
                         container[j].length == tmpBatch.length
                     ) {
-                        for (size_t k=0;k<tmpBatch.regs.size();k++) {
-                            container[j].regs.push_back(tmpBatch.regs[k]);
-                        }
+                        container[j].regs.push_back(std::vector<Register*>());
                         container[j].ids.push_back(tmpBatch.ids.front());
+                        for (size_t k=0;k<tmpBatch.regs.front().size();k++) {
+                            container[j].regs.back().push_back(tmpBatch.regs.front()[k]);
+                        }
                         found = true;
                         break;
                     }
@@ -901,7 +931,7 @@ class BaseManager : public CallManager
                     if (tmpBatch.regs.size() == 0) {
                         tmpBatch.addr = reg->addr;
                         tmpBatch.length = reg->length;
-                        tmpBatch.regs = {reg};
+                        tmpBatch.regs = {{reg}};
                         tmpBatch.ids = {reg->id};
                         //And continue to next register
                         continue;
@@ -915,7 +945,7 @@ class BaseManager : public CallManager
                         //Registers are first batched by address
                         //with id constant.
                         tmpBatch.length += reg->length;
-                        tmpBatch.regs.push_back(reg);
+                        tmpBatch.regs.front().push_back(reg);
                     } else {
                         //If the register is not contiguous,
                         //the temporaty batch is added to
@@ -927,7 +957,7 @@ class BaseManager : public CallManager
                         //And a new temporary batch is initialize
                         tmpBatch.addr = reg->addr;
                         tmpBatch.length = reg->length;
-                        tmpBatch.regs = {reg};
+                        tmpBatch.regs = {{reg}};
                         tmpBatch.ids = {reg->id};
                     }
                 }
@@ -943,7 +973,6 @@ class BaseManager : public CallManager
         /**
          * Actually Write and Read on the bus
          * given batched Registers
-         * TODO handle error.........XXX
          */
         inline void writeBatch(BatchedRegisters& batch)
         {
@@ -959,7 +988,7 @@ class BaseManager : public CallManager
                 _protocol->writeData(
                     batch.ids.front(),
                     batch.addr,
-                    batch.regs.front()->_dataBufferWrite,
+                    batch.regs.front().front()->_dataBufferWrite,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.writeCount++;
@@ -970,7 +999,7 @@ class BaseManager : public CallManager
                 //Synch Write multiple registers
                 std::vector<const data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
-                    datas.push_back(batch.regs[i]->_dataBufferWrite);
+                    datas.push_back(batch.regs[i].front()->_dataBufferWrite);
                 }
                 TimePoint pStart = getTimePoint();
                 _protocol->syncWrite(
@@ -995,7 +1024,9 @@ class BaseManager : public CallManager
             }
             //Reset read flags for all registers
             for (size_t i=0;i<batch.regs.size();i++) {
-                batch.regs[i]->readyForRead();
+                for (size_t j=0;j<batch.regs[i].size();j++) {
+                    batch.regs[i][j]->readyForRead();
+                }
             }
             if (batch.ids.size() == 1) {
                 //Read single register
@@ -1003,7 +1034,7 @@ class BaseManager : public CallManager
                 ResponseState state = _protocol->readData(
                     batch.ids.front(),
                     batch.addr,
-                    batch.regs.front()->_dataBufferRead,
+                    batch.regs.front().front()->_dataBufferRead,
                     batch.length);
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
@@ -1011,15 +1042,27 @@ class BaseManager : public CallManager
                 _stats.readDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
                 //Check for communication error
-                if (state != ResponseOK) {
-                    //TODO XXX XXX XXX handle response code
-                    //SetPresent Device if ok
+                if (!checkResponseState(state, _devicesById.at(batch.ids.front()))) {
+                    //Error case
+                    //Re-ask the value at next cycle
+                    for (size_t j=0;j<batch.regs.front().size();j++) {
+                        batch.regs.front()[j]->readError();
+                    }
+                } else {
+                    //Valid case
+                    //Retrieve the read timestamp
+                    TimePoint timestamp = getTimePoint();
+                    //Assign timestamp on Manager side and 
+                    //mark for swapping
+                    for (size_t j=0;j<batch.regs.front().size();j++) {
+                        batch.regs.front()[j]->finishRead(timestamp);
+                    }
                 }
             } else {
                 //Synch Read multiple registers
                 std::vector<data_t*> datas;
                 for (size_t i=0;i<batch.regs.size();i++) {
-                    datas.push_back(batch.regs[i]->_dataBufferRead);
+                    datas.push_back(batch.regs[i].front()->_dataBufferRead);
                 }
                 TimePoint pStart = getTimePoint();
                 std::vector<ResponseState> states = _protocol->syncRead(
@@ -1032,16 +1075,25 @@ class BaseManager : public CallManager
                 _stats.syncReadLength += batch.length;
                 _stats.syncReadDuration +=
                     getTimeDuration<TimeDurationMicro>(pStart, pStop);
-                //Check for communication error
-                    //TODO XXX XXX XXX handle response code
-                    //SetPresent Device if ok
-            }
-            //Retrieve the read timestamp
-            TimePoint timestamp = getTimePoint();
-            //For all registers, assign timestamp on
-            //Manager side and mark them for swapping
-            for (size_t i=0;i<batch.regs.size();i++) {
-                batch.regs[i]->finishRead(timestamp);
+                //Retrieve the read timestamp
+                TimePoint timestamp = getTimePoint();
+                for (size_t i=0;i<states.size();i++) {
+                    //Check for communication error
+                    if (!checkResponseState(states[i], _devicesById.at(batch.ids[i]))) {
+                        //Error case
+                        //Re-ask the value at next cycle
+                        for (size_t j=0;j<batch.regs[i].size();j++) {
+                            batch.regs[i][j]->readError();
+                        }
+                    } else {
+                        //Valid case
+                        //Assign timestamp on Manager side and 
+                        //mark for swapping
+                        for (size_t j=0;j<batch.regs[i].size();j++) {
+                            batch.regs[i][j]->finishRead(timestamp);
+                        }
+                    }
+                }
             }
         }
 
@@ -1071,6 +1123,79 @@ class BaseManager : public CallManager
         }
 
         /**
+         * Handle given response state.
+         * Update statistics and Device status.
+         * Device can be null.
+         * Return false if the read operation
+         * is a failure and the read value can
+         * not be used.
+         */
+        inline bool checkResponseState(
+            ResponseState state, Device* dev)
+        {
+            //Check if the device has answered
+            bool isPresent = true;
+            if (state & ResponseQuiet) {
+                _stats.deviceQuietCount++;
+                isPresent = false;
+            }
+            //Check for warning flags
+            bool isWarning = false;
+            if (state & ResponseOverload) {
+                isWarning = true;
+            }
+            if (state & ResponseOverheat) {
+                isWarning = true;
+            }
+            if (state & ResponseBadVoltage) {
+                isWarning = true;
+            }
+            if (state & ResponseAlert) {
+                isWarning = true;
+            }
+            //Check for error flags
+            bool isError = false;
+            if (state & ResponseBadChecksum) {
+                isError = true;
+            }
+            if (state & ResponseDeviceBadInstruction) {
+                isError = true;
+            }
+            if (state & ResponseDeviceBadChecksum) {
+                isError = true;
+            }
+            if (state & ResponseBadSize) {
+                isError = true;
+            }
+            if (state & ResponseBadProtocol) {
+                isError = true;
+            }
+            if (state & ResponseBadId) {
+                isError = true;
+            }
+            //Update statistics
+            if (isWarning) {
+                _stats.deviceWarningCount++;
+            }
+            if (isError) {
+                _stats.deviceErrorCount++;
+            }
+            //Update Device state
+            if (dev != nullptr) {
+                dev->setPresent(isPresent);
+                dev->setWarning(isWarning);
+                dev->setError(isError);
+            }
+
+            if (state & ResponseOK) {
+                _stats.deviceOKCount++;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /**
          * Try to read the Device model number
          * from given id and assign into given type.
          * True is returned if read is successful.
@@ -1087,9 +1212,9 @@ class BaseManager : public CallManager
             data_t* pt = reinterpret_cast<data_t*>(&type);
             ResponseState state = _protocol
                 ->readData(id, AddrDevTypeNumber, pt, 2);
-            //XXX Response state ?
-            //Check response state
-            return (state == ResponseOK);
+
+            //Check response
+            return checkResponseState(state, nullptr);
         }
 };
 

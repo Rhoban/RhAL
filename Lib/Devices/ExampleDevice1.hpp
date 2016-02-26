@@ -92,12 +92,12 @@ class ExampleDevice1 : public BaseExampleDevice1
         /**
          * Return read value of position and temperature
          */
-        inline TimedValueFloat getPosition()
+        inline ReadValueFloat getPosition()
         {
             std::lock_guard<std::mutex> lock(_mutex);
             return _position.readValue();
         }
-        inline TimedValueFloat getTemperature()
+        inline ReadValueFloat getTemperature()
         {
             std::lock_guard<std::mutex> lock(_mutex);
             return _temperature.readValue();

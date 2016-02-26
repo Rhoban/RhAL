@@ -165,26 +165,31 @@ inline TimeDurationFloat::rep duration_float(const T& d)
 
 /**
  * A value associated with
- * a timestamp
+ * a timestamp and an error flag
  */
 template <typename T>
-struct TimedValue {
+struct ReadValue {
+    //Last valid read
     const TimePoint timestamp;
+    //Current read value
     const T value;
+    //Is last read operation has failed
+    const bool isError;
 
     //Simple initialization constructor
-    TimedValue(const TimePoint& time, const T& val) :
+    ReadValue(const TimePoint& time, const T& val, bool flag) :
         timestamp(time),
-        value(val)
+        value(val),
+        isError(flag)
     {
     }
 };
 
 /**
- * Typedef for TimedValue
+ * Typedef for ReadValue
  */
-typedef TimedValue<bool> TimedValueBool;
-typedef TimedValue<int> TimedValueInt;
-typedef TimedValue<float> TimedValueFloat;
+typedef ReadValue<bool> ReadValueBool;
+typedef ReadValue<int> ReadValueInt;
+typedef ReadValue<float> ReadValueFloat;
 
 }

@@ -90,8 +90,10 @@ namespace RhAL
     }
 
     DynamixelV1::DynamixelV1(Bus &bus)
-        : Protocol(bus)
+        : Protocol(bus),
+        _timeout("timeout", 0.005)
     {
+        _parametersList.add(&_timeout);
     }
 
     void DynamixelV1::writeData(id_t id, addr_t address, 
@@ -213,14 +215,14 @@ namespace RhAL
         bus.flush();
     }
 
-    ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id, double timeout)
+    ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id)
     {
     	ResponseState error = ResponseQuiet;
         response = NULL;
         TimePoint start = getTimePoint();
         size_t position = 0;
-        while (duration_float(start, getTimePoint()) <= timeout) {
-            double t = timeout-(duration_float(start, getTimePoint()));
+        while (duration_float(start, getTimePoint()) <= _timeout.value) {
+            double t = _timeout.value-(duration_float(start, getTimePoint()));
             if (bus.waitForData(t)) {
                 size_t n = bus.available();
                 uint8_t data[n];

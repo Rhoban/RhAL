@@ -33,8 +33,9 @@ int main()
     dev2.setGoal(0.0);
     
     std::cout << "----" << std::endl;
-    RhAL::TimedValueFloat val1 = dev2.getPosition();
+    RhAL::ReadValueFloat val1 = dev2.getPosition();
     std::cout << val1.value << std::endl;
+    std::cout << "isError: " << val1.isError << std::endl;
     
     std::cout << "----" << std::endl;
     float val2 = dev3.getTemperature().value;

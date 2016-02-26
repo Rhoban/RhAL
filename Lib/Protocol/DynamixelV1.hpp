@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Protocol.hpp"
+#include "Manager/Parameter.hpp"
 
 namespace RhAL
 {
@@ -113,6 +114,14 @@ namespace RhAL
             /**
              * Waits to receive a packet over the bus
              */
-            ResponseState receivePacket(Packet* &response, id_t id, double timeout = 0.005);
+            ResponseState receivePacket(Packet* &response, id_t id);
+
+        private:
+
+            /**
+             * Parameters
+             * timeout: wait for receive packet in secondes
+             */
+            ParameterNumber _timeout;
     };
 }

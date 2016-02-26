@@ -6,7 +6,8 @@ using namespace std;
 namespace RhAL
 {
     Protocol::Protocol(Bus &bus)
-        : bus(bus)
+        : bus(bus),
+        _parametersList()
     {
     }
             
@@ -46,5 +47,14 @@ namespace RhAL
         bytes[1] = (word>>8)&0xff;
 
         writeData(id, address, bytes, 2);
+    }
+    
+    const ParametersList& Protocol::parametersList() const
+    {
+        return _parametersList;
+    }
+    ParametersList& Protocol::parametersList()
+    {
+        return _parametersList;
     }
 }

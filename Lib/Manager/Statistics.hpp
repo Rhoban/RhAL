@@ -50,6 +50,14 @@ struct Statistics
     //emergencyStop(), exitEmergencyState()
     unsigned long emergencyCount;
     unsigned long exitEmergencyCount;
+    //Number of valid (usable) receivned packets
+    unsigned long deviceOKCount;
+    //Number of read() warnings
+    unsigned long deviceWarningCount;
+    //Number of read() quiet errors
+    unsigned long deviceQuietCount;
+    //Number of read() non quiet errors
+    unsigned long deviceErrorCount;
 
     /**
      * Initialization
@@ -75,7 +83,11 @@ struct Statistics
         waitUsersDuration(0),
         waitManagerDuration(0),
         emergencyCount(0),
-        exitEmergencyCount(0)
+        exitEmergencyCount(0),
+        deviceOKCount(0),
+        deviceWarningCount(0),
+        deviceQuietCount(0),
+        deviceErrorCount(0)
     {
     }
 
@@ -117,6 +129,10 @@ struct Statistics
             duration_float(waitUsersDuration) << "s" << std::endl;
         os << "Waiting Manager spent time: " << 
             duration_float(waitManagerDuration) << "s" << std::endl;
+        os << "Devices valid responses: " << deviceOKCount << std::endl;
+        os << "Devices warning responses: " << deviceWarningCount << std::endl;
+        os << "Devices quiet responses: " << deviceQuietCount << std::endl;
+        os << "Devices error responses: " << deviceErrorCount << std::endl;
     }
 };
 
