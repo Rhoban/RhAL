@@ -328,13 +328,65 @@ void testCM510() {
 	    return;
 }
 
+void testDynaban() {
+	StandardManager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+	    RhAL::Dynaban64& dev = manager.dev<RhAL::Dynaban64>(1);
+//	    RhAL::Dynaban64 * dev = dynamic_cast<RhAL::Dynaban64*>(&devFake);
+	    //Set Manager scheduling config mode
+	    manager.setScheduleMode(false);
+
+	    // Allowing torque
+	    manager.exitEmergencyState();
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+
+		dev.setGoalPosition(179);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+		dev.setGoalPosition(90);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+		dev.setGoalPosition(0);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+		dev.setGoalPosition(-90);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+		dev.setGoalPosition(-180);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::cout << "Position = " << dev.getPosition() << std::endl;
+
+
+		std::cout << "Emergency stop ! " << std::endl;
+		manager.emergencyStop();
+
+
+	    return;
+}
+
 }
 
 /**
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::testCM510();
+	RhAL::testDynaban();
 	return 0;
 }
 

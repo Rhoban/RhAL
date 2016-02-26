@@ -262,7 +262,7 @@ class RegistersList
                 ) {
                     throw std::logic_error(
                         "RegistersList register memory intersection: "
-                        + reg->name);
+                        + reg->name + " and " + reg2->name);
                 }
             }
         }

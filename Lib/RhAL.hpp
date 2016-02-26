@@ -28,6 +28,7 @@
 #include "Devices/IMU.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
+#include "Devices/Dynaban64.hpp"
 
 /**
  * Define classic Manager typedef
@@ -37,7 +38,7 @@ namespace RhAL {
 
 typedef Manager<
     MX106,
-    MX64,
+//    MX64, // MX64 is so has been
     MX28,
     MX12,
     RX64,
@@ -46,7 +47,8 @@ typedef Manager<
     AX12,
     IMU,
     PressureSensor,
-    Pins
+    Pins,
+	Dynaban64
 > StandardManager;
 
 }
