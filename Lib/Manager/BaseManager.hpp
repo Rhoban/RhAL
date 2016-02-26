@@ -607,6 +607,28 @@ class BaseManager : public CallManager
         {
             return _parametersList;
         }
+        
+        /**
+         * Read/Write access to Protocol Parameters list
+         */
+        const ParametersList& protocolParametersList() const
+        {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            return _protocol->parametersList();
+        }
+        ParametersList& protocolParametersList()
+        {
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            return _protocol->parametersList();
+        }
 
         /**
          * Set all Bus/Protocol configuration

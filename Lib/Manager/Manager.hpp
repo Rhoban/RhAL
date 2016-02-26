@@ -46,6 +46,7 @@ class Manager : public AggregateManager<Types...>
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             nlohmann::json j = this->saveAggregatedJSON();
             j["Manager"] = this->_parametersList.saveJSON();
+            j["Protocol"] = this->protocolParametersList().saveJSON();
             return j;
         }
 
@@ -61,13 +62,15 @@ class Manager : public AggregateManager<Types...>
             if (
                 !j.is_object() ||
                 j.size() > sizeof...(Types) + 1 ||
-                j.count("Manager") != 1
+                j.count("Manager") != 1 ||
+                j.count("Protocol") != 1
             ) {
                 throw std::runtime_error(
                     "Manager load parameters root json malformed");
             }
             this->loadAggregatedJSON(j);
             this->_parametersList.loadJSON(j.at("Manager"));
+            this->protocolParametersList().loadJSON(j.at("Protocol"));
             //Reset low level communication (bus/protocol)
             this->initBus();
         }

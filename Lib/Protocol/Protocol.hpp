@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <types.h>
 #include <Bus/Bus.hpp>
+#include "Manager/ParametersList.hpp"
 
 namespace RhAL
 {
@@ -94,8 +95,19 @@ namespace RhAL
              */
             virtual void exitEmergencyState() = 0;
 
+            /**
+             * Read/Write access to Parameters list
+             */
+            const ParametersList& parametersList() const;
+            ParametersList& parametersList();
+
         protected:
             // Bus used for communication
             Bus &bus;
+
+            /**
+             * Protocol parameters
+             */
+            ParametersList _parametersList;
     };
 }
