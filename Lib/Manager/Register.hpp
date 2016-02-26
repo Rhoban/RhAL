@@ -594,7 +594,7 @@ class TypedRegister : public Register
 
             std::lock_guard<std::mutex> lock(_mutex);
 
-            //Encode and re Decode the current write balue
+            //Encode and re Decode the current write value
             data_t tmpbuffer[AddrDevLen];
             funcConvEncode(tmpbuffer, _valueWrite);
             return funcConvDecode(tmpbuffer);

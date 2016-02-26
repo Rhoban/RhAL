@@ -116,7 +116,7 @@ inline void convEncode_3Bytes(data_t* buffer, uint32_t value)
  */
 inline void convEncode_float(data_t* buffer, float value)
 {
-    write1ByteToBuffer(buffer, value);
+	writeFloatToBuffer(buffer, value);
 }
 
 /**

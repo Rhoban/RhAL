@@ -352,6 +352,16 @@ void testDynaban() {
 	    //Set Manager scheduling config mode
 	    manager.setScheduleMode(false);
 
+		std::cout << "zero = " << dev.getZero() << std::endl;
+		std::cout << "inverted = " << dev.getInverted() << std::endl;
+
+
+		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
+		dev.setGoalPosition(50.25);
+		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
+		dev.setGoalPosition(-5.25);
+		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
+		while(true);
 	    // Allowing torque
 	    manager.exitEmergencyState();
 		std::cout << "Position = " << dev.getPosition() << std::endl;
@@ -371,6 +381,38 @@ void testDynaban() {
 		dev.setGoalPosition(-180);
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		std::cout << "Position = " << dev.getPosition() << std::endl;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		std::cout << "Testing the frozen ram mode." << std::endl;
+		dev.setTorqueEnable(false);
+		dev.setGoalPosition(0);
+		std::cout << "Setting frozen ram to ON " << std::endl;
+		dev.setFrozenRamOn(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::cout << "Setting torque enable to true, the motor should NOT move right now !" << std::endl;
+		dev.setTorqueEnable(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::cout << "Setting use values now. The motor SHOULD move." << std::endl;
+		dev.setUseValuesNow(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::cout << "Setting torque enable to false and an other position order, the motor should NOT move" << std::endl;
+		dev.setTorqueEnable(false);
+		dev.setGoalPosition(90);
+		std::cout << "Setting use values now. The motor should NOT move." << std::endl;
+		dev.setUseValuesNow(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::cout << "Setting torque enable to true and use values now, the motor SHOULD move" << std::endl;
+		dev.setTorqueEnable(true);
+		dev.setGoalPosition(170);
+		dev.setUseValuesNow(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+		dev.setFrozenRamOn(false);
+		dev.setUseValuesNow(true);
+		std::cout << "***End of frozen mode test " << std::endl;
+
+
+
 
 
 		std::cout << "Emergency stop ! " << std::endl;

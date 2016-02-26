@@ -58,7 +58,8 @@ void testDevice(RhAL::Device* dev)
     std::cout << "\n    RegistersBool:" << std::endl;
     for (const auto& it : dev->registersList().containerBool()) {
 
-        if(!it.second->isReadOnly && it.first.compare("lockEeprom"))
+        if(!it.second->isReadOnly && it.first.compare("lockEeprom") && it.first.compare("frozenRamOn")
+				&& it.first.compare("useValuesNow") && it.first.compare("positionTrackerOn"))
         {
 
             // for(int i=0;i<10;i++)
@@ -86,13 +87,12 @@ void testDevice(RhAL::Device* dev)
 
     }
 
-
     std::cout << "\n    RegistersInt:" << std::endl;
     for (const auto& it : dev->registersList().containerInt()) {
-        if(!it.second->isReadOnly && it.first.compare("statusReturnLevel") && it.first.compare("baudrate") && it.first.compare("returnDelayTime")&& it.first.compare("id"))
+        if(!it.second->isReadOnly && it.first.compare("statusReturnLevel") && it.first.compare("baudrate")
+        		&& it.first.compare("returnDelayTime") && it.first.compare("id") && it.first.compare("mode"))
         {
 
-            // for(int i=0;i<10;i++)
             {
             bool res=false;
             auto tmpval=it.second->readValue();
@@ -125,11 +125,14 @@ void testDevice(RhAL::Device* dev)
 
             // for(int i=0;i<10;i++)
             {
+            std::cout << "\n    RegistersFloat:" << std::endl;
+
             bool res=false;
             float delta=it.second->getStepValue();
             if(delta==0.0)
-                std::cerr<<"Warning: StepValue=0.0"<<delta<<std::endl;
+            	delta = 0.01;
             auto tmpval=it.second->readValue();
+
 
             float towrite=(tmpval.value<it.second->getMaxValue()?(tmpval.value+delta):(tmpval.value-delta));
             it.second->writeValue(towrite);
@@ -140,10 +143,11 @@ void testDevice(RhAL::Device* dev)
                 res=true;
             */
             float reallywritten=it.second->getWrittenValueAfterEncode();
-            if(tmpval2.value==reallywritten)
+            if(fabs(tmpval2.value - reallywritten) < it.second->getStepValue()/2.0 || fabs(tmpval2.value - reallywritten) < 0.001)
                 res=true;
 
             float lost=fabs(towrite-reallywritten);
+            std::cout << "Really written = " << reallywritten << std::endl;
 
             std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<towrite<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us"<<(it.second->isSlowRegister?" slow register) ":") ");
             /*
@@ -155,7 +159,7 @@ void testDevice(RhAL::Device* dev)
                     std::cout<<YELLOW<<"MAYBE"<<DEFAULT<<std::endl;
             }
             */
-            if(res && lost<0.001)
+            if(res && (lost<0.001 || lost < it.second->getStepValue()/2.0))
                 std::cout<<GREEN<<"PASS"<<DEFAULT<<std::endl;
             else
                 std::cout<<RED<<"FAIL"<<DEFAULT<<std::endl;
@@ -184,7 +188,7 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
 
     //Scan the bus
     manager.scan();
-    // std::cout << manager.saveJSON().dump(4) << std::endl;
+    std::cout << manager.saveJSON().dump(4) << std::endl;
 
 
     //Iterate over Manager Devices with types

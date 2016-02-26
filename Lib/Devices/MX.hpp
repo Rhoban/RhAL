@@ -20,6 +20,7 @@ inline void convEncode_PositionMx(data_t* buffer, float value)
 	value = 2048.0 + value * 4096/360.0;
 
 	uint16_t position = std::lround(value)%4096;
+	std::cout << "Sending position = " << position << std::endl;
 	write2BytesToBuffer(buffer, position);
 }
 /**
@@ -28,6 +29,8 @@ inline void convEncode_PositionMx(data_t* buffer, float value)
 inline float convDecode_PositionMx(const data_t* buffer)
 {
 	uint16_t val = read2BytesFromBuffer(buffer);
+	std::cout << "Reading position = " << val << std::endl;
+
 	float result = (val - 2048) * 360.0 / 4096.0;
 	if (result >= -180 && result < 180) {
 		//We're already in the desired portion
@@ -35,6 +38,7 @@ inline float convDecode_PositionMx(const data_t* buffer)
 		//Modulating to be in [-180, 180[
 		result = fmod(result + 180.0, 360) - 180;
 	}
+
 	return result;
 }
 
@@ -124,8 +128,8 @@ class MX : public DXL
 			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
 			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
+			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 
-			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
 			_DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0),
@@ -149,6 +153,10 @@ class MX : public DXL
             _angleLimitCW.setMinValue(-180.0);
             _angleLimitCW.setMaxValue(180.0-0.087890625);
             _angleLimitCW.setStepValue(0.087890625);
+
+            _angleLimitCCW.setMinValue(-180.0);
+            _angleLimitCCW.setMaxValue(180.0-0.087890625);
+            _angleLimitCCW.setStepValue(0.087890625);
 
             _goalPosition.setMinValue(-180.0);
             _goalPosition.setMaxValue(180.0-0.087890625);

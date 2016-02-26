@@ -106,20 +106,20 @@ class Dynaban64 : public MX64
 			_torque1a2("torque1a2", 0x68, 4, convEncode_float, convDecode_float, 0),
 			_torque1a3("torque1a3", 0x6C, 4, convEncode_float, convDecode_float, 0),
 			_torque1a4("torque1a4", 0x70, 4, convEncode_float, convDecode_float, 0),
-			_duration1("duration1", 0x75, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
+			_duration1("duration1", 0x74, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 			_trajPoly2Size("trajPoly2Size", 0x76, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_traj2a0("traj2a0", 0x77, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a1("traj2a1", 0x7B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a2("traj2a2", 0x7F, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a3("traj2a3", 0x83, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj2a4("traj2a4", 0x87, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-			_torquePoly2Size("torquePoly2Size", 0x8B, 1, convEncode_PolyDuration, convDecode_PolyDuration, 0),
+			_torquePoly2Size("torquePoly2Size", 0x8B, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_torque2a0("torque2a0", 0x8C, 4, convEncode_float, convDecode_float, 0),
 			_torque2a1("torque2a1", 0x90, 4, convEncode_float, convDecode_float, 0),
 			_torque2a2("torque2a2", 0x94, 4, convEncode_float, convDecode_float, 0),
 			_torque2a3("torque2a3", 0x98, 4, convEncode_float, convDecode_float, 0),
 			_torque2a4("torque2a4", 0x9C, 4, convEncode_float, convDecode_float, 0),
-			_duration2("duration2", 0xA0, 2, convEncode_float, convDecode_float, 0),
+			_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 			_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 0),
@@ -155,6 +155,7 @@ class Dynaban64 : public MX64
             _speedCalculationDelay.setStepValue(0.001);
         	const TimePoint tp  = getTimePoint();
         	t0 = duration_float(tp);
+        	t = t0;
 
         }
 
