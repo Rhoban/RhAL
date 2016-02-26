@@ -6,6 +6,7 @@
 #include "types.h"
 #include "CallManager.hpp"
 #include "Aggregation.h"
+#include <iostream>
 
 namespace RhAL {
 
@@ -542,6 +543,7 @@ class TypedRegister : public Register
                 forceRead();
             }
             std::lock_guard<std::mutex> lock(_mutex);
+
             return ReadValue<T>(_lastDevReadUser, _valueRead, _isLastError);
         }
 

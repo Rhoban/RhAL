@@ -91,7 +91,7 @@ namespace RhAL
 
     DynamixelV1::DynamixelV1(Bus &bus)
         : Protocol(bus),
-        _timeout("timeout", 0.005)
+        _timeout("timeout", 0.01)
     {
         _parametersList.add(&_timeout);
     }

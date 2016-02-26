@@ -48,7 +48,7 @@ void printDevice(RhAL::Device* dev)
 
 }
 
-void testDevice(RhAL::Device* dev)
+void testDevice(RhAL::Device* dev, bool avoidSlowRegisters=false)
 {
     std::cout<<"\nTesting read/write\n"
         << "Dev: id:" << dev->id()
@@ -57,9 +57,11 @@ void testDevice(RhAL::Device* dev)
 
     std::cout << "\n    RegistersBool:" << std::endl;
     for (const auto& it : dev->registersList().containerBool()) {
-
+    	if (avoidSlowRegisters == true &&  it.second->isSlowRegister) {
+    		continue;
+    	}
         if(!it.second->isReadOnly && it.first.compare("lockEeprom") && it.first.compare("frozenRamOn")
-				&& it.first.compare("useValuesNow") && it.first.compare("positionTrackerOn"))
+				&& it.first.compare("useValuesNow") && it.first.compare("positionTrackerOn") )
         {
 
             // for(int i=0;i<10;i++)
@@ -89,6 +91,9 @@ void testDevice(RhAL::Device* dev)
 
     std::cout << "\n    RegistersInt:" << std::endl;
     for (const auto& it : dev->registersList().containerInt()) {
+    	if (avoidSlowRegisters == true &&  it.second->isSlowRegister) {
+    		continue;
+    	}
         if(!it.second->isReadOnly && it.first.compare("statusReturnLevel") && it.first.compare("baudrate")
         		&& it.first.compare("returnDelayTime") && it.first.compare("id") && it.first.compare("mode"))
         {
@@ -119,25 +124,31 @@ void testDevice(RhAL::Device* dev)
 
     std::cout << "\n    RegistersFloat:" << std::endl;
     for (const auto& it : dev->registersList().containerFloat()) {
-
+    	if (avoidSlowRegisters == true &&  it.second->isSlowRegister) {
+    		continue;
+    	}
         if(!it.second->isReadOnly)
         {
 
             // for(int i=0;i<10;i++)
             {
-            std::cout << "\n    RegistersFloat:" << std::endl;
-
             bool res=false;
             float delta=it.second->getStepValue();
             if(delta==0.0)
-            	delta = 0.01;
+            	delta = 1.01;
             auto tmpval=it.second->readValue();
+            if (tmpval.isError) {
+            	std::cout<<RED<<"BUS ERROR !"<<std::endl;
+            }
 
 
             float towrite=(tmpval.value<it.second->getMaxValue()?(tmpval.value+delta):(tmpval.value-delta));
             it.second->writeValue(towrite);
 
             auto tmpval2=it.second->readValue();
+            if (tmpval.isError) {
+            	std::cout<<RED<<"BUS ERROR !"<<std::endl;
+            }
             /*
             if(tmpval2.value==(tmpval.value+delta))
                 res=true;
@@ -147,7 +158,6 @@ void testDevice(RhAL::Device* dev)
                 res=true;
 
             float lost=fabs(towrite-reallywritten);
-            std::cout << "Really written = " << reallywritten << std::endl;
 
             std::cout<<std::right<<std::setw(25)<<it.first<<": wrote ("<<towrite<<") read ("<<tmpval2.value<<") duration ("<<getTimeDuration<TimeDurationMicro>(tmpval.timestamp,tmpval2.timestamp).count()<<"us"<<(it.second->isSlowRegister?" slow register) ":") ");
             /*
@@ -195,7 +205,7 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
     for (const auto& it : manager.devContainer<RhAL::Device>()) {
         RhAL::Device * dev = it.second;
         printDevice(dev);
-        testDevice(dev);
+        testDevice(dev, false);
     }
     // manager.getStatistics().print();
 

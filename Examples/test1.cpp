@@ -357,9 +357,9 @@ void testDynaban() {
 
 
 		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
-		dev.setGoalPosition(50.25);
+		dev.setGoalPosition(90);
 		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
-		dev.setGoalPosition(-5.25);
+		dev.setGoalPosition(-90);
 		std::cout << "Goal position = " << dev.getGoalPosition() << std::endl;
 		while(true);
 	    // Allowing torque
@@ -422,13 +422,72 @@ void testDynaban() {
 	    return;
 }
 
+void test() {
+	StandardManager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyUSB0", 1000000, "DynamixelV1");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("/tmp/rhal.json");
+
+	    //Import configuration in file
+	    manager.readConfig("/tmp/rhal.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+
+	    //Set Manager scheduling config mode
+	    manager.setScheduleMode(false);
+	    while(true)
+	    {
+			//Iterate over Manager Devices with types
+			for (const auto& it : manager.devContainer<RhAL::Device>()) {
+				RhAL::Device * dev = it.second;
+
+				if (manager.devTypeName(it.second->name()) == "MX64") {
+//					//Unchecked cast instead of dynamic_cast because the check was hand made :)
+					RhAL::MX * devMx = (RhAL::MX*) dev;
+//					bool led = devMx->getLed();
+					auto ledRegister = devMx->registersList().containerBool().at("led");
+					auto value = ledRegister->readValue();
+					bool led = value.value;
+
+					std::cout << "led = " << value.value << ", error = " << value.isError << std::endl;
+					led = !led;
+					std::this_thread::sleep_for(std::chrono::milliseconds(500));
+					devMx->setLed(led);
+				}
+	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
+
+			}
+	    }
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+		std::cout << "Emergency stop ! " << std::endl;
+		manager.emergencyStop();
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+		std::cout << "Release stop ! " << std::endl;
+		manager.exitEmergencyState();
+
+	    return;
+}
+
 }
 
 /**
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::testDynaban();
+	RhAL::test();
+
+//	RhAL::testDynaban();
 	return 0;
 }
 

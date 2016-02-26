@@ -497,7 +497,9 @@ class BaseManager : public CallManager
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
+
             std::lock_guard<std::mutex> lockBus(_mutexBus);
+
             _stats.forceReadCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
@@ -518,6 +520,9 @@ class BaseManager : public CallManager
                     reg->addr,
                     reg->_dataBufferRead,
                     reg->length);
+                printf("data read = %x\n", *reg->_dataBufferRead);
+                fflush(stdout);
+
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
                 _stats.readLength += reg->length;
@@ -548,9 +553,12 @@ class BaseManager : public CallManager
             //Retrieve the read timestamp
             TimePoint timestamp = getTimePoint();
             //Set swapping flags and set timestamp
+
             reg->finishRead(timestamp);
+
             //Do swapping
             reg->swapRead();
+
         }
         inline virtual void forceRegisterWrite(
             id_t id, const std::string& name) override
@@ -1180,8 +1188,10 @@ class BaseManager : public CallManager
             if (isError) {
                 _stats.deviceErrorCount++;
             }
+
             //Update Device state
             if (dev != nullptr) {
+
                 dev->setPresent(isPresent);
                 dev->setWarning(isWarning);
                 dev->setError(isError);
