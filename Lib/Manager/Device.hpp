@@ -109,12 +109,35 @@ class Device
         /**
          * Return true if the device has 
          * been see and is supposed 
-         * enable currently on the bus
+         * enabled currently on the bus
          */
         inline bool isPresent() const
         {
             std::lock_guard<std::mutex> lock(_mutex);
             return _isPresent;
+        }
+
+        /**
+         * If true, the last read operations
+         * with the Device set at least one 
+         * warning flags (overload, overheat,
+         * badvoltage, alert).
+         */
+        inline bool isWarning() const
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _isWarning;
+        }
+
+        /**
+         * If true, the last read operation
+         * with the Device set at leat one
+         * non quiet error flags
+         */
+        inline bool isError() const
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _isError;
         }
 
         /**
@@ -146,13 +169,23 @@ class Device
         mutable std::mutex _mutex;
 
         /**
-         * Set Device isPresent state.
+         * Set Device isPresent and warning/error status.
          * (Used for friend Manager access)
          */
         inline void setPresent(bool isPresent)
         {
             std::lock_guard<std::mutex> lock(_mutex);
             _isPresent = isPresent;
+        }
+        inline void setWarning(bool isWarning)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _isWarning = isWarning;
+        }
+        inline void setError(bool isError)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _isError = isError;
         }
 
         /**
@@ -209,10 +242,25 @@ class Device
 
         /**
          * If true, the device has been see
-         * and is supposed enable currently
-         * on the bus
+         * and is supposed enabled currently
+         * on the bus.
          */
         bool _isPresent;
+
+        /**
+         * If true, the last read operations
+         * with the Device set at least one 
+         * warning flags (overload, overheat,
+         * badvoltage, alert).
+         */
+        bool _isWarning;
+
+        /**
+         * If true, the last read operation
+         * with the Device set at leat one
+         * non quiet error flags
+         */
+        bool _isError;
 };
 
 }
