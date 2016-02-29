@@ -29,6 +29,7 @@
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
 #include "Devices/Dynaban64.hpp"
+#include "Devices/RX24.hpp"
 
 /**
  * Define classic Manager typedef
@@ -48,7 +49,8 @@ typedef Manager<
     IMU,
     PressureSensor,
     Pins,
-	Dynaban64
+	Dynaban64,
+	RX24
 > StandardManager;
 
 }

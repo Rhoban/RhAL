@@ -500,13 +500,9 @@ void test() {
 
 		}
 
-	    int i = 0;
 	    bool ledValue = true;
 	    while(true)
 	    {
-	    	if (i> 20) {
-//	    		break;
-	    	}
 			//Iterate over Manager Devices with types
 			for (const auto& it : manager.devContainer<RhAL::Device>()) {
 				RhAL::Device * dev = it.second;
@@ -528,7 +524,6 @@ void test() {
 	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
 			}
-			i++;
 	    }
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -543,15 +538,72 @@ void test() {
 	    return;
 }
 
+void testMowgly() {
+	StandardManager manager;
+
+	    manager.setProtocolConfig(
+	        "/dev/ttyACM0", 1000000, "DynamixelV1");
+
+	    //Scan the bus
+	    //(no response with FakeProtocol)
+	    manager.scan();
+
+	    //Export configuration in file
+	    manager.writeConfig("./Mowgly.json");
+
+	    //Import configuration in file
+	    manager.readConfig("./Mowgly.json");
+
+
+	    std::cout << manager.saveJSON().dump(4) << std::endl;
+
+	    //Set Manager scheduling config mode
+	    manager.setScheduleMode(false);
+
+	    while (true) {
+			std::cout << "Dynaban : " << std::endl;
+
+			for (const auto& it : manager.devContainer<RhAL::MX>()) {
+				RhAL::MX * devGen = it.second;
+				if (manager.devTypeName(it.second->name()) == "Dynaban64") {
+					RhAL::Dynaban64 * dev = (RhAL::Dynaban64*) devGen;
+					std::cout << +(dev->getId()) << " : " << dev->getPosition() << std::endl;
+//					if (dev->getId() == 15) {
+//						dev->enableTorque();
+//						dev->setGoalPosition(0);
+//					}
+				}
+			}
+
+			std::cout << "RX : " << std::endl;
+			for (const auto& it : manager.devContainer<RhAL::RX>()) {
+				RhAL::RX * devGen = it.second;
+				std::cout << +(devGen->getId()) << " : " << devGen->getPosition() << std::endl;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			std::cout << "*******************************************************************" << std::endl;
+
+	    }
+
+		manager.getStatistics().print();
+		std::cout << "Emergency stop ! " << std::endl;
+		manager.emergencyStop();
+
+
+	    return;
+}
+
+
 }
 
 /**
  * Manager Devices manipulation example
  */
 int main() {
-	RhAL::test();
+//	RhAL::test();
 
 //	RhAL::testDynaban();
+	RhAL::testMowgly();
 	return 0;
 }
 
