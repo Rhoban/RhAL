@@ -374,10 +374,10 @@ void testDynaban() {
 //		}
 
 		// Sinus in 4 poly
-		float coefs1[5] = {169.9973127875532*r, 1.2118904739507608*r, -859.49525560910968*r, 109.93882674890278*r, 489.17556618589202*r};
-		float coefs2[5] = {0.0, -532.49287882689202*r, -29.078490997017791*r, 1058.1470413492527*r, -459.36643296722087*r};
-		float coefs3[5] = {-169.99731278755326*r, -1.2118904739506096*r, 859.49525560910888*r, -109.93882674889758*r, -489.17556618590021*r};
-		float coefs4[5] = {0.0, 532.49287882689293*r, 29.07849099701108*r, -1058.1470413492355*r, 459.3664329672057*r};
+		float coefs1[5] = {169.9973127875532f*r, 1.2118904739507608f*r, -859.49525560910968f*r, 109.93882674890278f*r, 489.17556618589202f*r};
+		float coefs2[5] = {0.0f, -532.49287882689202f*r, -29.078490997017791f*r, 1058.1470413492527f*r, -459.36643296722087f*r};
+		float coefs3[5] = {-169.99731278755326f*r, -1.2118904739506096f*r, 859.49525560910888f*r, -109.93882674889758f*r, -489.17556618590021f*r};
+		float coefs4[5] = {0.0f, 532.49287882689293f*r, 29.07849099701108f*r, -1058.1470413492355f*r, 459.3664329672057f*r};
 
 		dev.prepareFirstTrajectory(coefs4, 5, nullptr, 0, 0.5);
 		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -485,8 +485,28 @@ void test() {
 
 	    //Set Manager scheduling config mode
 	    manager.setScheduleMode(false);
+
+		for (const auto& it : manager.devContainer<RhAL::Device>()) {
+			RhAL::Device * dev = it.second;
+			if (manager.devTypeName(it.second->name()) == "MX64") {
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				RhAL::MX * devMx = (RhAL::MX*) dev;
+				std::cout << "srl = " << devMx->getStatusReturnLevel() << std::endl;
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+				devMx->setStatusReturnLevel(1);
+
+			}
+
+		}
+
+	    int i = 0;
+	    bool ledValue = true;
 	    while(true)
 	    {
+	    	if (i> 20) {
+//	    		break;
+	    	}
 			//Iterate over Manager Devices with types
 			for (const auto& it : manager.devContainer<RhAL::Device>()) {
 				RhAL::Device * dev = it.second;
@@ -494,22 +514,25 @@ void test() {
 				if (manager.devTypeName(it.second->name()) == "MX64") {
 //					//Unchecked cast instead of dynamic_cast because the check was hand made :)
 					RhAL::MX * devMx = (RhAL::MX*) dev;
-//					bool led = devMx->getLed();
 					auto ledRegister = devMx->registersList().containerBool().at("led");
 					auto value = ledRegister->readValue();
 					bool led = value.value;
 
 					std::cout << "led = " << value.value << ", error = " << value.isError << std::endl;
-					led = !led;
+//					led = !led;
 					std::this_thread::sleep_for(std::chrono::milliseconds(500));
-					devMx->setLed(led);
+
+					ledValue = !ledValue;
+					devMx->setLed(ledValue);
 				}
 	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
 			}
+			i++;
 	    }
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
+		manager.getStatistics().print();
 		std::cout << "Emergency stop ! " << std::endl;
 		manager.emergencyStop();
 
@@ -526,9 +549,9 @@ void test() {
  * Manager Devices manipulation example
  */
 int main() {
-//	RhAL::test();
+	RhAL::test();
 
-	RhAL::testDynaban();
+//	RhAL::testDynaban();
 	return 0;
 }
 

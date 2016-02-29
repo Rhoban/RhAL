@@ -135,7 +135,7 @@ void testDevice(RhAL::Device* dev, bool avoidSlowRegisters=false)
             bool res=false;
             float delta=it.second->getStepValue();
             if(delta==0.0)
-            	delta = 1.01;
+            	delta = 0.22;
             auto tmpval=it.second->readValue();
             if (tmpval.isError) {
             	std::cout<<RED<<"BUS ERROR !"<<std::endl;
@@ -205,7 +205,7 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
     for (const auto& it : manager.devContainer<RhAL::Device>()) {
         RhAL::Device * dev = it.second;
         printDevice(dev);
-        testDevice(dev, false);
+        testDevice(dev, true);
     }
     // manager.getStatistics().print();
 

@@ -27,7 +27,6 @@ namespace RhAL {
             
         inline void getPins(bool pins[7])
         {
-            std::lock_guard<std::mutex> lock(_mutex);
             uint8_t value = _pins.readValue().value;
             for (int i = 0; i < 7; i++) {
             	if (value & (1<<i)) {

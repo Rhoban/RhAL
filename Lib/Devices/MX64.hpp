@@ -83,11 +83,22 @@ class MX64 : public MX
          */
         inline MX64(const std::string& name, id_t id) :
             MX(name, id),
-			_current("current", 0x44, 2, convEncode_Current, convDecode_Current, 0),
+			_current("current", 0x44, 2, convDecode_Current, 0),
 			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
 			_goalCurrent("goalCurrent", 0x47, 2, convEncode_GoalCurrent, convDecode_GoalCurrent, 0)
         {
+            _goalCurrent.setMinValue(-1.0);
+            _goalCurrent.setMaxValue(1.0);
+            _goalCurrent.setStepValue(0.0001);
+
+            _current.setMinValue(-9.2115);
+            _current.setMaxValue(9.2115);
+            _current.setStepValue(0.0045);
+
         }
+
+
+
     protected :
         /**
          * Inherit.

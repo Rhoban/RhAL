@@ -40,57 +40,53 @@ class PressureSensor : public Device
 
         inline int32_t getPressure1()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	//Implicit unsigned to signed cast
-        	return (_pressure1.readValue().value - (int32_t)_zero1.value);
+        	int32_t value = _pressure1.readValue().value;
+
+        	std::lock_guard<std::mutex> lock(_mutex);
+        	return (value - (int32_t)_zero1.value);
         }
         inline TimePoint getPressure1Ts()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pressure1.readValue().timestamp;
         }
 
         inline int32_t getPressure2()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	//Implicit unsigned to signed cast
-        	return (_pressure2.readValue().value - (int32_t)_zero2.value);
+        	int32_t value = _pressure2.readValue().value;
+
+        	std::lock_guard<std::mutex> lock(_mutex);
+        	return (value - (int32_t)_zero2.value);
         }
         inline TimePoint getPressure2Ts()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pressure2.readValue().timestamp;
         }
 
         inline int32_t getPressure3()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	//Implicit unsigned to signed cast
-        	return (_pressure3.readValue().value - (int32_t)_zero3.value);
+        	int32_t value = _pressure3.readValue().value;
+
+        	std::lock_guard<std::mutex> lock(_mutex);
+        	return (value - (int32_t)_zero3.value);
         }
         inline TimePoint getPressure3Ts()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pressure3.readValue().timestamp;
         }
 
         inline int32_t getPressure4()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	//Implicit unsigned to signed cast
-        	return (_pressure4.readValue().value - (int32_t)_zero4.value);
+        	int32_t value = _pressure4.readValue().value;
+
+        	std::lock_guard<std::mutex> lock(_mutex);
+        	return (value - (int32_t)_zero4.value);
         }
         inline TimePoint getPressure4Ts()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pressure4.readValue().timestamp;
         }
 

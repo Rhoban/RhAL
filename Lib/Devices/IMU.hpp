@@ -66,27 +66,19 @@ class IMU : public Device
 
         inline float getYaw()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _yaw.readValue().value;
         }
         inline TimePoint getYawTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _yaw.readValue().timestamp;
         }
 
         inline float getPitch()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pitch.readValue().value;
         }
         inline TimePoint getPitchTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _pitch.readValue().timestamp;
         }
 
@@ -98,8 +90,6 @@ class IMU : public Device
         }
         inline TimePoint getRollTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _roll.readValue().timestamp;
         }
 
@@ -111,138 +101,96 @@ class IMU : public Device
         }
         inline TimePoint getAccXTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _accX.readValue().timestamp;
         }
 
         inline int32_t getAccY()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _accY.readValue().value;
         }
         inline TimePoint getAccYTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _accY.readValue().timestamp;
         }
 
         inline int32_t getAccZ()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _accZ.readValue().value;
         }
         inline TimePoint getAccZTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _accZ.readValue().timestamp;
         }
 
         inline float getGyroX()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroX.readValue().value;
         }
         inline TimePoint getGyroXTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroX.readValue().timestamp;
         }
 
         inline float getGyroY()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroY.readValue().value;
         }
         inline TimePoint getGyroYTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroY.readValue().timestamp;
         }
 
         inline float getGyroZ()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroZ.readValue().value;
         }
         inline TimePoint getGyroZTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroZ.readValue().timestamp;
         }
 
         inline float getGyroYaw()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroZ.readValue().value;
         }
         inline TimePoint getGyroYawTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _gyroZ.readValue().timestamp;
         }
 
         inline int32_t getMagnX()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnX.readValue().value;
         }
         inline TimePoint getMagnXTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnX.readValue().timestamp;
         }
 
         inline int32_t getMagnY()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnY.readValue().value;
         }
         inline TimePoint getMagnYTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnY.readValue().timestamp;
         }
 
         inline int32_t getMagnZ()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnZ.readValue().value;
         }
         inline TimePoint getMagnZTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnZ.readValue().timestamp;
         }
 
         inline float getMagnAzimuth()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnAzimuth.readValue().value;
         }
         inline TimePoint getMagnAzimuthTs()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
-
         	return _magnAzimuth.readValue().timestamp;
         }
 

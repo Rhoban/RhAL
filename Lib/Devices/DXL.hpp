@@ -212,24 +212,20 @@ class DXL : public Device
 
         virtual uint16_t getModelNumber()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	return _modelNumber.readValue().value;
         }
 
         virtual int16_t getFirmwareVersion()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	return _firmwareVersion.readValue().value;
         }
 
         virtual uint8_t getId()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	return _id.readValue().value;
         }
         virtual void setId(uint8_t id)
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	_id.writeValue(id);
         }
 
@@ -238,7 +234,6 @@ class DXL : public Device
 		 */
 		virtual float getBaudrate()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _baudrate.readValue().value;
 		}
 		/**
@@ -246,7 +241,6 @@ class DXL : public Device
 		 */
 		virtual void setBaudrate(float baudrate)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_baudrate.writeValue(baudrate);
 		}
 
@@ -255,7 +249,6 @@ class DXL : public Device
 		 */
         virtual uint8_t getReturnDelayTime()
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	return _returnDelayTime.readValue().value;
         }
         /**
@@ -263,7 +256,6 @@ class DXL : public Device
          */
         virtual void setReturnDelayTime(uint8_t delay)
         {
-        	std::lock_guard<std::mutex> lock(_mutex);
         	_returnDelayTime.writeValue(delay);
         }
 
@@ -300,7 +292,6 @@ class DXL : public Device
          */
 		virtual void getVoltageLimits(float voltageLimits[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			voltageLimits[0] = _voltageLowLimit.readValue().value;
 			voltageLimits[1] = _voltageHighLimit.readValue().value;
 		}
@@ -311,7 +302,6 @@ class DXL : public Device
 		 */
 		virtual void setVoltageLimits(float voltageLimits[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_voltageLowLimit.writeValue(voltageLimits[0]);
 			_voltageHighLimit.writeValue(voltageLimits[1]);
 		}
@@ -320,7 +310,6 @@ class DXL : public Device
 		 */
 		virtual float getTorqueLimit()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _maxTorque.readValue().value;
 		}
 		/**
@@ -328,7 +317,6 @@ class DXL : public Device
 		 */
 		virtual void setTorqueLimit(float torqueLimit)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_maxTorque.writeValue(torqueLimit);
 		}
 
@@ -337,7 +325,6 @@ class DXL : public Device
 		 */
 		virtual uint8_t getStatusReturnLevel()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _statusReturnLevel.readValue().value;
 		}
 		/**
@@ -345,7 +332,6 @@ class DXL : public Device
 		 */
 		virtual void setStatusReturnLevel(uint8_t statusReturnLevel)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_statusReturnLevel.writeValue(statusReturnLevel);
 		}
 
@@ -363,7 +349,6 @@ class DXL : public Device
 		 */
 		virtual uint8_t getAlarmShutdown()
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _alarmShutdown.readValue().value;
 		}
 		/**
@@ -371,7 +356,6 @@ class DXL : public Device
 		 */
 		virtual void setAlarmShutdown(uint8_t alarmShutdown)
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_alarmShutdown.writeValue(alarmShutdown);
 		}
 

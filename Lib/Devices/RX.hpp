@@ -264,7 +264,6 @@ class RX : public DXL
 		 */
 		virtual void getAngleLimits(float limits[2]) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			limits[0] = _angleLimitCW.readValue().value;
 			limits[1] = _angleLimitCCW.readValue().value;
 		}
@@ -274,7 +273,6 @@ class RX : public DXL
 		 */
 		virtual void setAngleLimits(const float limits[2]) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_angleLimitCW.writeValue(limits[0]);
 			_angleLimitCCW.writeValue(limits[1]);
 		}
@@ -284,7 +282,6 @@ class RX : public DXL
 		 */
 		virtual uint8_t getAlarmLed() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _alarmLed.readValue().value;
 		}
 		/**
@@ -292,7 +289,6 @@ class RX : public DXL
 		 */
 		virtual void setAlarmLed(uint8_t alarmLed) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_alarmLed.writeValue(alarmLed);
 		}
 
@@ -301,17 +297,14 @@ class RX : public DXL
 
 		virtual bool getTorqueEnable() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torqueEnable.readValue().value;
 		}
 		virtual TimePoint getTorqueEnableTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torqueEnable.readValue().timestamp;
 		}
 		virtual void setTorqueEnable(bool torqueEnable) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torqueEnable.writeValue(torqueEnable);
 		}
 		/**
@@ -319,12 +312,10 @@ class RX : public DXL
 		 */
 		virtual bool getLed() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _led.readValue().value;
 		}
 		virtual TimePoint getLedTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _led.readValue().timestamp;
 		}
 		/**
@@ -332,7 +323,6 @@ class RX : public DXL
 		 */
 		virtual void setLed(bool led) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_led.writeValue(led);
 		}
 
@@ -341,8 +331,8 @@ class RX : public DXL
 		 */
 		virtual float getGoalPosition() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			float value = _goalPosition.readValue().value;
+        	std::lock_guard<std::mutex> lock(_mutex);
 			if (_inverted.value == true) {
 				value = value * -1;
 			}
@@ -351,7 +341,6 @@ class RX : public DXL
 		}
 		virtual TimePoint getGoalPositionTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _goalPosition.readValue().timestamp;
 		}
 		/**
@@ -359,12 +348,16 @@ class RX : public DXL
 		 */
 		virtual void setGoalPosition(float goalPosition) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
-
-			float value = goalPosition + _zero.value;
-			if (_inverted.value == true) {
-				value = value * -1;
+			float value;
+			{
+				// Scope for lock guard
+				std::lock_guard<std::mutex> lock(_mutex);
+				value = goalPosition + _zero.value;
+				if (_inverted.value == true) {
+					value = value * -1;
+				}
 			}
+
 			_goalPosition.writeValue(value);
 		}
 
@@ -379,16 +372,17 @@ class RX : public DXL
 		 */
 		virtual float getGoalSpeed() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			int direction = 1;
-			if (_inverted.value == true) {
-				direction = -1;
+			{
+	        	std::lock_guard<std::mutex> lock(_mutex);
+				if (_inverted.value == true) {
+					direction = -1;
+				}
 			}
 			return _goalSpeed.readValue().value * direction;
 		}
 		virtual TimePoint getGoalSpeedTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _goalSpeed.readValue().timestamp;
 		}
 		/**
@@ -396,10 +390,13 @@ class RX : public DXL
 		 */
 		virtual void setGoalSpeed(float goalSpeed) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			int direction = 1;
-			if (_inverted.value == true) {
-				direction = -1;
+			{
+				std::lock_guard<std::mutex> lock(_mutex);
+
+				if (_inverted.value == true) {
+					direction = -1;
+				}
 			}
 			_goalSpeed.writeValue(goalSpeed * direction);
 		}
@@ -409,12 +406,10 @@ class RX : public DXL
 		 */
 		virtual float getMaxTorque() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torqueLimit.readValue().value;
 		}
 		virtual TimePoint getMaxTorqueTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _torqueLimit.readValue().timestamp;
 		}
 		/**
@@ -422,7 +417,6 @@ class RX : public DXL
 		 */
 		virtual void setMaxTorque(float maxTorque) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_torqueLimit.writeValue(maxTorque);
 		}
 
@@ -431,8 +425,9 @@ class RX : public DXL
 		 */
 		virtual float getPosition() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			float value = _position.readValue().value;
+
+			std::lock_guard<std::mutex> lock(_mutex);
 			if (_inverted.value == true) {
 				value = value * -1;
 			}
@@ -441,7 +436,6 @@ class RX : public DXL
 		}
 		virtual TimePoint getPositionTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _position.readValue().timestamp;
 		}
 
@@ -450,16 +444,18 @@ class RX : public DXL
 		 */
 		virtual float getSpeed() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			int direction = 1;
+			{
+	        	std::lock_guard<std::mutex> lock(_mutex);
+
 			if (_inverted.value == true) {
 				direction = -1;
+			}
 			}
 			return _speed.readValue().value * direction;
 		}
 		virtual TimePoint getSpeedTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _speed.readValue().timestamp;
 		}
 
@@ -468,12 +464,10 @@ class RX : public DXL
 		 */
 		virtual float getLoad() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _load.readValue().value;
 		}
 		virtual TimePoint getLoadTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _load.readValue().timestamp;
 		}
 
@@ -482,12 +476,10 @@ class RX : public DXL
 		 */
 		virtual float getVoltage() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _voltage.readValue().value;
 		}
 		virtual TimePoint getVoltageTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _voltage.readValue().timestamp;
 		}
 
@@ -496,12 +488,10 @@ class RX : public DXL
 		 */
 		virtual float getTemperature() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _temperature.readValue().value;
 		}
 		virtual TimePoint getTemperatureTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _temperature.readValue().timestamp;
 		}
 
@@ -510,12 +500,10 @@ class RX : public DXL
 		 */
 		virtual bool getRegistered() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _registered.readValue().value;
 		}
 		virtual TimePoint getRegisteredTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _registered.readValue().timestamp;
 		}
 
@@ -524,12 +512,10 @@ class RX : public DXL
 		 */
 		virtual bool getMoving() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _moving.readValue().value;
 		}
 		virtual TimePoint getMovingTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _moving.readValue().timestamp;
 		}
 
@@ -538,12 +524,10 @@ class RX : public DXL
 		 */
 		virtual bool getLockEeprom() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _lockEeprom.readValue().value;
 		}
 		virtual TimePoint getLockEepromTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _lockEeprom.readValue().timestamp;
 		}
 		/**
@@ -551,7 +535,6 @@ class RX : public DXL
 		 */
 		virtual void setLockEeprom(bool lockEeprom) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_lockEeprom.writeValue(lockEeprom);
 		}
 
@@ -560,12 +543,10 @@ class RX : public DXL
 		 */
 		virtual float getPunch() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _punch.readValue().value;
 		}
 		virtual TimePoint getPunchTs() override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			return _punch.readValue().timestamp;
 		}
 		/**
@@ -573,7 +554,6 @@ class RX : public DXL
 		 */
 		virtual void setPunch(float punch) override
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_punch.writeValue(punch);
 		}
 
@@ -603,7 +583,6 @@ class RX : public DXL
 		 */
 		inline void getComplianceMargins(float margins[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			margins[0] =_complianceMarginCW.readValue().value;
 			margins[1] =_complianceMarginCCW.readValue().value;
 		}
@@ -612,7 +591,6 @@ class RX : public DXL
 		 */
 		inline void getComplianceMarginsTs(TimePoint marginsTs[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			marginsTs[0] =_complianceMarginCW.readValue().timestamp;
 			marginsTs[1] =_complianceMarginCCW.readValue().timestamp;
 		}
@@ -621,7 +599,6 @@ class RX : public DXL
 		 */
 		inline void setComplianceMargins(float margins[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_complianceMarginCW.writeValue(margins[0]);
 			_complianceMarginCCW.writeValue(margins[1]);
 		}
@@ -631,7 +608,6 @@ class RX : public DXL
 		 */
 		inline void getComplianceSlopes(int slopes[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			slopes[0] =_complianceSlopeCW.readValue().value;
 			slopes[1] =_complianceSlopeCCW.readValue().value;
 		}
@@ -640,7 +616,6 @@ class RX : public DXL
 		 */
 		inline void getComplianceSlopesTs(TimePoint slopesTs[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			slopesTs[0] =_complianceSlopeCW.readValue().timestamp;
 			slopesTs[1] =_complianceSlopeCCW.readValue().timestamp;
 		}
@@ -649,7 +624,6 @@ class RX : public DXL
 		 */
 		inline void setComplianceSlopes(int slopes[2])
 		{
-			std::lock_guard<std::mutex> lock(_mutex);
 			_complianceSlopeCW.writeValue(slopes[0]);
 			_complianceSlopeCCW.writeValue(slopes[1]);
 		}
