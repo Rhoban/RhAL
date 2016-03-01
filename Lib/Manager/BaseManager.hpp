@@ -386,6 +386,38 @@ class BaseManager : public CallManager
         }
 
         /**
+         * Ping a Device with given name or id. 
+         * True is returned if the Device is present,
+         * false else.
+         */
+        inline bool ping(const std::string& name)
+        {
+            if (_devicesByName.count(name) == 0) {
+                throw std::logic_error(
+                    "BaseManager no Device with name:" + name);
+            } else {
+                return ping(_devicesByName.at(name)->id());
+            }
+        }
+        inline bool ping(id_t id)
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            bool response = _protocol->ping(id);
+            if (_devicesById.count(id) == 1) {
+                //If the device is register, 
+                //set present flag
+                _devicesById.at(id)->setPresent(response);
+            }
+            return response;
+        }
+
+        /**
          * Ping all possible Device Id.
          * New discovered Devices are added.
          * All responding Devices are marked as present
@@ -458,6 +490,51 @@ class BaseManager : public CallManager
         }
 
         /**
+         * Check if all Devices registered are
+         * present on the bus.
+         * True is returned if all known Devices are
+         * anwsering. If at least one Device is missing,
+         * false is returned.
+         * (Device Present flag is set accordingly)
+         */
+        inline bool checkDevices()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::lock_guard<std::mutex> lockBus(_mutexBus);
+            //Check for initBus() called
+            if (_protocol == nullptr) {
+                throw std::logic_error(
+                    "BaseManager protocol not initialized");
+            }
+            //Iterate over all known Devices
+            bool isMissing = false;
+            for (auto& dev : _devicesById) {
+                bool response = _protocol->ping(dev.first);
+                if (!response) {
+                    isMissing = true;
+                    dev.second->setPresent(false);
+                } else {
+                    dev.second->setPresent(true);
+                }
+            }
+
+            return isMissing;
+        }
+
+        /**
+         * Call setConfig on all registered Devices
+         * that are present.
+         */
+        inline void setDevicesConfig()
+        {
+            for (auto& dev : _devicesById) {
+                if (dev.second->isPresent()) {
+                    dev.second->setConfig();
+                }
+            }
+        }
+
+        /**
          * Inherit.
          * Call when a register is declared
          * to the Device. Use to build up
@@ -497,9 +574,7 @@ class BaseManager : public CallManager
             id_t id, const std::string& name) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
-
             std::lock_guard<std::mutex> lockBus(_mutexBus);
-
             _stats.forceReadCount++;
             //Check for initBus() called
             if (_protocol == nullptr) {
@@ -520,9 +595,6 @@ class BaseManager : public CallManager
                     reg->addr,
                     reg->_dataBufferRead,
                     reg->length);
-//                printf("data read = %x\n", *reg->_dataBufferRead);
-//                fflush(stdout);
-
                 TimePoint pStop = getTimePoint();
                 _stats.readCount++;
                 _stats.readLength += reg->length;
@@ -553,12 +625,9 @@ class BaseManager : public CallManager
             //Retrieve the read timestamp
             TimePoint timestamp = getTimePoint();
             //Set swapping flags and set timestamp
-
             reg->finishRead(timestamp);
-
             //Do swapping
             reg->swapRead();
-
         }
         inline virtual void forceRegisterWrite(
             id_t id, const std::string& name) override
@@ -1188,10 +1257,8 @@ class BaseManager : public CallManager
             if (isError) {
                 _stats.deviceErrorCount++;
             }
-
             //Update Device state
             if (dev != nullptr) {
-
                 dev->setPresent(isPresent);
                 dev->setWarning(isWarning);
                 dev->setError(isError);

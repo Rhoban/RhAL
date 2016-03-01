@@ -107,6 +107,15 @@ class Device
         }
 
         /**
+         * Trigger specific implementation 
+         * to enforce specific Device configuration
+         */
+        inline virtual void setConfig()
+        {
+            //Empty default
+        }
+
+        /**
          * Return true if the device has 
          * been see and is supposed 
          * enabled currently on the bus
