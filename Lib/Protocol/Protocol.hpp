@@ -28,31 +28,32 @@ namespace RhAL
         ResponseDeviceBadChecksum=256,
         ResponseBadSize=512,
         ResponseBadProtocol=1024,
-        ResponseBadId=2048
-    };        
+        ResponseBadId=2048,
+        ResponseNoData=4096
+    };
 
-    class Protocol
-    {
-        public:
-            Protocol(Bus &bus);
+class Protocol
+{
+  public:
+    Protocol(Bus &bus);
 
-            /**
-             * Virtual destructor
-             */
-            virtual ~Protocol();
+    /**
+     * Virtual destructor
+     */
+    virtual ~Protocol();
 
-            /**
-             * Write size bytes of data on device with id at given address
-             */
-            virtual void writeData(id_t id, addr_t address, 
-                    const uint8_t *data, size_t size)=0;
+    /**
+     * Write size bytes of data on device with id at given address
+     */
+    virtual void writeData(id_t id, addr_t address,
+                           const uint8_t *data, size_t size)=0;
 
             /**
              * Reads size bytes of data on device with id at given address
              *
              * If it fails, false will be returned
              */
-            virtual ResponseState readData(id_t id, addr_t address, 
+            virtual ResponseState readData(id_t id, addr_t address,
                     uint8_t *data, size_t size)=0;
 
             /**
@@ -76,7 +77,7 @@ namespace RhAL
             virtual std::vector<ResponseState> syncRead(
                     const std::vector<id_t>& ids, addr_t address,
                     const std::vector<uint8_t*>& datas, size_t size)=0;
-            
+
             /**
              * Performs a synchronized write across devices
              */
