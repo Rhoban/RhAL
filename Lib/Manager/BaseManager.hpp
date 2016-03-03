@@ -53,11 +53,15 @@ class BaseManager : public CallManager
             _mutexBus(),
             _sortedRegisters(),
             _readCycleCount(0),
-            _managerWaitUser(),
-            _userWaitManager(),
-            _isManagerFlushing(false),
+            _managerWaitUser1(),
+            _managerWaitUser2(),
+            _userWaitManager1(),
+            _userWaitManager2(),
+            _isManagerBarrierOpen1(false),
+            _isManagerBarrierOpen2(false),
             _cooperativeThreadCount(0),
-            _currentThreadWaiting(0),
+            _currentThreadWaiting1(0),
+            _currentThreadWaiting2(0),
             _stats(),
             _bus(nullptr),
             _protocol(nullptr),
@@ -264,23 +268,37 @@ class BaseManager : public CallManager
             }
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            //Statistics
             _stats.waitNextFlushCount++;
+            TimePoint pStart = getTimePoint();
             //The lock is now acquired
             //Increment current user in waitNextFlush()
-            _currentThreadWaiting++;
+            _currentThreadWaiting1++;
             //Notify the Manager for a new thread waiting
-            _managerWaitUser.notify_all();
-            //Wait for the end of flush() barrier.
+            _managerWaitUser1.notify_all();
+            //Wait for the end of the first flush() barrier.
             //(during wait, the shared mutex is released)
-            TimePoint pStart = getTimePoint();
-            _userWaitManager.wait(lock,
-                [this](){return !_isManagerFlushing;});
+            _userWaitManager1.wait(lock,
+                [this](){return _isManagerBarrierOpen1;});
+            //The lock is re acquire. Decrease the number
+            //of waiting thread.
+            _currentThreadWaiting1--;
+            //Increment the number of waiting thread for the 
+            //second barrier
+            _currentThreadWaiting2++;
+            //Notify the Manager for a new thread waiting
+            _managerWaitUser2.notify_all();
+            //Wait for the end of the second flush() barrier.
+            //(during wait, the shared mutex is released)
+            _userWaitManager2.wait(lock,
+                [this](){return _isManagerBarrierOpen2;});
+            //The lock is re acquire. Decrease the number
+            //of waiting thread.
+            _currentThreadWaiting2--;
+            //Statistics
             TimePoint pStop = getTimePoint();
             _stats.waitManagerDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
-            //The lock is re acquire. Decrease the number
-            //of waiting thread.
-            _currentThreadWaiting--;
             //Release the shared mutex
             lock.unlock();
         }
@@ -319,16 +337,22 @@ class BaseManager : public CallManager
             //(during wait, the shared mutex is released)
             //(The lock is taken once condition is reached)
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
+            //Close the second barrier
+            _isManagerBarrierOpen2 = false;
+            //Statistics
             _stats.flushCount++;
-            _isManagerFlushing = true;
             TimePoint pStart = getTimePoint();
-            _managerWaitUser.wait(lock,
+            //Wait for all user thread to have reach the 
+            //first barrier
+            //(During wait, the lock is release)
+            _managerWaitUser1.wait(lock,
                 [this](){
-                    return _currentThreadWaiting == _cooperativeThreadCount;
+                    return _currentThreadWaiting1 == _cooperativeThreadCount;
                 });
-            TimePoint pStop = getTimePoint();
-            _stats.waitUsersDuration +=
-                getTimeDuration<TimeDurationMicro>(pStart, pStop);
+            //The lock is then re acquire. Open the first barrier.
+            _isManagerBarrierOpen1 = true;
+            //Notify the users waiting on first barrier
+            _userWaitManager1.notify_all();
             //Swap to apply last read change
             swapRead();
             //Call all Devices onSwap() callback
@@ -339,11 +363,25 @@ class BaseManager : public CallManager
                 computeBatchedRegisters(true);
             std::vector<BatchedRegisters> batchsWrite =
                 computeBatchedRegisters(false);
-            //Wake up cooperative user threads waiting
-            //in waitNextFlush()
-            _isManagerFlushing = false;
+            //Wait for all user thread to have reach the 
+            //second barrier
+            //(During wait, the lock is release)
+            _managerWaitUser2.wait(lock,
+                [this](){
+                    return _currentThreadWaiting2 == _cooperativeThreadCount;
+                });
+            //The lock is re acquired. Open the second barrier.
+            _isManagerBarrierOpen2 = true;
+            //Lock the first barrier
+            _isManagerBarrierOpen1 = false;
+            //Statistics
+            TimePoint pStop = getTimePoint();
+            _stats.waitUsersDuration +=
+                getTimeDuration<TimeDurationMicro>(pStart, pStop);
+            //Notify the users thread waiting on the second barrier
+            _userWaitManager2.notify_all();
+            //Unlock the shared mutex
             lock.unlock();
-            _userWaitManager.notify_all();
             //Perform read operation on all batchs
             for (size_t i=0;i<batchsRead.size();i++) {
                 readBatch(batchsRead[i]);
@@ -853,16 +891,22 @@ class BaseManager : public CallManager
          * users call waitNextFlush()
          * and for users waiting the end of
          * flush() operation.
+         * Multi turn barrier synchronisation needs
+         * two waits for both the Manager and Users
          */
-        mutable std::condition_variable _managerWaitUser;
-        mutable std::condition_variable _userWaitManager;
+        mutable std::condition_variable _managerWaitUser1;
+        mutable std::condition_variable _managerWaitUser2;
+        mutable std::condition_variable _userWaitManager1;
+        mutable std::condition_variable _userWaitManager2;
 
         /**
-         * If true, the Manager is flushing
+         * If fakse, the Manager is flushing
          * and all other cooperative user thread
-         * have to wait
+         * have to wait on the first and second 
+         * barrier.
          */
-        bool _isManagerFlushing;
+        bool _isManagerBarrierOpen1;
+        bool _isManagerBarrierOpen2;
 
         /**
          * The number of current user cooperative
@@ -875,9 +919,11 @@ class BaseManager : public CallManager
         /**
          * The number of user cooperative
          * threads currently waiting in
-         * waitNextFlush() methods.
+         * waitNextFlush() methods for the
+         * first and the second barrier.
          */
-        unsigned int _currentThreadWaiting;
+        unsigned int _currentThreadWaiting1;
+        unsigned int _currentThreadWaiting2;
 
         /**
          * Manager Statistics container

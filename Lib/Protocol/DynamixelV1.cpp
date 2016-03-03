@@ -51,80 +51,81 @@ namespace RhAL
         }
     }
 
-    uint8_t DynamixelV1::Packet::computeChecksum()
-    {
-        uint8_t checksum = 0;
-        for (size_t k=2; k<5+parameters; k++) {
-            checksum += buffer[k];
-        }
 
-        return ~checksum;
-    }
-                
-    void DynamixelV1::Packet::prepare()
-    {
-        buffer[0] = 0xff;
-        buffer[1] = 0xff;
-        buffer[5 + parameters] = computeChecksum();
+uint8_t DynamixelV1::Packet::computeChecksum()
+{
+    uint8_t checksum = 0;
+    for (size_t k=2; k<5+parameters; k++) {
+        checksum += buffer[k];
     }
 
-    void DynamixelV1::Packet::setError(uint8_t error)
-    {
-        buffer[4] = error;
-    }
-    
-    uint8_t DynamixelV1::Packet::getError()
-    {
-        return buffer[4];
-    }
+    return ~checksum;
+}
 
-    size_t DynamixelV1::Packet::getSize()
-    {
-        // A packet is: Header (2), ID, length, instruction, parameters and checksum
-        return 2 + 1 + 1 + 1 + parameters + 1;
-    }
+void DynamixelV1::Packet::prepare()
+{
+    buffer[0] = 0xff;
+    buffer[1] = 0xff;
+    buffer[5 + parameters] = computeChecksum();
+}
 
-    uint8_t *DynamixelV1::Packet::getParameters()
-    {
-        return buffer + 5;
-    }
+void DynamixelV1::Packet::setError(uint8_t error)
+{
+    buffer[4] = error;
+}
 
-    DynamixelV1::DynamixelV1(Bus &bus)
+uint8_t DynamixelV1::Packet::getError()
+{
+    return buffer[4];
+}
+
+size_t DynamixelV1::Packet::getSize()
+{
+    // A packet is: Header (2), ID, length, instruction, parameters and checksum
+    return 2 + 1 + 1 + 1 + parameters + 1;
+}
+
+uint8_t *DynamixelV1::Packet::getParameters()
+{
+    return buffer + 5;
+}
+
+DynamixelV1::DynamixelV1(Bus &bus)
         : Protocol(bus),
-        _timeout("timeout", 0.01)
-    {
-        _parametersList.add(&_timeout);
-    }
+          _timeout("timeout", 0.01)
+{
+    _parametersList.add(&_timeout);
+}
 
-    void DynamixelV1::writeData(id_t id, addr_t address, 
-            const uint8_t *data, size_t size)
-    {
-        Packet packet(id, CommandWrite, size+1);
-        packet.append(address);
-        packet.append(data, size);
-        sendPacket(packet);
-    }
+void DynamixelV1::writeData(id_t id, addr_t address,
+                            const uint8_t *data, size_t size)
+{
+    Packet packet(id, CommandWrite, size+1);
+    packet.append(address);
+    packet.append(data, size);
+    sendPacket(packet);
+}
 
-    ResponseState DynamixelV1::readData(id_t id, addr_t address, 
-            uint8_t *data, size_t size)
-    {
-        Packet packet(id, CommandRead, 2);
-        packet.append(address);
-        packet.append(size);
-        sendPacket(packet);
+ResponseState DynamixelV1::readData(id_t id, addr_t address,
+                                    uint8_t *data, size_t size)
+{
+    Packet packet(id, CommandRead, 2);
+    packet.append(address);
+    packet.append(size);
+    sendPacket(packet);
 
-        Packet *response;
-        auto code = receivePacket(response, id);
+    Packet *response;
+    auto code = receivePacket(response, id);
 #if DEBUG
         if (response == NULL) {
-        	std::cout << "Response null" << endl;
+            std::cout << "Response null" << endl;
         } else {
-        	std::cout << "Receiving packet : ";
-			for (int i = 0; i < sizeof(response->buffer)/sizeof(*(response->buffer)); i++) {
-				std::cout << (int)response->buffer[i] << " ";
-			}
-			std::cout << ", code = " << (int)code << endl;
-			std::cout << std::endl;
+            std::cout << "Receiving packet : ";
+            for (int i = 0; i < sizeof(response->buffer)/sizeof(*(response->buffer)); i++) {
+                std::cout << (int)response->buffer[i] << " ";
+            }
+            std::cout << ", code = " << (int)code << endl;
+            std::cout << std::endl;
         }
 #endif
         if (code & ResponseOK) {
@@ -150,19 +151,84 @@ namespace RhAL
     }
 
     std::vector<ResponseState> DynamixelV1::syncRead(
-            const std::vector<id_t>& ids, addr_t address,
-            const std::vector<uint8_t*>& datas, size_t size)
+        const std::vector<id_t>& ids, addr_t address,
+        const std::vector<uint8_t*>& datas, size_t size)
     {
-        (void)ids;
-        (void)address;
-        (void)datas;
-        (void)size;
-        throw runtime_error("Sync read is not yet supported");
+
+        Packet packet(0xfd, CommandSyncRead, ids.size()+2); //Number of motor ids + starting address and size
+        packet.buffer[3]=ids.size()+4;     //length has to be 4+(number of ids) but packet already adds 2 so we replace
+        //adress from where we start to read
+        packet.append(address);
+        //number of bytes to read
+        packet.append(size);
+        //ids
+        for(size_t i=0;i<ids.size();i++)
+            packet.append(ids[i]);
+
+        sendPacket(packet);
+
+        Packet *response;
+        auto code = receivePacket(response, 0xfd);
+#if DEBUG
+        if (response == NULL) {
+            std::cout << "Sync Response null" << endl;
+        } else {
+            std::cout << "Sync Receiving packet : ";
+            for (int i = 0; i < sizeof(response->buffer)/sizeof(*(response->buffer)); i++) {
+                std::cout << (int)response->buffer[i] << " ";
+            }
+            std::cout << ", code = " << (int)code << endl;
+            std::cout << std::endl;
+        }
+#endif
+
+        std::vector<ResponseState> ret;
+        //returns: ID LENGTH ERROR ERROR_0 PARAM_0_0 PARAM_0_1 ... PARAM_0_N ERROR_1 PARAM_1_0 ...
+        if (code & ResponseOK)
+        {
+
+            for(size_t i=0;i<ids.size();i++)
+            {
+                unsigned int error=*(response->getParameters()+i*(size+1)); //first the motor error code
+                if(error==0xFF)
+                {
+                    ret.push_back(ResponseNoData); //motor timeout exceeded
+                }
+                else
+                {
+                    if (error & ErrorChecksum) { //we should probably ignore the data...
+                        ret.push_back(ResponseDeviceBadChecksum);
+                    } else if (error & ErrorInstruction) {
+                        ret.push_back(ResponseDeviceBadInstruction);
+                    } else {
+                        unsigned int ecode=ResponseOK; //humm not a very good use of flags, we miss some errors...
+                        if (error & ErrorVoltage) ecode |= ResponseBadVoltage;
+                        if (error & ErrorOverheat) ecode |= ResponseOverheat;
+                        if (error & ErrorOverload) ecode |= ResponseOverload;
+                        ret.push_back(ecode);
+                    }
+
+                    memcpy(datas[i], response->getParameters()+i*(size+1)+1, size);
+                }
+
+            }
+            delete response;
+            return ret;
+        }
+        else
+        {
+            delete response;
+            ret.push_back(code);
+            return ret;
+        }
+
+        return ret; //should never happen
+
     }
 
     void DynamixelV1::syncWrite(
-            const std::vector<id_t>& ids, addr_t address,
-            const std::vector<const uint8_t*>& datas, size_t size)
+        const std::vector<id_t>& ids, addr_t address,
+        const std::vector<const uint8_t*>& datas, size_t size)
     {
         if (ids.size() != datas.size()) {
             throw runtime_error("ids and datas should have the same size() for syncWrite");
@@ -184,9 +250,9 @@ namespace RhAL
      */
     void DynamixelV1::emergencyStop()
     {
-    	uint8_t data[1];
-    	data[0] = 0;
-    	writeData(Broadcast, 0x18, data, 1);
+        uint8_t data[1];
+        data[0] = 0;
+        writeData(Broadcast, 0x18, data, 1);
     }
 
     /**
@@ -194,20 +260,20 @@ namespace RhAL
      */
     void DynamixelV1::exitEmergencyState()
     {
-    	uint8_t data[1];
-    	data[0] = 1;
-    	writeData(Broadcast, 0x18, data, 1);
+        uint8_t data[1];
+        data[0] = 1;
+        writeData(Broadcast, 0x18, data, 1);
     }
 
     void DynamixelV1::sendPacket(Packet &packet)
     {
-    	bus.clearInputBuffer();
-//    	bus.flushInput();
+        bus.clearInputBuffer();
+        //    	bus.flushInput();
         packet.prepare();
 #if DEBUG
         std::cout << "Sending packet : ";
         for (int i = 0; i < sizeof(packet.buffer)/sizeof(*packet.buffer); i++) {
-        	std::cout << (int)packet.buffer[i] << " ";
+            std::cout << (int)packet.buffer[i] << " ";
         }
         std::cout << std::endl;
 #endif
@@ -217,7 +283,7 @@ namespace RhAL
 
     ResponseState DynamixelV1::receivePacket(Packet* &response, id_t id)
     {
-    	ResponseState error = ResponseQuiet;
+        ResponseState error = ResponseQuiet;
         response = NULL;
         TimePoint start = getTimePoint();
         size_t position = 0;
@@ -232,15 +298,15 @@ namespace RhAL
                     switch (position) {
                         case 0:
                         case 1:
-                        	if (byte == 0xff) {
-                        		position++;
-                        	} else {
-                        		position = 0;
-                        	}
+                            if (byte == 0xff) {
+                                position++;
+                            } else {
+                                position = 0;
+                            }
                             break;
                         case 2:
                             if (byte == id) {
-                            	position++;
+                                position++;
                             } else {
                                 error = ResponseBadId;
                                 position = 0;
@@ -251,8 +317,8 @@ namespace RhAL
                                 response = new Packet(id, byte-2);
                                 position++;
                             } else {
-                            	error = ResponseBadSize;
-                            	position = 0;
+                                error = ResponseBadSize;
+                                position = 0;
                             }
                             break;
                         case 4:

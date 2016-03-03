@@ -125,9 +125,9 @@ struct Statistics
             duration_float(syncReadDuration) << "s" << std::endl;
         os << "SyncWrite() spent time: " << 
             duration_float(syncWriteDuration) << "s" << std::endl;
-        os << "Waiting Users spent time: " << 
+        os << "Waiting in flush() spent time: " << 
             duration_float(waitUsersDuration) << "s" << std::endl;
-        os << "Waiting Manager spent time: " << 
+        os << "Waiting in WaitNextFlush() spent time: " << 
             duration_float(waitManagerDuration) << "s" << std::endl;
         os << "Devices valid responses: " << deviceOKCount << std::endl;
         os << "Devices warning responses: " << deviceWarningCount << std::endl;
