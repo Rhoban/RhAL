@@ -217,8 +217,9 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         }
         else
         {
+            for(size_t i=0;i<ids.size();i++)
+                ret.push_back(code);
             delete response;
-            ret.push_back(code);
             return ret;
         }
 
