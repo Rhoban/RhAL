@@ -518,7 +518,7 @@ class BaseManager : public CallManager
                 }
             }
 
-            return isMissing;
+            return !isMissing;
         }
 
         /**
