@@ -44,23 +44,29 @@ class Servo(object):
                   "parameters" : {
                                   "inverse" : self.inverted,
                                   "zero" : self.zero,
-                                  "cwAngleLimit" : self.minAngle,
-                                  "ccwAngleLimit" : self.maxAngle 
+                                  "angleLimitCWParameter" : self.minAngle,
+                                  "angleLimitCCWParameter" : self.maxAngle 
                                   }
                   }
         return output
 
 def main(xmlFile):
+    index = xmlFile.rfind(".")
+    if (index < 0) :
+        fileName = "output"
+    else :
+        fileName = xmlFile[:index]
+        
     #Parsing the xml file
     dom = parse(xmlFile)
     listOfServos = []
     for node in dom.getElementsByTagName('ServoConfig'):  # visit every node <bar />
-        idServo =  node.getElementsByTagName('Id')[0].childNodes[0].nodeValue
+        idServo =  int(node.getElementsByTagName('Id')[0].childNodes[0].nodeValue)
         name =  node.getElementsByTagName('Name')[0].childNodes[0].nodeValue
-        zero = node.getElementsByTagName('ZeroAngle')[0].childNodes[0].nodeValue
+        zero = float(node.getElementsByTagName('ZeroAngle')[0].childNodes[0].nodeValue)
         inverted = node.getElementsByTagName('Inverse')[0].childNodes[0].nodeValue
-        minAngle = node.getElementsByTagName('MinAngle')[0].childNodes[0].nodeValue
-        maxAngle = node.getElementsByTagName('MaxAngle')[0].childNodes[0].nodeValue
+        minAngle = float(node.getElementsByTagName('MinAngle')[0].childNodes[0].nodeValue)
+        maxAngle = float(node.getElementsByTagName('MaxAngle')[0].childNodes[0].nodeValue)
         invertedBool = ""
         if inverted.strip() == "1" :
             invertedBool = "true"
@@ -91,27 +97,57 @@ def main(xmlFile):
                 ],
                 "parameters": "null"
             },
+            "IMU": {
+                "devices": [
+                    {
+                        "id": 241,
+                        "name": "IMU_1",
+                        "parameters": "null"
+                    }
+            ],
+            "parameters": "null"
+    },
             "Protocol": {
                 "timeout": 0.01
             },
             "Dynaban64" : {
-               "devices" : []
+               "devices" : [],
+               "parameters" : "null"
             },
-             "RX" : {
-               "devices" : []
+             "RX28" : {
+               "devices" : [],
+               "parameters" : "null"
+            },
+              "RX24" : {
+                "devices" : [],
+                "parameters" : "null"
             }
      }
     
     for servo in listOfServos :
         name = servo.name
         if ("ankle" in name) or ("hip" in name) or ("knee" in name) :
-            #The servo will be considerer Dynaban64
+            #The servo will be considered Dynaban64
             header["Dynaban64"]["devices"].append(servo.toMap())
+        elif ("head" in name) :
+            #The servo will be considered RX24
+            header["RX24"]["devices"].append(servo.toMap())
         else :
-            #The others are considered to be RX
-            header["RX"]["devices"].append(servo.toMap())
+            #The others are considered to be RX28
+            header["RX28"]["devices"].append(servo.toMap())
     
-    print json.dumps(header, sort_keys=True, indent=4, separators=(',', ': '))
+    result = json.dumps(header, sort_keys=True, indent=4, separators=(',', ': '))
+    #Replacing "true" with true and co
+    result = result.replace("\"true\"", "true")
+    result = result.replace("\"false\"", "false")
+    result = result.replace("\"null\"", "null")
+    print result
+
+    outputFile = fileName + '.json'
+    print "Writing at ", outputFile
+    f = open(outputFile,'w')
+    f.write(result)
+    f.close()
 
 if ( __name__ == "__main__"):
     print("A new day dawns")

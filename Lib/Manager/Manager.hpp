@@ -70,9 +70,9 @@ class Manager : public AggregateManager<Types...>
             }
             this->loadAggregatedJSON(j);
             this->_parametersList.loadJSON(j.at("Manager"));
-            this->protocolParametersList().loadJSON(j.at("Protocol"));
             //Reset low level communication (bus/protocol)
             this->initBus();
+            this->protocolParametersList().loadJSON(j.at("Protocol"));
         }
 
         /**

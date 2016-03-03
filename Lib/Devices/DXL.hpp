@@ -156,6 +156,8 @@ class DXL : public Device
 			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
 			//Parameters configuration
+			_angleLimitCWParameter("angleLimitCWParameter", 0.0),
+			_angleLimitCCWParameter("angleLimitCCWParameter", 0.0),
 			_inverted("inverse", false),
 			_zero("zero", 0.0)
         {
@@ -176,6 +178,7 @@ class DXL : public Device
             _maxTorque.setStepValue(0.000977517); // 1.0/1023
 
         }
+
 
         /**
          * Returns true if the servo's angular convention is inverted, false otherwise
@@ -549,6 +552,8 @@ class DXL : public Device
 		/**
 		 * Parameters
 		 */
+		ParameterNumber _angleLimitCWParameter;
+		ParameterNumber _angleLimitCCWParameter;
 		ParameterBool _inverted;
 		ParameterNumber _zero;
 
@@ -569,6 +574,9 @@ class DXL : public Device
 			Device::registersList().add(&_maxTorque);
 			Device::registersList().add(&_statusReturnLevel);
 			Device::registersList().add(&_alarmShutdown);
+
+			Device::parametersList().add(&_angleLimitCWParameter);
+			Device::parametersList().add(&_angleLimitCCWParameter);
 			Device::parametersList().add(&_inverted);
 			Device::parametersList().add(&_zero);
 		}

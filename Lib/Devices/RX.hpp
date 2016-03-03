@@ -257,6 +257,21 @@ class RX : public DXL
 
         }
 
+        /**
+         * Applies the configuration to the motors. Used to make sure the angle limits are what they should be.
+         */
+        virtual void setConfig() override
+       	{
+        	float angleLimits[2];
+        	getAngleLimits(angleLimits);
+        	if (abs(angleLimits[0] - _angleLimitCWParameter.value) > _angleLimitCW.getStepValue()/2.0
+        			|| abs(angleLimits[1] - _angleLimitCCWParameter.value) > _angleLimitCCW.getStepValue()/2.0) {
+        		// Setting the angle limits to what they should be
+        		angleLimits[0] = _angleLimitCWParameter.value;
+        		angleLimits[1] = _angleLimitCCWParameter.value;
+        		setAngleLimits(angleLimits);
+        	}
+   		}
 
 		/**
 		 * Fills an array of 2 floats with the angle limits in degrees:

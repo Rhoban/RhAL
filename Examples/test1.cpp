@@ -546,16 +546,28 @@ void testMowgly() {
 
 	    //Scan the bus
 	    //(no response with FakeProtocol)
-	    manager.scan();
+//	    manager.scan();
 
 	    //Export configuration in file
-	    manager.writeConfig("./Mowgly.json");
+//	    manager.writeConfig("./MowglyAuto.json");
 
 	    //Import configuration in file
 	    manager.readConfig("./Mowgly.json");
 
+	    if (manager.checkDevices()) {
+	    	std::cout << "All the devices are fine :)" << std::endl;
+	    } else {
+	    	std::cout << "At least a device is not present" << std::endl;
+			for (const auto& it : manager.devContainer<RhAL::Device>()) {
+				RhAL::Device * dev = it.second;
+				if (!dev->isPresent()) {
+			    	std::cout << it.first << " is not present !" << std::endl;
+				}
+			}
+			return;
+		}
 
-	    std::cout << manager.saveJSON().dump(4) << std::endl;
+//	    std::cout << manager.saveJSON().dump(4) << std::endl;
 
 	    //Set Manager scheduling config mode
 	    manager.setScheduleMode(false);
@@ -567,18 +579,19 @@ void testMowgly() {
 				RhAL::MX * devGen = it.second;
 				if (manager.devTypeName(it.second->name()) == "Dynaban64") {
 					RhAL::Dynaban64 * dev = (RhAL::Dynaban64*) devGen;
-					std::cout << +(dev->getId()) << " : " << dev->getPosition() << std::endl;
-//					if (dev->getId() == 15) {
-//						dev->enableTorque();
-//						dev->setGoalPosition(0);
-//					}
+
+					std::cout << dev->name() << " : " << dev->getPosition() << std::endl;
+					dev->enableTorque();
+					dev->setGoalPosition(0);
 				}
 			}
 
 			std::cout << "RX : " << std::endl;
 			for (const auto& it : manager.devContainer<RhAL::RX>()) {
 				RhAL::RX * devGen = it.second;
-				std::cout << +(devGen->getId()) << " : " << devGen->getPosition() << std::endl;
+				std::cout << devGen->name() << " : " << devGen->getPosition() << std::endl;
+				devGen->enableTorque();
+				devGen->setGoalPosition(0);
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			std::cout << "*******************************************************************" << std::endl;
