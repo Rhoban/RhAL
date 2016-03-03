@@ -156,7 +156,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
     {
 
         Packet packet(0xfd, CommandSyncRead, ids.size()+2); //Number of motor ids + starting address and size
-        packet.buffer[3]=ids.size()+4;     //length has to be 4+(number of ids) but packet already adds 2 so we replace
+        // packet.buffer[3]=ids.size()+4;     //length has to be 4+(number of ids) but packet already adds 2 so we replace
         //adress from where we start to read
         packet.append(address);
         //number of bytes to read
@@ -169,7 +169,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
 
         Packet *response;
         auto code = receivePacket(response, 0xfd);
-#if DEBUG
+        #if DEBUG
         if (response == NULL) {
             std::cout << "Sync Response null" << endl;
         } else {
@@ -180,7 +180,8 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
             std::cout << ", code = " << (int)code << endl;
             std::cout << std::endl;
         }
-#endif
+        #endif
+
 
         std::vector<ResponseState> ret;
         //returns: ID LENGTH ERROR ERROR_0 PARAM_0_0 PARAM_0_1 ... PARAM_0_N ERROR_1 PARAM_1_0 ...
@@ -189,10 +190,11 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
 
             for(size_t i=0;i<ids.size();i++)
             {
+                // printf("MOTOR: %d data: %x %x %x\n",i,(uint8_t)*(response->getParameters()+i*(size+1)),(uint8_t)*(response->getParameters()+i*(size+1)+1),(uint8_t)*(response->getParameters()+i*(size+1)+2));
                 unsigned int error=*(response->getParameters()+i*(size+1)); //first the motor error code
                 if(error==0xFF)
                 {
-                    ret.push_back(ResponseNoData); //motor timeout exceeded
+                    ret.push_back(ResponseQuiet); //motor timeout exceeded
                 }
                 else
                 {
@@ -217,6 +219,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         }
         else
         {
+            // std::cout<<"SYNC_READ ERROR: "<<code<<std::endl;
             for(size_t i=0;i<ids.size();i++)
                 ret.push_back(code);
             delete response;
@@ -226,6 +229,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         return ret; //should never happen
 
     }
+
 
     void DynamixelV1::syncWrite(
         const std::vector<id_t>& ids, addr_t address,

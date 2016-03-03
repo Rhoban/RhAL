@@ -52,6 +52,7 @@ set(TESTS_SOURCES
     testBaseManager
     testManager
     testReadWrite
+    testSync
 )
 
 # Examples source files
