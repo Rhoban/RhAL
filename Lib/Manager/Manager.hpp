@@ -129,13 +129,12 @@ class Manager : public AggregateManager<Types...>
          * be given and will be called at each
          * Manager cycle.
          */
-        inline void startManagerThread(
-            std::function<void()> callback = [](){})
+        inline void startManagerThread(std::function<void()> callback = [](){})
         {
             if (_managerThread == nullptr) {
                 _managerThreadContinue = true;
                 _managerThread = new std::thread(
-                    [this, &callback](){
+                    [this, callback](){
                         while (this->_managerThreadContinue) {
                             this->flush();
                             callback();

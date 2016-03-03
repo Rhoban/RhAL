@@ -143,18 +143,18 @@ class DXL : public Device
 			 * Therefore, we decided to declare here only the Eeprom/flash registers that are common among all the dxl devices.
                          * ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
 			 */
-			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_modelNumber("modelNumber", 0x00, 2, convDecode_2Bytes, 0, false, false, true),
-			_firmwareVersion("firmwareVersion", 0x02, 1, convDecode_1Byte, 0, false, false, true),
-			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
-			_baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0, false, false, true),
-			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0, false, false, true),
-			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_temperature, convDecode_temperature, 0, false, false, true),
-			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_voltage, convDecode_voltage, 0, false, false, true),
-			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0, false, false, true),
-			_maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0, false, false, true),
-			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
-			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
+			_modelNumber("modelNumber", 0x00, 2, convDecode_2Bytes, 0, true, false, true),
+			_firmwareVersion("firmwareVersion", 0x02, 1, convDecode_1Byte, 0, true, false, true),
+			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
+			_baudrate("baudrate", 0x04, 1, convEncode_baudrate, convDecode_baudrate, 0, true, false, true),
+			_returnDelayTime("returnDelayTime", 0x05, 1, convEncode_returnDelayTime, convDecode_returnDelayTime, 0, true, false, true),
+			_temperatureLimit("temperatureLimit", 0x0B, 1, convEncode_temperature, convDecode_temperature, 0, true, false, true),
+			_voltageLowLimit("voltageLowLimit", 0x0C, 1, convEncode_voltage, convDecode_voltage, 0, true, false, true),
+			_voltageHighLimit("voltageHighLimit", 0x0D, 1, convEncode_voltage, convDecode_voltage, 0, true, false, true),
+			_maxTorque("maxTorque", 0x0E, 2, convEncode_torque, convDecode_torque, 0, true, false, true),
+			_statusReturnLevel("statusReturnLevel", 0x10, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
+			_alarmShutdown("alarmShutdown", 0x12, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
 			//Parameters configuration
 			_angleLimitCWParameter("angleLimitCWParameter", 0.0),
 			_angleLimitCCWParameter("angleLimitCCWParameter", 0.0),
@@ -176,7 +176,6 @@ class DXL : public Device
             _maxTorque.setMinValue(0.0);
             _maxTorque.setMaxValue(1.0);
             _maxTorque.setStepValue(0.000977517); // 1.0/1023
-
         }
 
 
@@ -394,8 +393,9 @@ class DXL : public Device
          */
         virtual float getGoalPosition() = 0;
 		virtual TimePoint getGoalPositionTs() = 0;
+
         /**
-         * Sets the goal position in degrees
+         * Sets the goal position in degrees. If a duration is specified,
          */
         virtual void setGoalPosition(float goalPosition) = 0;
 
@@ -556,6 +556,16 @@ class DXL : public Device
 		ParameterNumber _angleLimitCCWParameter;
 		ParameterBool _inverted;
 		ParameterNumber _zero;
+
+		//Values used to measure time
+		double t0;
+		double t;
+
+        inline virtual void onSwap() override
+       	{
+        	const TimePoint tp  = getTimePoint();
+        	t = duration_float(tp);
+  		}
 
 		/**
 		 * Inherit.

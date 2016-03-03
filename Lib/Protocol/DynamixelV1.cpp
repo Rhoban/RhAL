@@ -3,8 +3,10 @@
 #include <string.h>
 #include "DynamixelV1.hpp"
 #include <iostream>
+#include <unistd.h>
 
 #define DEBUG 0
+#define WAIT_AFTER_WRITE_US 500 // 250 fails, 500 sounds about right.
 using namespace std;
 
 namespace RhAL
@@ -104,6 +106,8 @@ void DynamixelV1::writeData(id_t id, addr_t address,
     packet.append(address);
     packet.append(data, size);
     sendPacket(packet);
+    // Can't talk to the servos too soon
+    usleep(WAIT_AFTER_WRITE_US);
 }
 
 ResponseState DynamixelV1::readData(id_t id, addr_t address,
@@ -192,7 +196,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
                 unsigned int error=*(response->getParameters()+i*(size+1)); //first the motor error code
                 if(error==0xFF)
                 {
-                    ret.push_back(ResponseNoData); //motor timeout exceeded
+                    ret.push_back(ResponseQuiet); //motor timeout exceeded
                 }
                 else
                 {
@@ -218,7 +222,12 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         else
         {
             delete response;
-            ret.push_back(code);
+            printf("I HEARD NOTHING : %d\n", code);
+            for(size_t i=0;i<ids.size();i++)
+            {
+            	ret.push_back(code);
+            }
+
             return ret;
         }
 
@@ -243,6 +252,8 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
             packet.append(datas[k], size);
         }
         sendPacket(packet);
+        // Can't talk to the servos too soon
+        usleep(WAIT_AFTER_WRITE_US);
     }
 
     /**

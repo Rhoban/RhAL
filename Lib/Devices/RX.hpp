@@ -184,9 +184,9 @@ class RX : public DXL
             DXL(name, id),
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
                 // ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionRx, convDecode_PositionRx, 0, false, false, true),
-			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionRx, convDecode_PositionRx, 0, true, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionRx, convDecode_PositionRx, 0, true, false, true),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
 
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),

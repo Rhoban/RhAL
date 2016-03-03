@@ -288,6 +288,7 @@ class BaseManager : public CallManager
             _currentThreadWaiting2++;
             //Notify the Manager for a new thread waiting
             _managerWaitUser2.notify_all();
+
             //Wait for the end of the second flush() barrier.
             //(during wait, the shared mutex is released)
             _userWaitManager2.wait(lock,
@@ -299,6 +300,7 @@ class BaseManager : public CallManager
             TimePoint pStop = getTimePoint();
             _stats.waitManagerDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
+
             //Release the shared mutex
             lock.unlock();
         }
@@ -352,9 +354,11 @@ class BaseManager : public CallManager
             //The lock is then re acquire. Open the first barrier.
             _isManagerBarrierOpen1 = true;
             //Notify the users waiting on first barrier
+
             _userWaitManager1.notify_all();
             //Swap to apply last read change
             swapRead();
+
             //Call all Devices onSwap() callback
             swapCallBack();
             //Select registers for read and write
@@ -384,8 +388,10 @@ class BaseManager : public CallManager
             lock.unlock();
             //Perform read operation on all batchs
             for (size_t i=0;i<batchsRead.size();i++) {
+
                 readBatch(batchsRead[i]);
             }
+
             //Increment Read counter
             _readCycleCount++;
             //Perform write operation on all batchs
@@ -401,6 +407,7 @@ class BaseManager : public CallManager
                     }
                 }
             }
+
             //Optionally force immediate swap read
             if (isForceSwap) {
                 forceSwap();

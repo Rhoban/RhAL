@@ -415,7 +415,7 @@ class TypedRegister : public Register
             FuncConvEncode<T> funcConvEncode,
             FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
-            bool forceRead = false,
+            bool forceRead = true,
             bool forceWrite = false,
             bool isSlowRegister = false) :
             //Member init

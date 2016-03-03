@@ -153,9 +153,6 @@ class Dynaban64 : public MX64
             _speedCalculationDelay.setMinValue(0);
             _speedCalculationDelay.setMaxValue(6.5);
             _speedCalculationDelay.setStepValue(0.001);
-        	const TimePoint tp  = getTimePoint();
-        	t0 = duration_float(tp);
-        	t = t0;
 
         }
 
@@ -800,11 +797,6 @@ class Dynaban64 : public MX64
 		TypedRegisterBool	_useValuesNow;				//1 CF
 		TypedRegisterInt	_torqueKp;					//2 D0
 		TypedRegisterFloat  _goalTorque;				//4 D2
-
-		//Value used to measure time since last polynomial swap
-		double t0;
-		double t;
-
 };
 
 /**

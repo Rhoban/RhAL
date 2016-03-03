@@ -26,10 +26,10 @@ class PressureSensor : public Device
             Device(name, id),
 
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_pressure1("pressure1", 0x24, 3, convEncode_3Bytes, convDecode_3Bytes, 1, false, false, false),
-			_pressure2("pressure2", 0x27, 3, convEncode_3Bytes, convDecode_3Bytes, 1, false, false, false),
-			_pressure3("pressure3", 0x2A, 3, convEncode_3Bytes, convDecode_3Bytes, 1, false, false, false),
-			_pressure4("pressure4", 0x2D, 3, convEncode_3Bytes, convDecode_3Bytes, 1, false, false, false),
+			_pressure1("pressure1", 0x24, 3, convEncode_3Bytes, convDecode_3Bytes, 1, true, false, false),
+			_pressure2("pressure2", 0x27, 3, convEncode_3Bytes, convDecode_3Bytes, 1, true, false, false),
+			_pressure3("pressure3", 0x2A, 3, convEncode_3Bytes, convDecode_3Bytes, 1, true, false, false),
+			_pressure4("pressure4", 0x2D, 3, convEncode_3Bytes, convDecode_3Bytes, 1, true, false, false),
 			//Parameters configuration
 			_zero1("zero1", 0.0),
 			_zero2("zero2", 0.0),

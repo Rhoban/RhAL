@@ -29,7 +29,6 @@ namespace RhAL
         ResponseBadSize=512,
         ResponseBadProtocol=1024,
         ResponseBadId=2048,
-        ResponseNoData=4096
     };
 
 class Protocol

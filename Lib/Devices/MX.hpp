@@ -122,11 +122,11 @@ class MX : public DXL
             DXL(name, id),
         	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
             // ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
-			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
-			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionMx, convDecode_PositionMx, 0, false, false, true),
-			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
-			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, false, false, true),
-			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0, false, false, true),
+			_angleLimitCW("angleLimitCW", 0x06, 2, convEncode_PositionMx, convDecode_PositionMx, 0, true, false, true),
+			_angleLimitCCW("angleLimitCCW", 0x08, 2, convEncode_PositionMx, convDecode_PositionMx, 0, true, false, true),
+			_alarmLed("alarmLed", 0x11, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
+			_multiTurnOffset("multiTurnOffset", 0x14, 2, convEncode_2Bytes, convDecode_2Bytes, 0, true, false, true),
+			_resolutionDivider("resolutionDivider", 0x16, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
 
 			_torqueEnable("torqueEnable", 0x18, 1, convEncode_Bool, convDecode_Bool, 0),
 			_led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
@@ -307,6 +307,21 @@ class MX : public DXL
 			}
 			_goalPosition.writeValue(value);
 		}
+
+//		/**
+//		 * Sets the goal position in degrees. The goal position will linearly go from the current position to goalPosition in duration seconds.
+//		 */
+//		inline void setGoalPosition(float goalPosition, float duration)
+//		{
+//			if (duration == 0.0) {
+//				setGoalPosition(goalPosition);
+//			} else {
+//				_goalPosition.setSmoothingOngoing(true);
+//				_goalPosition.setGoalValue(goalPosition);
+//				_goalPosition.setRemainingDuration(duration);
+//				_goalPosition.setT0(t);
+//			}
+//		}
 
 		/**
 		 * Sets the goal position in degrees without boundaries ('725' will be sent as is)

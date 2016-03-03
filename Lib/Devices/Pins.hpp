@@ -21,7 +21,7 @@ namespace RhAL {
              */
             inline Pins(const std::string& name, id_t id) :
                 Device(name, id),
-                _pins("pins", 0x24, 1, convEncode_1Byte, convDecode_1Byte, 1)
+                _pins("pins", 0x24, 1, convEncode_1Byte, convDecode_1Byte, 0)
         {
         }
             
