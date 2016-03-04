@@ -116,7 +116,7 @@ class Register
             addr_t addr,
             size_t length,
             unsigned int periodPackedRead = 0,
-            bool isForceRead = false,
+            bool isForceRead = true,
             bool isForceWrite = false,
             bool isSlowRegister = false,
             bool isReadOnly = false) :
@@ -446,7 +446,7 @@ class TypedRegister : public Register
             size_t length,
             FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
-            bool forceRead = false,
+            bool forceRead = true,
             bool forceWrite = false,
             bool isSlowRegister = false) :
             //Member init

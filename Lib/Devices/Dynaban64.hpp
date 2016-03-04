@@ -94,6 +94,7 @@ class Dynaban64 : public MX64
          */
         inline Dynaban64(const std::string& name, id_t id) :
             MX64(name, id),
+        	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
 			_trajPoly1Size("trajPoly1Size", 0x4A, 1, convEncode_1Byte, convDecode_1Byte, 0),
 			_traj1a0("traj1a0", 0x4B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
 			_traj1a1("traj1a1", 0x4F, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
@@ -122,7 +123,7 @@ class Dynaban64 : public MX64
 			_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 			_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 0),
+			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 1),
 			_positionTrackerOn("positionTrackerOn", 0xA4, 1, convEncode_Bool, convDecode_Bool, 0),
 			_debugOn("debugOn", 0xA5, 1, convEncode_Bool, convDecode_Bool, 0),
 			_unused("unused", 0xA6, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
@@ -169,12 +170,28 @@ class Dynaban64 : public MX64
         									float * torqueCoefs, int nbTorqueCoefs,
 											float duration)
         {
+        	int direction = 1;
+        	float zero = 0;
+        	{
+				// Braces for lock_guard
+				std::lock_guard<std::mutex> lock(_mutex);
+				if (_inverted.value == true) {
+					direction = -1;
+				}
+				zero = Deg2Rad(_zero.value) + M_PI;
+        	}
+
         	// Common duration for position and torque trajectory
         	setDuration1(duration);
 
         	float fivePositionCoefs[5];
         	for (int i = 0; i < nbPositionCoefs; i++) {
-        		fivePositionCoefs[i] = positionCoefs[i];
+        		if (i == 0) {
+        			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
+        		} else {
+        			fivePositionCoefs[i] = positionCoefs[i]*direction;
+        		}
+
         	}
         	for (int i = nbPositionCoefs; i < 5; i++) {
         		fivePositionCoefs[i] = 0.0;
@@ -214,7 +231,7 @@ class Dynaban64 : public MX64
 
         inline bool isReadyForNextTrajectory()
         {
-        	if (getCopyNextBuffer()) {
+        	if (getCopyNextBuffer() != 0) {
         		return false;
         	}
         	return true;
@@ -230,13 +247,28 @@ class Dynaban64 : public MX64
 				float * torqueCoefs, int nbTorqueCoefs,
 				float duration)
         {
+        	int direction = 1;
+        	float zero = 0;
+        	{
+				// Braces for lock_guard
+				std::lock_guard<std::mutex> lock(_mutex);
+				if (_inverted.value == true) {
+					direction = -1;
+				}
+				zero = Deg2Rad(_zero.value) + M_PI;
+        	}
 
         	// Common duration for position and torque trajectory
         	setDuration2(duration);
 
         	float fivePositionCoefs[5];
         	for (int i = 0; i < nbPositionCoefs; i++) {
-        		fivePositionCoefs[i] = positionCoefs[i];
+        		if (i == 0) {
+        			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
+        		} else {
+        			fivePositionCoefs[i] = positionCoefs[i]*direction;
+        		}
+
         	}
         	for (int i = nbPositionCoefs; i < 5; i++) {
         		fivePositionCoefs[i] = 0.0;
@@ -262,6 +294,15 @@ class Dynaban64 : public MX64
         	 * The copy next buffer will be reset to 0 once dynaban starts using the new trajectory.
         	 */
         	setCopyNextBuffer(1);
+        }
+
+        /**
+         * Tells the servo top stop once the current trajectory is over. The calls to updateNextTrajectory set the copyNextBuffer flag to 1,
+         * if stopAtTheEndOfTheTrajectory is not called, the servo will swap the buffers one last time, replaying the penultimate trajectory [disastrous].
+         */
+        inline void stopAtTheEndOfTheTrajectory()
+        {
+        	setCopyNextBuffer(0);
         }
 
 
