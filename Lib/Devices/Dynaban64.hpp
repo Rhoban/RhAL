@@ -209,8 +209,8 @@ class Dynaban64 : public MX64
             		fivePositionCoefs[i] = 0.0;
             	}
             	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
-            	setPositionTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-            	setPositionTrajectory1Size(nbTorqueCoefs);
+            	setTorqueTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setTorqueTrajectory1Size(nbTorqueCoefs);
         	}
         	/*
         	 * We set copy next buffer to 0, this means that if nothing is done the movement will stop at the end of the current traj.
@@ -286,8 +286,8 @@ class Dynaban64 : public MX64
             		fivePositionCoefs[i] = 0.0;
             	}
             	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
-            	setPositionTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-            	setPositionTrajectory2Size(nbTorqueCoefs);
+            	setTorqueTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setTorqueTrajectory2Size(nbTorqueCoefs);
         	}
         	/*
         	 * We set copy next buffer to 1, this tells dynaban to use our new trajectory once the last one has finished.
