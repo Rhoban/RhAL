@@ -203,7 +203,7 @@ class Dynaban64 : public MX64
         	//Same goes for the torque coefs, unless there are none
         	if (nbTorqueCoefs != 0) {
             	for (int i = 0; i < nbTorqueCoefs; i++) {
-            		fivePositionCoefs[i] = torqueCoefs[i];
+            		fivePositionCoefs[i] = torqueCoefs[i]*direction;
             	}
             	for (int i = nbTorqueCoefs; i < 5; i++) {
             		fivePositionCoefs[i] = 0.0;
@@ -280,7 +280,7 @@ class Dynaban64 : public MX64
         	//Same goes for the torque coefs, unless there are none
         	if (nbTorqueCoefs != 0) {
             	for (int i = 0; i < nbTorqueCoefs; i++) {
-            		fivePositionCoefs[i] = torqueCoefs[i];
+            		fivePositionCoefs[i] = torqueCoefs[i]*direction;
             	}
             	for (int i = nbTorqueCoefs; i < 5; i++) {
             		fivePositionCoefs[i] = 0.0;
