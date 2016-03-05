@@ -123,7 +123,7 @@ class Dynaban64 : public MX64
 			_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 			_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 1, false),
+			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 0, true),
 			_positionTrackerOn("positionTrackerOn", 0xA4, 1, convEncode_Bool, convDecode_Bool, 0),
 			_debugOn("debugOn", 0xA5, 1, convEncode_Bool, convDecode_Bool, 0),
 			_unused("unused", 0xA6, 2, convEncode_2Bytes, convDecode_2Bytes, 0),

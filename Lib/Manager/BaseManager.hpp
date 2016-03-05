@@ -657,11 +657,11 @@ class BaseManager : public CallManager
                         if (_paramThrowErrorOnRead.value) {
                             throw std::runtime_error(
                                 "BaseManager max tries reached when read error: "
-                                + reg->name);
+                                + reg->name + ", on device id : " + std::to_string(id));
                         } else {
                             std::cerr <<
                                 "BaseManager max tries reached when read error: "
-                                << reg->name << std::endl;
+                                << reg->name << ", on device id : " << id << std::endl;
                             return;
                         }
                     }
