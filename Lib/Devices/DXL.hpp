@@ -144,6 +144,7 @@ class DXL : public Device
                          * ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
 			 */
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
+			// Our current policy is as follows : if the register has an updateFreq of 0, the it should be in forceRead mode. Otherwise, it really shouldn't be in forceRead mode.
 			_modelNumber("modelNumber", 0x00, 2, convDecode_2Bytes, 0, true, false, true),
 			_firmwareVersion("firmwareVersion", 0x02, 1, convDecode_1Byte, 0, true, false, true),
 			_id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true),
