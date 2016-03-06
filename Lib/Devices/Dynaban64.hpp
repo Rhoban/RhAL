@@ -181,24 +181,27 @@ class Dynaban64 : public MX64
 				zero = Deg2Rad(_zero.value) + M_PI;
         	}
 
-        	// Common duration for position and torque trajectory
-        	setDuration1(duration);
-
         	float fivePositionCoefs[5];
-        	for (int i = 0; i < nbPositionCoefs; i++) {
-        		if (i == 0) {
-        			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
-        		} else {
-        			fivePositionCoefs[i] = positionCoefs[i]*direction;
-        		}
 
+        	if (nbPositionCoefs != 0) {
+            	// Common duration for position and torque trajectory
+            	setDuration1(duration);
+
+            	for (int i = 0; i < nbPositionCoefs; i++) {
+            		if (i == 0) {
+            			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
+            		} else {
+            			fivePositionCoefs[i] = positionCoefs[i]*direction;
+            		}
+
+            	}
+            	for (int i = nbPositionCoefs; i < 5; i++) {
+            		fivePositionCoefs[i] = 0.0;
+            	}
+            	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+            	setPositionTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setPositionTrajectory1Size(nbPositionCoefs);
         	}
-        	for (int i = nbPositionCoefs; i < 5; i++) {
-        		fivePositionCoefs[i] = 0.0;
-        	}
-        	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
-        	setPositionTrajectory1(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-        	setPositionTrajectory1Size(nbPositionCoefs);
 
         	//Same goes for the torque coefs, unless there are none
         	if (nbTorqueCoefs != 0) {
@@ -258,24 +261,27 @@ class Dynaban64 : public MX64
 				zero = Deg2Rad(_zero.value) + M_PI;
         	}
 
-        	// Common duration for position and torque trajectory
-        	setDuration2(duration);
-
         	float fivePositionCoefs[5];
-        	for (int i = 0; i < nbPositionCoefs; i++) {
-        		if (i == 0) {
-        			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
-        		} else {
-        			fivePositionCoefs[i] = positionCoefs[i]*direction;
-        		}
 
+        	if (nbPositionCoefs != 0) {
+            	// Common duration for position and torque trajectory
+            	setDuration2(duration);
+
+            	for (int i = 0; i < nbPositionCoefs; i++) {
+            		if (i == 0) {
+            			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
+            		} else {
+            			fivePositionCoefs[i] = positionCoefs[i]*direction;
+            		}
+
+            	}
+            	for (int i = nbPositionCoefs; i < 5; i++) {
+            		fivePositionCoefs[i] = 0.0;
+            	}
+            	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
+            	setPositionTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
+            	setPositionTrajectory2Size(nbPositionCoefs);
         	}
-        	for (int i = nbPositionCoefs; i < 5; i++) {
-        		fivePositionCoefs[i] = 0.0;
-        	}
-        	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
-        	setPositionTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-        	setPositionTrajectory2Size(nbPositionCoefs);
 
         	//Same goes for the torque coefs, unless there are none
         	if (nbTorqueCoefs != 0) {
