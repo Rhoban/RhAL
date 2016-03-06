@@ -479,7 +479,7 @@ class Dynaban64 : public MX64
    		 */
 		inline void setDuration2(const float value)
 		{
-			_duration1.writeValue(value);
+			_duration2.writeValue(value);
 		}
 
 		/**
