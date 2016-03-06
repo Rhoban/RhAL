@@ -136,7 +136,7 @@ class Manager : public AggregateManager<Types...>
                 _managerThread = new std::thread(
                     [this, callback](){
                         while (this->_managerThreadContinue) {
-                            this->flush();
+                            this->flush(false);
                             callback();
                         }
                     });

@@ -326,7 +326,7 @@ class BaseManager : public CallManager
          * - Optionnaly swap Registers (if isForceSwap is true)
          *   to apply immediatly read values.
          */
-        inline void flush(bool isForceSwap = false)
+        inline void flush(bool isForceSwap = true)
         {
             //No cooperative thread if
             //scheduling mode is disabled

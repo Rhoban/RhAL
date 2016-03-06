@@ -140,8 +140,8 @@ class Dynaban64 : public MX64
 			_frozenRamOn("frozenRamOn", 0xCE, 1, convEncode_Bool, convDecode_Bool, 0),
 			_useValuesNow("useValuesNow", 0xCF, 1, convEncode_Bool, convDecode_Bool, 0),
 			_torqueKp("torqueKp", 0xD0, 1, convEncode_2Bytes, convDecode_2Bytes, 0),
-			_goalTorque("goalTorque", 0xD2, 4, convEncode_float, convDecode_float, 0)
-
+			_goalTorque("goalTorque", 0xD2, 4, convEncode_float, convDecode_float, 0),
+			_predictiveCommandPeriod("predictiveCommandPeriod", 0xD6, 1, convEncode_float, convDecode_1Byte, 0)
         {
             _duration1.setMinValue(0.0);
             _duration1.setMaxValue(6.5);
@@ -775,6 +775,7 @@ class Dynaban64 : public MX64
 			Device::registersList().add(&_useValuesNow);
 			Device::registersList().add(&_torqueKp);
 			Device::registersList().add(&_goalTorque);
+			Device::registersList().add(&_predictiveCommandPeriod);
         }
 
         inline virtual void onSwap() override
@@ -838,6 +839,7 @@ class Dynaban64 : public MX64
 		TypedRegisterBool	_useValuesNow;				//1 CF
 		TypedRegisterInt	_torqueKp;					//2 D0
 		TypedRegisterFloat  _goalTorque;				//4 D2
+		TypedRegisterInt 	_predictiveCommandPeriod;	//1 D6
 };
 
 /**
