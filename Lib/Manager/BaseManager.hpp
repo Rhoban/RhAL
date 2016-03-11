@@ -386,14 +386,7 @@ class BaseManager : public CallManager
             _userWaitManager2.notify_all();
             //Unlock the shared mutex
             lock.unlock();
-            //Perform read operation on all batchs
-            for (size_t i=0;i<batchsRead.size();i++) {
 
-                readBatch(batchsRead[i]);
-            }
-
-            //Increment Read counter
-            _readCycleCount++;
             //Perform write operation on all batchs
             bool needsToWait = false;
             for (size_t i=0;i<batchsWrite.size();i++) {
@@ -407,6 +400,15 @@ class BaseManager : public CallManager
                     }
                 }
             }
+
+            //Perform read operation on all batchs
+            for (size_t i=0;i<batchsRead.size();i++) {
+
+                readBatch(batchsRead[i]);
+            }
+
+            //Increment Read counter
+            _readCycleCount++;
 
             //Optionally force immediate swap read
             if (isForceSwap) {

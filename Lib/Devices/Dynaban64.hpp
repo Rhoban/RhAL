@@ -123,7 +123,7 @@ class Dynaban64 : public MX64
 			_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 			_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
-			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 0, true),
+			_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 1, false),
 			_positionTrackerOn("positionTrackerOn", 0xA4, 1, convEncode_Bool, convDecode_Bool, 0),
 			_debugOn("debugOn", 0xA5, 1, convEncode_Bool, convDecode_Bool, 0),
 			_unused("unused", 0xA6, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
@@ -293,7 +293,8 @@ class Dynaban64 : public MX64
             	}
             	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
             	setTorqueTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-            	setTorqueTrajectory2Size(nbTorqueCoefs);
+            	//TODO why do we need to comment this???
+//            	setTorqueTrajectory2Size(nbTorqueCoefs);
         	}
         	/*
         	 * We set copy next buffer to 1, this tells dynaban to use our new trajectory once the last one has finished.
