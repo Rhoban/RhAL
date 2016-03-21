@@ -68,10 +68,13 @@ class Manager : public AggregateManager<Types...>
                 throw std::runtime_error(
                     "Manager load parameters root json malformed");
             }
+            //Load Devices parameters
             this->loadAggregatedJSON(j);
+            //Load Manager parameters (bus/protocol)
             this->_parametersList.loadJSON(j.at("Manager"));
             //Reset low level communication (bus/protocol)
             this->initBus();
+            //Load specific Protocol parameters
             this->protocolParametersList().loadJSON(j.at("Protocol"));
         }
 

@@ -266,6 +266,7 @@ class BaseManager : public CallManager
                 //Do nothing
                 return;
             }
+
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
             //Statistics
@@ -276,6 +277,7 @@ class BaseManager : public CallManager
             _currentThreadWaiting1++;
             //Notify the Manager for a new thread waiting
             _managerWaitUser1.notify_all();
+
             //Wait for the end of the first flush() barrier.
             //(during wait, the shared mutex is released)
             _userWaitManager1.wait(lock,
@@ -321,8 +323,8 @@ class BaseManager : public CallManager
          * - Wake up all cooperative user threads leaving
          *   waitNextFlush().
          *   Here, all threads are running.
-         * - Perform all read operation.
          * - Perform all write operations.
+         * - Perform all read operations.
          * - Optionnaly swap Registers (if isForceSwap is true)
          *   to apply immediatly read values.
          */
@@ -334,13 +336,12 @@ class BaseManager : public CallManager
                 //Do nothing
                 return;
             }
+
             //Wait for all cooperative user thread to have
             //started to wait in waitNextFlush();
             //(during wait, the shared mutex is released)
             //(The lock is taken once condition is reached)
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
-            //Close the second barrier
-            _isManagerBarrierOpen2 = false;
             //Statistics
             _stats.flushCount++;
             TimePoint pStart = getTimePoint();
@@ -351,14 +352,15 @@ class BaseManager : public CallManager
                 [this](){
                     return _currentThreadWaiting1 == _cooperativeThreadCount;
                 });
+
+            //Close the second barrier
+            _isManagerBarrierOpen2 = false;
             //The lock is then re acquire. Open the first barrier.
             _isManagerBarrierOpen1 = true;
             //Notify the users waiting on first barrier
-
             _userWaitManager1.notify_all();
             //Swap to apply last read change
             swapRead();
-
             //Call all Devices onSwap() callback
             swapCallBack();
             //Select registers for read and write
@@ -374,6 +376,7 @@ class BaseManager : public CallManager
                 [this](){
                     return _currentThreadWaiting2 == _cooperativeThreadCount;
                 });
+
             //The lock is re acquired. Open the second barrier.
             _isManagerBarrierOpen2 = true;
             //Lock the first barrier
@@ -382,7 +385,8 @@ class BaseManager : public CallManager
             TimePoint pStop = getTimePoint();
             _stats.waitUsersDuration +=
                 getTimeDuration<TimeDurationMicro>(pStart, pStop);
-            //Notify the users thread waiting on the second barrier
+            //Notify the users thread waiting on the second barrier.
+            //Users are exiting from waitNextFlush().
             _userWaitManager2.notify_all();
             //Unlock the shared mutex
             lock.unlock();
@@ -400,10 +404,16 @@ class BaseManager : public CallManager
                     }
                 }
             }
+            
+            //If a slow register was written, we need
+            //to wait a big amount of time
+            if (needsToWait) {
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(SlowRegisterDelayMs));
+            }
 
             //Perform read operation on all batchs
             for (size_t i=0;i<batchsRead.size();i++) {
-
                 readBatch(batchsRead[i]);
             }
 
@@ -413,12 +423,6 @@ class BaseManager : public CallManager
             //Optionally force immediate swap read
             if (isForceSwap) {
                 forceSwap();
-            }
-            //If a slow register was written, we need
-            //to wait a big amount of time
-            if (needsToWait) {
-                std::this_thread::sleep_for(
-                    std::chrono::milliseconds(SlowRegisterDelayMs));
             }
         }
 
@@ -659,11 +663,13 @@ class BaseManager : public CallManager
                         if (_paramThrowErrorOnRead.value) {
                             throw std::runtime_error(
                                 "BaseManager max tries reached when read error: "
-                                + reg->name + ", on device id : " + std::to_string(id));
+                                + reg->name 
+                                + ", on device id : " + std::to_string(id));
                         } else {
                             std::cerr <<
                                 "BaseManager max tries reached when read error: "
-                                << reg->name << ", on device id : " << id << std::endl;
+                                << reg->name 
+                                << ", on device id : " << id << std::endl;
                             return;
                         }
                     }
