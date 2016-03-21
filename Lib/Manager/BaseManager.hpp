@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <string>
 #include <condition_variable>
+#include <exception>
 #include "Statistics.hpp"
 #include "Device.hpp"
 #include "CallManager.hpp"
@@ -849,8 +850,17 @@ class BaseManager : public CallManager
             }
             //Allocate Bus and Protocol
             if (_paramBusPort.value != "") {
+                try {
                 _bus = new SerialBus(
                     _paramBusPort.value, _paramBusBaudrate.value);
+                } catch (const std::exception& e) {
+                    throw std::runtime_error(
+                        "SerialBus initialization failed:" 
+                        + std::string(" port:") 
+                        + std::string(_paramBusPort.value)
+                        + std::string(" exception: ")
+                        + std::string(e.what()));
+                }
             }
             _protocol = ProtocolFactory(_paramProtocolName.value, *_bus);
             //Check that Protocol implementation name is valid
