@@ -34,6 +34,7 @@ namespace RhAL
 class Protocol
 {
   public:
+
     Protocol(Bus &bus);
 
     /**
@@ -45,7 +46,7 @@ class Protocol
      * Write size bytes of data on device with id at given address
      */
     virtual void writeData(id_t id, addr_t address,
-                           const uint8_t *data, size_t size)=0;
+        const uint8_t *data, size_t size)=0;
 
     /**
      * Reads size bytes of data on device with id at given address
@@ -53,7 +54,7 @@ class Protocol
      * If it fails, false will be returned
      */
     virtual ResponseState readData(id_t id, addr_t address,
-                                   uint8_t *data, size_t size)=0;
+        uint8_t *data, size_t size)=0;
 
     /**
      * These are helpers that internally use writeData and readData
@@ -89,6 +90,7 @@ class Protocol
      * in emergency stop mode.
      */
     virtual void emergencyStop() = 0;
+
     /**
      * Sends a broadcasted signal
      * to exit the emergency state.
@@ -102,7 +104,10 @@ class Protocol
     ParametersList& parametersList();
 
   protected:
-    // Bus used for communication
+
+    /**
+     * Bus used for communication
+     */
     Bus &bus;
 
     /**

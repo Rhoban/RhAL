@@ -121,7 +121,10 @@ namespace RhAL
         /**
          * Parameters
          * timeout: wait for receive packet in secondes
+         * waitAfterWrite: a delay in seconds to wait
+         * after each write
          */
         ParameterNumber _timeout;
+        ParameterNumber _waitAfterWrite;
     };
 }

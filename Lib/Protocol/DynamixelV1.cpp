@@ -4,9 +4,9 @@
 #include "DynamixelV1.hpp"
 #include <iostream>
 #include <unistd.h>
+#include <thread>
 
 #define DEBUG 0
-#define WAIT_AFTER_WRITE_US 500 // 250 fails, 500 sounds about right.
 using namespace std;
 
 namespace RhAL
@@ -92,11 +92,13 @@ uint8_t *DynamixelV1::Packet::getParameters()
     return buffer + 5;
 }
 
-DynamixelV1::DynamixelV1(Bus &bus)
-        : Protocol(bus),
-          _timeout("timeout", 0.01)
+DynamixelV1::DynamixelV1(Bus &bus): 
+    Protocol(bus),
+    _timeout("timeout", 0.01),
+    _waitAfterWrite("waitAfterWrite", 0.0005)
 {
     _parametersList.add(&_timeout);
+    _parametersList.add(&_waitAfterWrite);
 }
 
 void DynamixelV1::writeData(id_t id, addr_t address,
@@ -107,7 +109,7 @@ void DynamixelV1::writeData(id_t id, addr_t address,
     packet.append(data, size);
     sendPacket(packet);
     // Can't talk to the servos too soon
-    usleep(WAIT_AFTER_WRITE_US);
+    std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
 }
 
 ResponseState DynamixelV1::readData(id_t id, addr_t address,
@@ -254,7 +256,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         }
         sendPacket(packet);
         // Can't talk to the servos too soon
-        usleep(WAIT_AFTER_WRITE_US);
+        std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
     }
 
     /**
