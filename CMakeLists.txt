@@ -15,6 +15,12 @@ set(TESTS_SOURCES_DIRECTORY
 set(EXAMPLES_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Examples")
 
+# Build option
+option(BUILD_RHAL_TESTS "Build RhAL Tests" OFF)
+option(BUILD_RHAL_EXAMPLES "Build RhAL Examples" OFF)
+option(BUILD_RHAL_BINDING "Build RhAL RhIO Binding" OFF)
+option(BUILD_RHAL_BINARY "Build RhAL Utility Binary" OFF)
+
 # Enable C++11
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -27,7 +33,6 @@ include_directories(${LIB_SOURCES_DIRECTORY})
 
 # Lib source files
 set(LIB_SOURCES
-    Bindings/RhioBinding.cpp
     Bus/Bus.cpp
     Bus/SerialBus.cpp
     Protocol/Protocol.cpp
@@ -35,13 +40,6 @@ set(LIB_SOURCES
     Protocol/FakeProtocol.cpp
     Protocol/ProtocolFactory.cpp
 )
-# Prefix with lib directory path
-foreach(SOURCE ${LIB_SOURCES})
-    set (PREFIXED_LIB_SOURCES
-        ${PREFIXED_LIB_SOURCES}
-        ${LIB_SOURCES_DIRECTORY}/${SOURCE}
-    )
-endforeach()
 
 # Tests source files
 set(TESTS_SOURCES
@@ -64,22 +62,60 @@ set(EXAMPLES_SOURCES
     test1
 )
 
+# Link Library List
+set (LIBRARIES
+    serial 
+    pthread
+)
+
+# Binding with RhIO
+if (BUILD_RHAL_BINDING)
+    set (TESTS_SOURCES
+        ${TESTS_SOURCES}
+        testBinding
+    )
+    set (LIB_SOURCES
+        ${LIB_SOURCES}
+        Bindings/RhIOBinding.cpp
+    )
+    set (LIBRARIES
+        ${LIBRARIES}
+        RhIO
+        zmq
+    )
+endif (BUILD_RHAL_BINDING)
+
+# Prefix with lib directory path
+foreach(SOURCE ${LIB_SOURCES})
+    set (PREFIXED_LIB_SOURCES
+        ${PREFIXED_LIB_SOURCES}
+        ${LIB_SOURCES_DIRECTORY}/${SOURCE}
+    )
+endforeach()
+
 # Build the RhAL Library
 add_library(LibRhAL ${PREFIXED_LIB_SOURCES})
-target_link_libraries(LibRhAL serial pthread)
+target_link_libraries(LibRhAL ${LIBRARIES})
 
 # Build the utility binary
-add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-target_link_libraries(rhal LibRhAL RhIO zmq)
+if (BUILD_RHAL_BINARY)
+    add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
+    target_link_libraries(rhal LibRhAL)
+endif (BUILD_RHAL_BINARY)
 
 # Build all Tests binary
-foreach(TEST ${TESTS_SOURCES})
-    add_executable(${TEST} "${TESTS_SOURCES_DIRECTORY}/${TEST}.cpp")
-    target_link_libraries(${TEST} LibRhAL)
-endforeach()
+if (BUILD_RHAL_TESTS)
+    foreach(TEST ${TESTS_SOURCES})
+        add_executable(${TEST} "${TESTS_SOURCES_DIRECTORY}/${TEST}.cpp")
+        target_link_libraries(${TEST} LibRhAL)
+    endforeach()
+endif (BUILD_RHAL_TESTS)
 
 # Build all Examples binary
-foreach(EXAMPLE ${EXAMPLES_SOURCES})
-    add_executable(${EXAMPLE} "${EXAMPLES_SOURCES_DIRECTORY}/${EXAMPLE}.cpp")
-    target_link_libraries(${EXAMPLE} LibRhAL)
-endforeach()
+if (BUILD_RHAL_EXAMPLES)
+    foreach(EXAMPLE ${EXAMPLES_SOURCES})
+        add_executable(${EXAMPLE} "${EXAMPLES_SOURCES_DIRECTORY}/${EXAMPLE}.cpp")
+        target_link_libraries(${EXAMPLE} LibRhAL)
+    endforeach()
+endif (BUILD_RHAL_EXAMPLES)
+

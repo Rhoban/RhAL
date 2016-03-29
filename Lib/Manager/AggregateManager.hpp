@@ -200,7 +200,7 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
         {
             return Impl<Types...>::runTypeNumberByName(this, name);
         }
-        inline std::string devTypeNameById(id_t id) const
+        inline virtual std::string devTypeNameById(id_t id) const override
         {
             return Impl<Types...>::runTypeNameById(this, id);
         }

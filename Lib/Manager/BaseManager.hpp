@@ -808,6 +808,7 @@ class BaseManager : public CallManager
          * functions of AggregateManager
          */
         virtual type_t devTypeNumberById(id_t id) const = 0;
+        virtual std::string devTypeNameById(id_t id) const = 0;
         virtual bool isTypeSupported(type_t type) const = 0;
         virtual void devAddByTypeNumber(id_t id, type_t type) = 0;
         virtual nlohmann::json saveJSON() const = 0;
