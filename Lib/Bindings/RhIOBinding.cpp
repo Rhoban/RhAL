@@ -45,7 +45,6 @@ RhIOBinding::RhIOBinding(
     update();
 
     //Start Binding update thread
-    /*
     if (isUpdateThread) {
         _isOver = false;
         _thread = new std::thread([this](){
@@ -56,7 +55,6 @@ RhIOBinding::RhIOBinding(
             }
         });
     }
-    */
 }
 
 RhIOBinding::~RhIOBinding()
