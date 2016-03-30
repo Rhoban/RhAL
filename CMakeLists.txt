@@ -98,12 +98,6 @@ endforeach()
 add_library(LibRhAL ${PREFIXED_LIB_SOURCES})
 target_link_libraries(LibRhAL ${LIBRARIES})
 
-# Build the utility binary
-if (BUILD_RHAL_BINARY)
-    add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-    target_link_libraries(rhal LibRhAL)
-endif (BUILD_RHAL_BINARY)
-
 # Build all Tests binary
 if (BUILD_RHAL_TESTS)
     foreach(TEST ${TESTS_SOURCES})
@@ -119,4 +113,11 @@ if (BUILD_RHAL_EXAMPLES)
         target_link_libraries(${EXAMPLE} LibRhAL)
     endforeach()
 endif (BUILD_RHAL_EXAMPLES)
+
+# Build the utility binary
+if (BUILD_RHAL_BINARY)
+    set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
+    target_link_libraries(rhal LibRhAL)
+endif (BUILD_RHAL_BINARY)
 
