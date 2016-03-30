@@ -144,9 +144,17 @@ void RhIOBinding::update()
     if (!_node->childExist("Manager")) {
         _node->newChild("Manager");
     }
-    RhIO::IONode* parametersNode = &(_node->child("Manager"));
+    RhIO::IONode* parametersManagerNode = &(_node->child("Manager"));
     //Update all parameters
-    updateParameters(_manager->parametersList(), parametersNode);
+    updateParameters(_manager->parametersList(), parametersManagerNode);
+    
+    //Create a RhIO node for Protocol parameters
+    if (!_node->childExist("Protocol")) {
+        _node->newChild("Protocol");
+    }
+    RhIO::IONode* parametersProtocolNode = &(_node->child("Protocol"));
+    //Update all parameters
+    updateParameters(_manager->protocolParametersList(), parametersProtocolNode);
 }
         
 void RhIOBinding::updateParameters(

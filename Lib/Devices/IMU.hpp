@@ -47,20 +47,20 @@ class IMU : public Device
             Device(name, id),
 
 			//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-			_yaw("yaw", 0x24, 2, convEncode_2Bytes, convDecode_100th_degrees, 1),
-			_pitch("pitch", 0x26, 2, convEncode_2Bytes, convDecode_100th_degrees, 1),
-			_roll("roll", 0x28, 2, convEncode_2Bytes, convDecode_100th_degrees, 1),
-			_accX("accX", 0x2A, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_accY("accY", 0x2C, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_accZ("accZ", 0x2E, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_gyroX("gyroX", 0x30, 2, convEncode_2Bytes, convDecode_gyro, 1),
-			_gyroY("gyroY", 0x32, 2, convEncode_2Bytes, convDecode_gyro, 1),
-			_gyroZ("gyroZ", 0x34, 2, convEncode_2Bytes, convDecode_gyro, 1),
-			_gyroYaw("gyroYaw", 0x36, 2, convEncode_2Bytes, convDecode_100th_degrees, 1),
-			_magnX("magnX", 0x38, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_magnY("magnY", 0x3A, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_magnZ("magnZ", 0x3C, 2, convEncode_2Bytes, convDecode_2Bytes, 1),
-			_magnAzimuth("magnAzimuth", 0x3E, 2, convEncode_2Bytes, convDecode_100th_degrees, 1)
+			_yaw("yaw", 0x24, 2, convEncode_2Bytes, convDecode_100th_degrees, 1, false),
+			_pitch("pitch", 0x26, 2, convEncode_2Bytes, convDecode_100th_degrees, 1, false),
+			_roll("roll", 0x28, 2, convEncode_2Bytes, convDecode_100th_degrees, 1, false),
+			_accX("accX", 0x2A, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_accY("accY", 0x2C, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_accZ("accZ", 0x2E, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_gyroX("gyroX", 0x30, 2, convEncode_2Bytes, convDecode_gyro, 1, false),
+			_gyroY("gyroY", 0x32, 2, convEncode_2Bytes, convDecode_gyro, 1, false),
+			_gyroZ("gyroZ", 0x34, 2, convEncode_2Bytes, convDecode_gyro, 1, false),
+			_gyroYaw("gyroYaw", 0x36, 2, convEncode_2Bytes, convDecode_100th_degrees, 1, false),
+			_magnX("magnX", 0x38, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_magnY("magnY", 0x3A, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_magnZ("magnZ", 0x3C, 2, convEncode_2Bytes, convDecode_2Bytes, 1, false),
+			_magnAzimuth("magnAzimuth", 0x3E, 2, convEncode_2Bytes, convDecode_100th_degrees, 1, false)
         {
 		}
 
