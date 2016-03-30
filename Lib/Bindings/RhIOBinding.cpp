@@ -87,10 +87,10 @@ void RhIOBinding::update()
             if (deviceNode->getValueType(reg.first) == RhIO::NoValue) {
                 deviceNode->newBool(reg.first);
                 deviceNode->setBool(reg.first, reg.second->readValue().value);
-                deviceNode->setCallbackBool(reg.first, [&reg](bool newValue) {
+                deviceNode->setCallbackBool(reg.first, [reg](bool newValue) {
                     reg.second->writeValue(newValue, true);
                 });
-                auto callback = [&deviceNode, &reg](bool newValue) {
+                auto callback = [deviceNode, reg](bool newValue) {
                     deviceNode->setBool(reg.first, newValue, true);
                 };
                 reg.second->setCallbackRead(callback);
@@ -104,10 +104,10 @@ void RhIOBinding::update()
             if (deviceNode->getValueType(reg.first) == RhIO::NoValue) {
                 deviceNode->newInt(reg.first);
                 deviceNode->setInt(reg.first, reg.second->readValue().value);
-                deviceNode->setCallbackInt(reg.first, [&reg](long newValue) {
+                deviceNode->setCallbackInt(reg.first, [reg](long newValue) {
                     reg.second->writeValue(newValue, true);
                 });
-                auto callback = [&deviceNode, &reg](long newValue) {
+                auto callback = [deviceNode, reg](long newValue) {
                     deviceNode->setInt(reg.first, newValue, true);
                 };
                 reg.second->setCallbackRead(callback);
@@ -158,7 +158,7 @@ void RhIOBinding::updateParameters(
         if (node->getValueType(param.first) == RhIO::NoValue) {
             node->newBool(param.first);
             node->setBool(param.first, param.second->value);
-            node->setCallbackBool(param.first, [&param](bool newValue) {
+            node->setCallbackBool(param.first, [param](bool newValue) {
                 param.second->value = newValue;
             });
         } else {
@@ -170,7 +170,7 @@ void RhIOBinding::updateParameters(
         if (node->getValueType(param.first) == RhIO::NoValue) {
             node->newFloat(param.first);
             node->setFloat(param.first, param.second->value);
-            node->setCallbackFloat(param.first, [&param](double newValue) {
+            node->setCallbackFloat(param.first, [param](double newValue) {
                 param.second->value = newValue;
             });
         } else {
@@ -182,7 +182,7 @@ void RhIOBinding::updateParameters(
         if (node->getValueType(param.first) == RhIO::NoValue) {
             node->newStr(param.first);
             node->setStr(param.first, param.second->value);
-            node->setCallbackStr(param.first, [&param](std::string newValue) {
+            node->setCallbackStr(param.first, [param](std::string newValue) {
                 param.second->value = newValue;
             });
         } else {
