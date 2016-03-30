@@ -10,6 +10,8 @@ static Manager manager;
 
 void userThread()
 {
+    manager.enableCooperativeThread();
+
     //Get references on derived Devices
     RhAL::ExampleDevice1& dev2 = manager.dev<RhAL::ExampleDevice1>(2);
     RhAL::ExampleDevice1& dev3 = manager.dev<RhAL::ExampleDevice1>(3);
@@ -28,7 +30,7 @@ void userThread()
         manager.waitNextFlush();
     }
 
-    manager.removeCooperativeThread();
+    manager.disableCooperativeThread();
 }
 
 int main()
@@ -76,8 +78,6 @@ int main()
     std::cout << std::endl;
 
     //Declare user threads
-    manager.addCooperativeThread();
-    manager.addCooperativeThread();
     std::thread t1(userThread);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::thread t2(userThread);
@@ -87,10 +87,11 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(4*2000));
-    manager.stopManagerThread();
 
     t1.join();
     t2.join();
+    
+    manager.stopManagerThread();
 
     //Display Manager statistics
     manager.getStatistics().print();

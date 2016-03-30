@@ -37,6 +37,7 @@ struct Statistics
     //waitNextFlush(), forceRead() and forceWrite()
     unsigned long flushCount;
     unsigned long waitNextFlushCount;
+    unsigned long waitNextFlushCooperativeCount;
     unsigned long forceReadCount;
     unsigned long forceWriteCount;
     //Total time duration spent during
@@ -78,6 +79,7 @@ struct Statistics
         syncWriteDuration(0),
         flushCount(0),
         waitNextFlushCount(0),
+        waitNextFlushCooperativeCount(0),
         forceReadCount(0),
         forceWriteCount(0),
         waitUsersDuration(0),
@@ -112,7 +114,8 @@ struct Statistics
         os << "SyncRead() bytes length: " << syncReadLength << std::endl;
         os << "SyncWrite() bytes length: " << syncWriteLength << std::endl;
         os << "Flush() calls: " << flushCount << std::endl;
-        os << "WaitNextFlush() calls: " << waitNextFlushCount << std::endl;
+        os << "WaitNextFlush() cooperative calls: " << waitNextFlushCooperativeCount << std::endl;
+        os << "WaitNextFlush() not cooperative calls: " << waitNextFlushCount << std::endl;
         os << "ForceRead() calls: " << forceReadCount << std::endl;
         os << "ForceWrite() calls: " << forceWriteCount << std::endl;
         os << "EmergencyStop() calls: " << emergencyCount << std::endl;

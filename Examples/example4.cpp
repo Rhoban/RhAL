@@ -13,22 +13,23 @@ int main()
 
     manager.setScheduleMode(true);
 
-    manager.addCooperativeThread();
     manager.startManagerThread([](){
         std::cout << "Manager thread wait start" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         std::cout << "Manager thread wait end" << std::endl;
     });
-
+    
+    manager.enableCooperativeThread();
     for (size_t i=0;i<10;i++) {
         manager.waitNextFlush();
         std::cout << "User thread wait start" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         std::cout << "User thread wait end" << std::endl;
     }
-    manager.removeCooperativeThread();
-    manager.getStatistics().print();
+    manager.disableCooperativeThread();
+
     manager.stopManagerThread();
+    manager.getStatistics().print();
 
     return 0;
 }

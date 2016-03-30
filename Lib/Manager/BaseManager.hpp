@@ -9,6 +9,7 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <condition_variable>
 #include <exception>
@@ -60,9 +61,11 @@ class BaseManager : public CallManager
             _userWaitManager2(),
             _isManagerBarrierOpen1(false),
             _isManagerBarrierOpen2(false),
-            _cooperativeThreadCount(0),
+            _cooperativeThread(0),
             _currentThreadWaiting1(0),
             _currentThreadWaiting2(0),
+            _currentThreadCooperativeWaiting1(0),
+            _currentThreadCooperativeWaiting2(0),
             _stats(),
             _bus(nullptr),
             _protocol(nullptr),
@@ -197,25 +200,37 @@ class BaseManager : public CallManager
         }
 
         /**
-         * Add or remove one cooperative
-         * thread. At the beginning of each
-         * main flush() operation, others
+         * Enable or disable the calling thread as 
+         * cooperative thread. At the beginning of each
+         * main flush() calls, all others
          * declared cooperative threads are waited
          * until all have called waitNextFlush() method.
          */
-        inline void addCooperativeThread()
+        inline void enableCooperativeThread()
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
-            _cooperativeThreadCount++;
-        }
-        inline void removeCooperativeThread()
-        {
-            std::lock_guard<std::mutex> lock(CallManager::_mutex);
-            if (_cooperativeThreadCount == 0) {
+            std::thread::id id = std::this_thread::get_id();
+            if (_cooperativeThread.count(id)) {
                 throw std::logic_error(
-                    "BaseManager cooperative threads add/remove mismatch");
+                    "BaseManager enable already active cooperative thread");
+            } else {
+                _cooperativeThread.insert(id);
             }
-            _cooperativeThreadCount--;
+        }
+        inline void disableCooperativeThread()
+        {
+            std::lock_guard<std::mutex> lock(CallManager::_mutex);
+            std::thread::id id = std::this_thread::get_id();
+            if (!_cooperativeThread.count(id)) {
+                throw std::logic_error(
+                    "BaseManager disable not active cooperative thread");
+            } else {
+                _cooperativeThread.erase(id);
+                //Notify up the Manager which may be
+                //waiting at the first barrier for
+                //the disabled coorepative thread
+                _managerWaitUser1.notify_all();
+            }
         }
 
         /**
@@ -271,24 +286,64 @@ class BaseManager : public CallManager
             //Lock the shared mutex
             std::unique_lock<std::mutex> lock(CallManager::_mutex);
             //Statistics
-            _stats.waitNextFlushCount++;
             TimePoint pStart = getTimePoint();
+
+            //Retrieve cooperative state
+            std::thread::id id = std::this_thread::get_id();
+            bool isCooperative = (_cooperativeThread.count(id) != 0);
+
             //The lock is now acquired
-            //Increment current user in waitNextFlush()
-            _currentThreadWaiting1++;
-            //Notify the Manager for a new thread waiting
-            _managerWaitUser1.notify_all();
+            if (isCooperative) {
+                //Statistics
+                _stats.waitNextFlushCooperativeCount++;
+                //Increment current cooperative 
+                //user in waitNextFlush()
+                _currentThreadCooperativeWaiting1++;
+                //Notify the Manager for a 
+                //new thread waiting
+                _managerWaitUser1.notify_all();
+            } else {
+                //Statistics
+                _stats.waitNextFlushCount++;
+                if (_isManagerBarrierOpen1) {
+                    //If the thread is not cooperative and if
+                    //the first barrier is already open, a flush
+                    //operation has already begun. To be sure that
+                    //registers are selected, the next Manager cycle
+                    //is waited.
+                    //Wait for barrier 2 opens force to wait for
+                    //the next flush() call.
+                    _userWaitManager2.wait(lock,
+                        [this](){return _isManagerBarrierOpen2;});
+                } 
+                if (_isManagerBarrierOpen1) {
+                    throw std::logic_error(
+                        "BaseManager this should never happen waitNextFlush()");
+                }
+
+                //Increment current user 
+                //in waitNextFlush()
+                _currentThreadWaiting1++;
+            }
 
             //Wait for the end of the first flush() barrier.
             //(during wait, the shared mutex is released)
             _userWaitManager1.wait(lock,
                 [this](){return _isManagerBarrierOpen1;});
-            //The lock is re acquire. Decrease the number
-            //of waiting thread.
-            _currentThreadWaiting1--;
-            //Increment the number of waiting thread for the 
-            //second barrier
-            _currentThreadWaiting2++;
+
+            //The lock is re acquire 
+            if (isCooperative) {
+                //Decrease the number
+                //of waiting cooperative thread.
+                _currentThreadCooperativeWaiting1--;
+                //Increment the number of cooperative 
+                //waiting thread for the second barrier
+                _currentThreadCooperativeWaiting2++;
+            } else {
+                //Increment the number of waiting thread for the 
+                //second barrier
+                _currentThreadWaiting2++;
+            }
             //Notify the Manager for a new thread waiting
             _managerWaitUser2.notify_all();
 
@@ -296,9 +351,21 @@ class BaseManager : public CallManager
             //(during wait, the shared mutex is released)
             _userWaitManager2.wait(lock,
                 [this](){return _isManagerBarrierOpen2;});
-            //The lock is re acquire. Decrease the number
-            //of waiting thread.
-            _currentThreadWaiting2--;
+
+            //The lock is re acquire
+            if (isCooperative) {
+                //Decrease the number
+                //of waiting thread.
+                _currentThreadCooperativeWaiting2--;
+            } else {
+                //Decrease the number
+                //of waiting thread.
+                _currentThreadWaiting1--;
+                //Decrease the number
+                //of waiting thread.
+                _currentThreadWaiting2--;
+            }
+
             //Statistics
             TimePoint pStop = getTimePoint();
             _stats.waitManagerDuration +=
@@ -338,6 +405,12 @@ class BaseManager : public CallManager
                 return;
             }
 
+            //Check if the Manager is defined as cooperative thread
+            if (_cooperativeThread.count(std::this_thread::get_id())) {
+                throw std::logic_error(
+                    "BaseManager Manager thread declared as cooperative");
+            }
+
             //Wait for all cooperative user thread to have
             //started to wait in waitNextFlush();
             //(during wait, the shared mutex is released)
@@ -351,7 +424,8 @@ class BaseManager : public CallManager
             //(During wait, the lock is release)
             _managerWaitUser1.wait(lock,
                 [this](){
-                    return _currentThreadWaiting1 == _cooperativeThreadCount;
+                    return (_currentThreadCooperativeWaiting1 
+                        == _cooperativeThread.size());
                 });
 
             //Close the second barrier
@@ -370,18 +444,21 @@ class BaseManager : public CallManager
                 computeBatchedRegisters(true);
             std::vector<BatchedRegisters> batchsWrite =
                 computeBatchedRegisters(false);
+        
             //Wait for all user thread to have reach the 
             //second barrier
             //(During wait, the lock is release)
             _managerWaitUser2.wait(lock,
                 [this](){
-                    return _currentThreadWaiting2 == _cooperativeThreadCount;
+                    return 
+                        _currentThreadCooperativeWaiting2 == _cooperativeThread.size() &&
+                        _currentThreadWaiting2 == _currentThreadWaiting1;
                 });
 
-            //The lock is re acquired. Open the second barrier.
-            _isManagerBarrierOpen2 = true;
-            //Lock the first barrier
+            //The lock is re acquired. Lock the first barrier
             _isManagerBarrierOpen1 = false;
+            //Open the second barrier.
+            _isManagerBarrierOpen2 = true;
             //Statistics
             TimePoint pStop = getTimePoint();
             _stats.waitUsersDuration +=
@@ -935,21 +1012,22 @@ class BaseManager : public CallManager
         bool _isManagerBarrierOpen2;
 
         /**
-         * The number of current user cooperative
-         * threads waited for their cycle end
-         * (waitNextFlush()) at the beginning
-         * of flush().
+         * The set of thread id  currently
+         * declared as cooperative to be waited
+         * in flush() by the manager.
          */
-        unsigned int _cooperativeThreadCount;
+        std::unordered_set<std::thread::id> _cooperativeThread;
 
         /**
          * The number of user cooperative
-         * threads currently waiting in
-         * waitNextFlush() methods for the
-         * first and the second barrier.
+         * and not cooperative threads currently 
+         * waiting in waitNextFlush() methods 
+         * for the first and the second barrier.
          */
         unsigned int _currentThreadWaiting1;
         unsigned int _currentThreadWaiting2;
+        unsigned int _currentThreadCooperativeWaiting1;
+        unsigned int _currentThreadCooperativeWaiting2;
 
         /**
          * Manager Statistics container
