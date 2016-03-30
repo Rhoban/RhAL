@@ -6,7 +6,7 @@
         "cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_RHAL_BINDING=ON ..",
         "make"
     ],
-    "binaries": "build",
+    "binaries": "build/bin",
     "libraries": "build",
     "includes": "Lib",
     "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap", "rhoban/rhio"]
