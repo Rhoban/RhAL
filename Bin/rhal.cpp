@@ -26,7 +26,8 @@ int main(int argc, char** argv)
         << std::endl;
     manager.setProtocolConfig(port.getValue(), speed.getValue(), protocol.getValue());
     // Schedule mode
-    manager.setScheduleMode(false);
+    manager.setScheduleMode(true);
+
     // Try to read config file
     if (config.getValue() != "") {
         std::cout << "Reading RhAL configuration: " 
@@ -37,6 +38,10 @@ int main(int argc, char** argv)
     // Scanning 
     std::cout << "Scanning the bus..." << std::endl;
     manager.scan();
+
+    // Start Manager
+    std::cout << "Starting Manager Thread" << std::endl;
+    manager.startManagerThread();
 
     // Running the binding
     std::cout << "Starting RhIO binding" << std::endl;
