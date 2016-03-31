@@ -77,7 +77,9 @@ class RhIOBinding
             std::vector<std::string> argv);
         std::string cmdStats(
             std::vector<std::string> argv);
-        std::string cmdForceDevRead(
+        std::string cmdReadDev(
+            std::vector<std::string> argv);
+        std::string cmdReadReg(
             std::vector<std::string> argv);
         std::string cmdPing(
             std::vector<std::string> argv);
@@ -92,6 +94,8 @@ class RhIOBinding
         std::string cmdEmergency(
             std::vector<std::string> argv);
         std::string cmdEmergencyExit(
+            std::vector<std::string> argv);
+        std::string cmdInit(
             std::vector<std::string> argv);
 };
 

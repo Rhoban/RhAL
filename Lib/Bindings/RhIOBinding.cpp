@@ -3,6 +3,7 @@
 #include "Bindings/RhIOBinding.hpp"
 #include "Manager/BaseManager.hpp"
 #include "Manager/Device.hpp"
+#include "Devices/DXL.hpp"
 
 namespace RhAL {
 
@@ -24,8 +25,10 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdScan, this, std::placeholders::_1));
     _node->newCommand("rhalStats", "Display RhAL statistics", 
         std::bind(&RhIOBinding::cmdStats, this, std::placeholders::_1));
-    _node->newCommand("rhalForceDevRead", "Re-read all registers of given device name", 
-        std::bind(&RhIOBinding::cmdForceDevRead, this, std::placeholders::_1));
+    _node->newCommand("rhalReadDev", "Re-read all registers of given device name", 
+        std::bind(&RhIOBinding::cmdReadDev, this, std::placeholders::_1));
+    _node->newCommand("rhalReadReg", "Re-read in the given device name the given register name", 
+        std::bind(&RhIOBinding::cmdReadReg, this, std::placeholders::_1));
     _node->newCommand("rhalPing", "Ping given device name or id", 
         std::bind(&RhIOBinding::cmdPing, this, std::placeholders::_1));
     _node->newCommand("rhalStatus", "Display RhAL devices status", 
@@ -40,6 +43,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdEmergency, this, std::placeholders::_1));
     _node->newCommand("rhalExitEmergency", "Exit emergency state", 
         std::bind(&RhIOBinding::cmdEmergencyExit, this, std::placeholders::_1));
+    _node->newCommand("rhalInit", "Enable all servos in zero position", 
+        std::bind(&RhIOBinding::cmdInit, this, std::placeholders::_1));
 
     //First RhIO/RhAL synchronisation
     update();
@@ -219,7 +224,7 @@ std::string RhIOBinding::cmdStats(
     return oss.str();
 }
             
-std::string RhIOBinding::cmdForceDevRead(
+std::string RhIOBinding::cmdReadDev(
     std::vector<std::string> argv)
 {
     if (argv.size() != 1) {
@@ -235,6 +240,24 @@ std::string RhIOBinding::cmdForceDevRead(
     update();
 
     return "Read all registers from device: " + argv[0];
+}
+
+std::string RhIOBinding::cmdReadReg(
+    std::vector<std::string> argv)
+{
+    if (argv.size() != 2) {
+        return "Invalid Argument. Usage:\nforceDevRead [dev_name] [reg_name]";
+    }
+    if (!_manager->devExists(argv[0])) {
+        return "Unknown device name: " + argv[0];
+    }
+    if (!_manager->devByName(argv[0]).registersList().exists(argv[1])) {
+        return "Unknown parameter name: " + argv[0];
+    }
+    _manager->devByName(argv[0]).registersList().reg(argv[1]).forceRead();
+    update();
+
+    return "Read one register from device: " + argv[0] + ":" + argv[1];
 }
 
 std::string RhIOBinding::cmdPing(
@@ -346,6 +369,22 @@ std::string RhIOBinding::cmdEmergencyExit(
     (void)argv;
     _manager->exitEmergencyState();
     return "Exit Emergency State";
+}
+        
+std::string RhIOBinding::cmdInit(
+    std::vector<std::string> argv)
+{
+    (void)argv;
+    auto allDevices = _manager->devContainer();
+    //Iterate over all DXL Devices
+    for (auto& dev : allDevices) {
+        DXL* pt = dynamic_cast<DXL*>(dev.second);
+        if (pt != nullptr) {
+            pt->setGoalPositionRad(0.0);
+        }
+    }
+
+    return "Init all servos";
 }
 
 }
