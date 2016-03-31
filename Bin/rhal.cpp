@@ -3,7 +3,6 @@
 #include <iostream>
 #include <tclap/CmdLine.h>
 #include "RhAL.hpp"
-#include "Bindings/RhIOBinding.hpp"
 
 int main(int argc, char** argv)
 {

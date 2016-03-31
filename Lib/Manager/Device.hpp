@@ -3,14 +3,15 @@
 #include <string>
 #include <mutex>
 #include "types.h"
+#include "utils.h"
 #include "ConvertionUtils.h"
-#include "Parameter.hpp"
 #include "ParametersList.hpp"
-#include "Register.hpp"
 #include "RegistersList.hpp"
-#include "CallManager.hpp"
 
 namespace RhAL {
+
+//Forward declaration
+class CallManager;
 
 /**
  * Device
@@ -31,28 +32,12 @@ class Device
          * Initialization with 
          * device name and id
          */
-        inline Device(const std::string& name, id_t id) :
-            _mutex(),
-            _registersList(id),
-            _parametersList(),
-            _name(name),
-            _id(id),
-            _manager(nullptr),
-            _isPresent(false)
-        {
-            if (id < IdDevBegin || id > IdDevEnd) {
-                throw std::logic_error(
-                    "Device id is outside static range: " 
-                    + name);
-            }
-        }
+        Device(const std::string& name, id_t id);
 
         /**
          * Virtual destructor
          */
-        inline virtual ~Device()
-        {
-        }
+        virtual ~Device();
 
         /**
          * Copy constructor and 
@@ -64,53 +49,29 @@ class Device
         /**
          * Set the Manager pointer
          */
-        inline void setManager(CallManager* manager)
-        {
-            if (manager == nullptr) {
-                throw std::logic_error(
-                    "Device null manager pointer: "
-                    + _name);
-            }
-            _manager = manager;
-            _registersList.setManager(_manager);
-        }
+        void setManager(CallManager* manager);
 
         /**
          * Run derived class registers and
          * parameters initialization
          */
-        inline void init()
-        {
-            if (_manager == nullptr) {
-                throw std::logic_error(
-                    "Device null manager pointer: "
-                    + _name);
-            }
-            //Call 
-            onInit();
-        }
+        void init();
 
         /**
          * Return the device name
          */
-        inline const std::string& name() const
-        {
-            return _name;
-        }
+        const std::string& name() const;
 
         /**
          * Return the device id
          */
-        inline id_t id() const
-        {
-            return _id;
-        }
+        id_t id() const;
 
         /**
          * Trigger specific implementation 
          * to enforce specific Device configuration
          */
-        inline virtual void setConfig()
+        virtual inline void setConfig()
         {
             //Empty default
         }
@@ -120,11 +81,7 @@ class Device
          * been see and is supposed 
          * enabled currently on the bus
          */
-        inline bool isPresent() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _isPresent;
-        }
+        bool isPresent() const;
 
         /**
          * If true, the last read operations
@@ -132,43 +89,23 @@ class Device
          * warning flags (overload, overheat,
          * badvoltage, alert).
          */
-        inline bool isWarning() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _isWarning;
-        }
+        bool isWarning() const;
 
         /**
          * If true, the last read operation
          * with the Device set at leat one
          * non quiet error flags
          */
-        inline bool isError() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _isError;
-        }
+        bool isError() const;
 
         /**
          * Read/Write access to Registers and
          * Parameters list
          */
-        const RegistersList& registersList() const
-        {
-            return _registersList;
-        }
-        RegistersList& registersList()
-        {
-            return _registersList;
-        }
-        const ParametersList& parametersList() const
-        {
-            return _parametersList;
-        }
-        ParametersList& parametersList()
-        {
-            return _parametersList;
-        }
+        const RegistersList& registersList() const;
+        RegistersList& registersList();
+        const ParametersList& parametersList() const;
+        ParametersList& parametersList();
         
     protected:
 
@@ -181,21 +118,9 @@ class Device
          * Set Device isPresent and warning/error status.
          * (Used for friend Manager access)
          */
-        inline void setPresent(bool isPresent)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isPresent = isPresent;
-        }
-        inline void setWarning(bool isWarning)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isWarning = isWarning;
-        }
-        inline void setError(bool isError)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isError = isError;
-        }
+        void setPresent(bool isPresent);
+        void setWarning(bool isWarning);
+        void setError(bool isError);
 
         /**
          * Call during device initialization.
@@ -209,7 +134,7 @@ class Device
          * called at the begin of each
          * flush() after swapRead()
          */
-        virtual inline void onSwap()
+        virtual void onSwap()
         {
             //Empty default
         }

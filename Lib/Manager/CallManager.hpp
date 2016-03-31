@@ -3,6 +3,7 @@
 #include <string>
 #include <mutex>
 #include "types.h"
+#include "utils.h"
 #include "Parameter.hpp"
 
 namespace RhAL {
@@ -24,17 +25,12 @@ class CallManager
         /**
          * Initialization
          */
-        CallManager() :
-            _paramScheduleMode("scheduleMode", true)
-        {
-        }
+        CallManager();
 
         /**
          * Virtual destructor
          */
-        inline virtual ~CallManager()
-        {
-        }
+        virtual ~CallManager();
 
         /**
          * Call when a register is declared 
@@ -62,11 +58,7 @@ class CallManager
          * If true, all Registers Read and Write 
          * operation are immediatly send on the bus.
          */
-        inline bool isScheduleMode() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _paramScheduleMode.value;
-        }
+        bool isScheduleMode() const;
 
         /**
          * Set current Manager schedule mode.
@@ -77,11 +69,7 @@ class CallManager
          * are immediately done on the bus.
          * flush() do nothing.
          */
-        inline void setScheduleMode(bool mode)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _paramScheduleMode.value = mode;
-        }
+        void setScheduleMode(bool mode);
 
     protected:
 

@@ -512,7 +512,7 @@ void test() {
 					RhAL::MX * devMx = (RhAL::MX*) dev;
 					auto ledRegister = devMx->registersList().containerBool().at("led");
 					auto value = ledRegister->readValue();
-					bool led = value.value;
+					//bool led = value.value;
 
 					std::cout << "led = " << value.value << ", error = " << value.isError << std::endl;
 //					led = !led;

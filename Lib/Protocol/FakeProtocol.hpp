@@ -5,7 +5,9 @@
 namespace RhAL {
 
 /**
+ * FakeProtocol
  *
+ * Simple testing mock protocol
  */
 class FakeProtocol : public Protocol
 {

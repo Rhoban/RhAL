@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "utils.h"
 #include "Manager/Aggregation.h"
 #include "Manager/Statistics.hpp"
 #include "Manager/CallManager.hpp"
@@ -37,25 +38,33 @@
 
 /**
  * Define classic Manager typedef
- * with all implemented Device
+ * with all implemented Devices
  */
 namespace RhAL {
 
-typedef Manager<
-    MX106,
-    //MX64, // MX64 is so has been
-    MX28,
-    MX12,
-    RX64,
-    RX28,
-    AX18,
-    AX12,
-    IMU,
-    PressureSensor,
-    Pins,
-    Dynaban64,
-    RX24
-> StandardManager;
+#define RHAL_STANDARD_MANAGER_TYPES \
+    AX12,                           \
+    AX18,                           \
+    RX24,                           \
+    RX28,                           \
+    RX64,                           \
+    MX12,                           \
+    MX28,                           \
+    Dynaban64,                      \
+    MX106,                          \
+    IMU,                            \
+    PressureSensor,                 \
+    Pins                            \
+
+/**
+ * StandardManager typedef
+ */
+typedef Manager<RHAL_STANDARD_MANAGER_TYPES> StandardManager;
+
+/**
+ * Template explicit instatiation
+ */
+extern template class Manager<RHAL_STANDARD_MANAGER_TYPES>;
 
 }
 

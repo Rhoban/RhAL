@@ -3,9 +3,11 @@
 #include <unordered_map>
 #include <stdexcept>
 #include "Register.hpp"
-#include "CallManager.hpp"
 
 namespace RhAL {
+
+//Forward declaration
+class CallManager;
 
 /**
  * RegistersList
@@ -33,34 +35,18 @@ class RegistersList
         /**
          * Initialization with associated Device id
          */
-        inline RegistersList(id_t id) :
-            _id(id),
-            _registers(),
-            _registersBool(),
-            _registersInt(),
-            _registersFloat(),
-            _manager(nullptr),
-            _memorySpaceRead{0},
-            _memorySpaceWrite{0}
-        {
-        }
+        RegistersList(id_t id);
 
         /**
          * Set Manager instance pointer
          */
-        inline void setManager(CallManager* manager)
-        {
-            _manager = manager;
-        }
+        void setManager(CallManager* manager);
 
         /**
          * Return true if given register name 
          * is already contained
          */
-        inline bool exists(const std::string& name) const
-        {
-            return (_registers.count(name) != 0);
-        }
+        bool exists(const std::string& name) const;
 
         /**
          * Add a new Typed Register pointer to 
@@ -69,137 +55,34 @@ class RegistersList
          * Throw std::logic_error if register name 
          * is already contained.
          */
-        inline void add(TypedRegisterBool* reg)
-        {
-            //Check for non intersecting memory
-            checkMemorySpace(reg);
-            //Insert the pointer into the container
-            _registers[reg->name] = reg;
-            _registersBool[reg->name] = reg;
-            //Register initialization
-            initRegister(reg);
-        }
-        inline void add(TypedRegisterInt* reg)
-        {
-            //Check for non intersecting memory
-            checkMemorySpace(reg);
-            //Insert the pointer into the container
-            _registers[reg->name] = reg;
-            _registersInt[reg->name] = reg;
-            //Register initialization
-            initRegister(reg);
-        }
-        inline void add(TypedRegisterFloat* reg)
-        {
-            //Check for non intersecting memory
-            checkMemorySpace(reg);
-            //Insert the pointer into the container
-            _registers[reg->name] = reg;
-            _registersFloat[reg->name] = reg;
-            //Register initialization
-            initRegister(reg);
-        }
+        void add(TypedRegisterBool* reg);
+        void add(TypedRegisterInt* reg);
+        void add(TypedRegisterFloat* reg);
 
         /**
          * Access to given untuyped and Typed register by its name.
          * Throw std::logic_error if asked name does not exists
          */
         //Register
-        inline const Register& reg(const std::string& name) const
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registers.at(name));
-        }
-        inline Register& reg(const std::string& name)
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registers.at(name));
-        }
+        const Register& reg(const std::string& name) const;
+        Register& reg(const std::string& name);
         //TypedRegisterBool
-        inline const TypedRegisterBool& regBool(const std::string& name) const
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersBool.at(name));
-        }
-        inline TypedRegisterBool& regBool(const std::string& name)
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersBool.at(name));
-        }
+        const TypedRegisterBool& regBool(const std::string& name) const;
+        TypedRegisterBool& regBool(const std::string& name);
         //TypedRegisterInt
-        inline const TypedRegisterInt& regInt(const std::string& name) const
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersInt.at(name));
-        }
-        inline TypedRegisterInt& regInt(const std::string& name)
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersInt.at(name));
-        }
+        const TypedRegisterInt& regInt(const std::string& name) const;
+        TypedRegisterInt& regInt(const std::string& name);
         //TypedRegisterFloat
-        inline const TypedRegisterFloat& regFloat(const std::string& name) const
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersFloat.at(name));
-        }
-        inline TypedRegisterFloat& regFloat(const std::string& name)
-        {
-            if (!exists(name)) {
-                throw std::logic_error(
-                    "RegistersList name does not exists: "
-                    + name);
-            }
-            return *(_registersFloat.at(name));
-        }
+        const TypedRegisterFloat& regFloat(const std::string& name) const;
+        TypedRegisterFloat& regFloat(const std::string& name);
 
         /**
          * Direct access to Typed and untyped Register container
          */
-        inline const ContainerRegisters& container() const
-        {
-            return _registers;
-        }
-        inline const ContainerRegistersBool& containerBool() const
-        {
-            return _registersBool;
-        }
-        inline const ContainerRegistersInt& containerInt() const
-        {
-            return _registersInt;
-        }
-        inline const ContainerRegistersFloat& containerFloat() const
-        {
-            return _registersFloat;
-        }
+        const ContainerRegisters& container() const;
+        const ContainerRegistersBool& containerBool() const;
+        const ContainerRegistersInt& containerInt() const;
+        const ContainerRegistersFloat& containerFloat() const;
 
     private:
 
@@ -237,52 +120,12 @@ class RegistersList
          * Register memory space
          * Check also for register exists and pointer validity.
          */
-        inline void checkMemorySpace(const Register* reg) const
-        {
-            if (reg == nullptr) {
-                throw std::logic_error(
-                    "RegistersList null pointer");
-            }
-            if (exists(reg->name)) {
-                throw std::logic_error(
-                    "RegistersList name already added: "
-                    + reg->name);
-            }
-            if (_manager == nullptr) {
-                throw std::logic_error(
-                    "RegistersList manager pointer not initialized");
-            }
-            for (const auto& it : _registers) {
-                const Register* reg2 = it.second;
-                if (
-                    (reg->addr > reg2->addr &&
-                    reg->addr < reg2->addr+reg2->length) ||
-                    (reg->addr+reg->length > reg2->addr &&
-                    reg->addr+reg->length < reg2->addr+reg2->length) 
-                ) {
-                    throw std::logic_error(
-                        "RegistersList register memory intersection: "
-                        + reg->name + " and " + reg2->name);
-                }
-            }
-        }
+        void checkMemorySpace(const Register* reg) const;
 
         /**
          * Initialize new added given register pointer
          */
-        inline void initRegister(Register* reg)
-        {
-            //Assign Register associated Device id,
-            //the pointer to the manager instance
-            //and the pointer to data buffer read and write
-            reg->init(
-                _id, _manager, 
-                _memorySpaceRead + reg->addr,
-                _memorySpaceWrite + reg->addr);
-            //Declare the register to the Manager
-            //for building the set of all Registers
-            _manager->onNewRegister(reg->id, reg->name);
-        }
+        void initRegister(Register* reg);
 };
 
 }

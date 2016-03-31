@@ -4,10 +4,13 @@
 #include <stdexcept>
 #include <mutex>
 #include "types.h"
-#include "CallManager.hpp"
+#include "utils.h"
 #include "Aggregation.h"
 
 namespace RhAL {
+
+//Forward declaration
+class CallManager;
 
 /**
  * Compile time constante for
@@ -111,7 +114,7 @@ class Register
          * isReadOnly: if true, write operation 
          * are disallowed on this register. 
          */
-        inline Register(
+        Register(
             const std::string& name,
             addr_t addr,
             size_t length,
@@ -119,116 +122,35 @@ class Register
             bool isForceRead = true,
             bool isForceWrite = false,
             bool isSlowRegister = false,
-            bool isReadOnly = false) :
-            //Member init
-            id(0),
-            name(name),
-            addr(addr),
-            length(length),
-            periodPackedRead(periodPackedRead),
-            isForceRead(isForceRead),
-            isForceWrite(isForceWrite),
-            isSlowRegister(isSlowRegister),
-            isReadOnly(isReadOnly),
-            _dataBufferRead(nullptr),
-            _dataBufferWrite(nullptr),
-            _lastDevReadUser(),
-            _lastDevReadManager(),
-            _lastUserWrite(),
-            _needRead(false),
-            _needWrite(false),
-            _needSwaping(false),
-            _isLastError(true),
-            _manager(nullptr),
-            _mutex()
-        {
-            if (length > MaxRegisterLength) {
-                throw std::logic_error(
-                    "Register length invalid with static max length: "
-                    + name);
-            }
-            if (addr+length >= AddrDevLen) {
-                throw std::logic_error(
-                    "Register address/length is outside static memory range: "
-                    + name);
-            }
-        }
+            bool isReadOnly = false); 
 
         /**
          * Initialize the Register with the associated
          * Device id, the Manager pointer and pointer to
          * Device memory space buffer for read and write.
          */
-        inline void init(id_t tmpId, CallManager* manager,
-            data_t* bufferRead, data_t* bufferWrite)
-        {
-            if (manager == nullptr) {
-                throw std::logic_error(
-                    "Register null manager pointer:"
-                    + name);
-            }
-            if (bufferRead == nullptr || bufferWrite == nullptr) {
-                throw std::logic_error(
-                    "Register null buffer pointer:"
-                    + name);
-            }
-            id = tmpId;
-            _manager = manager;
-            _dataBufferRead = bufferRead;
-            _dataBufferWrite = bufferWrite;
-        }
+        void init(id_t tmpId, CallManager* manager,
+            data_t* bufferRead, data_t* bufferWrite);
 
         /**
          * Perform immediate read or write
          * operation on the bus
          */
-        inline void forceRead()
-        {
-            if (_manager == nullptr) {
-                throw std::logic_error(
-                    "Register null manager pointer:"
-                    + name);
-            }
-            _manager->forceRegisterRead(id, name);
-        }
-        inline void forceWrite()
-        {
-            if (_manager == nullptr) {
-                throw std::logic_error(
-                    "Register null manager pointer:"
-                    + name);
-            }
-            _manager->forceRegisterWrite(id, name);
-        }
+        void forceRead();
+        void forceWrite();
 
         /**
          * Mark the register to be Read or Write
          */
-        inline void askRead()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _needRead = true;
-        }
-        inline void askWrite()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _needWrite = true;
-        }
+        void askRead();
+        void askWrite();
 
         /**
          * Return true if the register
          * has been mark to be Read or Write
          */
-        inline bool needRead() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _needRead;
-        }
-        inline bool needWrite() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _needWrite;
-        }
+        bool needRead() const;
+        bool needWrite() const;
 
     protected:
 
@@ -312,23 +234,14 @@ class Register
          * Set needWrite to false (reset aggregation).
          * (Call by Manager)
          */
-        inline void selectForWrite()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            doConvEncode();
-            _needWrite = false;
-        }
+        void selectForWrite();
 
         /**
          * Mark the register as read operation
          * has begins. Reset read dirty flag.
          * (Call by manager)
          */
-        inline void readyForRead()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _needRead = false;
-        }
+        void readyForRead();
 
         /**
          * Mark the register as read end and need
@@ -336,12 +249,7 @@ class Register
          * Given timestamp is the date at read receive.
          * (Call by manager)
          */
-        inline void finishRead(TimePoint timestamp)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _needSwaping = true;
-            _lastDevReadManager = timestamp;
-        }
+        void finishRead(TimePoint timestamp);
 
         /**
          * Mark the register as last read 
@@ -349,12 +257,7 @@ class Register
          * Re mark the register to be read again.
          * (Call by Manager)
          */
-        inline void readError()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isLastError = true;
-            _needRead = true;
-        }
+        void readError();
 
         /**
          * If the register swap is needed,
@@ -362,17 +265,7 @@ class Register
          * typed read value and assign the new timestamp.
          * (Call by Manager)
          */
-        inline void swapRead()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            if (!_needSwaping) {
-                return;
-            }
-            _needSwaping = false;
-            _isLastError = false;
-            doConvDecode();
-            _lastDevReadUser = _lastDevReadManager;
-        }
+        void swapRead();
 };
 
 /**
@@ -417,22 +310,7 @@ class TypedRegister : public Register
             unsigned int periodPackedRead = 0,
             bool forceRead = true,
             bool forceWrite = false,
-            bool isSlowRegister = false) :
-            //Member init
-            Register(name, addr, length, periodPackedRead,
-                forceRead, forceWrite, isSlowRegister),
-            funcConvEncode(funcConvEncode),
-            funcConvDecode(funcConvDecode),
-            _minValue(T(0)),
-            _maxValue(T(0)),
-            _stepValue(T(0)),
-            _valueRead(),
-            _valueWrite(),
-            _aggregationPolicy(AggregateLast),
-            _callbackOnRead([](T val){(void)val;}),
-            _callbackOnWrite([](T val){(void)val;})
-        {
-        }
+            bool isSlowRegister = false);
 
         /**
          * Initialization for ReadOnly Register and 
@@ -448,22 +326,7 @@ class TypedRegister : public Register
             unsigned int periodPackedRead = 0,
             bool forceRead = true,
             bool forceWrite = false,
-            bool isSlowRegister = false) :
-            //Member init
-            Register(name, addr, length, periodPackedRead,
-                forceRead, forceWrite, isSlowRegister, true),
-            funcConvEncode(),
-            funcConvDecode(funcConvDecode),
-            _minValue(T(0)),
-            _maxValue(T(0)),
-            _stepValue(T(0)),
-            _valueRead(),
-            _valueWrite(),
-            _aggregationPolicy(AggregateLast),
-            _callbackOnRead([](T val){(void)val;}),
-            _callbackOnWrite([](T val){(void)val;})
-        {
-        }
+            bool isSlowRegister = false);
 
         /**
          * Read and write access for range 
@@ -471,79 +334,33 @@ class TypedRegister : public Register
          * Values are considered non defined if
          * they are all equals to 0 (T(0)).
          */
-        inline void setMinValue(T val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _minValue = val;
-        }
-        inline void setMaxValue(T val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _maxValue = val;
-        }
-        inline void setStepValue(T val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _stepValue = val;
-        }
-        inline T getMinValue() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _minValue;
-        }
-        inline T getMaxValue() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _maxValue;
-        }
-        inline T getStepValue() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _stepValue;
-        }
+        void setMinValue(T val);
+        void setMaxValue(T val);
+        void setStepValue(T val);
+        T getMinValue() const;
+        T getMaxValue() const;
+        T getStepValue() const;
 
         /**
          * Set the register
          * aggregation policy
          */
-        inline void setAggregationPolicy(AggregationPolicy policy)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _aggregationPolicy = policy;
-        }
+        void setAggregationPolicy(AggregationPolicy policy);
 
         /**
          * Set the on user write and on
          * manager read callback. The updated
          * value is given as calback argument.
          */
-        inline void setCallbackRead(std::function<void(T)> func)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _callbackOnRead = func;
-        }
-        inline void setCallbackWrite(std::function<void(T)> func)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _callbackOnWrite = func;
-        }
+        void setCallbackRead(std::function<void(T)> func);
+        void setCallbackWrite(std::function<void(T)> func);
 
         /**
          * Return the last read value from
          * the hardware. The returned timestamp
          * is the time when data are received from the bus.
          */
-        inline ReadValue<T> readValue()
-        {
-            //Do immediate read on the bus
-            //is the register is configured to forceWrite
-            //or given Manager send mode
-            if (isForceRead || !_manager->isScheduleMode()) {
-                forceRead();
-            }
-            std::lock_guard<std::mutex> lock(_mutex);
-            return ReadValue<T>(_lastDevReadUser, _valueRead, _isLastError);
-        }
+        ReadValue<T> readValue();
 
         /**
          * Set the current contained typed value.
@@ -554,75 +371,21 @@ class TypedRegister : public Register
          * If noCallback is true, the on write callback
          * is not called.
          */
-        inline void writeValue(T val, bool noCallback = false)
-        {
-            //Check read only
-            if(isReadOnly) {
-                throw std::logic_error(
-                    "TypedRegister write to read only Register: " 
-                    + name);
-            }
-
-            std::unique_lock<std::mutex> lock(_mutex);
-
-            //Compute aggregation if the value
-            //has already been written
-            if (_needWrite) {
-                _valueWrite = aggregateValue(
-                    _aggregationPolicy, _valueWrite, val);
-            } else {
-                _valueWrite = val;
-            }
-            //Assign the timestamp
-            _lastUserWrite = getTimePoint();
-            //Mark as dirty
-            _needWrite = true;
-            //Call user callback
-            if (!noCallback) {
-                _callbackOnWrite(val);
-            }
-            //Unlock mutex
-            lock.unlock();
-            //Do immediate write on the bus
-            //is the register is configured to forceWrite
-            //or given Manager send mode
-            if (isForceWrite || !_manager->isScheduleMode()) {
-                forceWrite();
-            }
-        }
+        void writeValue(T val, bool noCallback = false);
 
         /**
          * Return the current write value
          * that has been written by writeValue()
          * and aggregation policy.
          */
-        inline T getWrittenValue()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _valueWrite;
-        }
+        T getWrittenValue();
 
         /**
          * Return the value set by user
          * Encode and Decode really send 
          * on the bus.
          */
-        inline T getWrittenValueAfterEncode()
-        {
-            //Check read only
-            if (isReadOnly) {
-                throw std::logic_error(
-                    "TypedRegister get write value on read only Register: " 
-                    + name);
-            }
-
-            std::lock_guard<std::mutex> lock(_mutex);
-
-            //Encode and re Decode the current write value
-            data_t tmpbuffer[AddrDevLen];
-            funcConvEncode(tmpbuffer, _valueWrite);
-            return funcConvDecode(tmpbuffer);
-        }
+        T getWrittenValueAfterEncode();
 
     protected:
 
@@ -633,22 +396,8 @@ class TypedRegister : public Register
          * data buffer to typed read value.
          * No thread protection.
          */
-        inline virtual void doConvEncode() override
-        {
-            //Check read only
-            if (isReadOnly) {
-                throw std::logic_error(
-                    "TypedRegister conv encode on read only Register: " 
-                    + name);
-            }
-            funcConvEncode(_dataBufferWrite, _valueWrite);
-        }
-        inline virtual void doConvDecode() override
-        {
-            _valueRead = funcConvDecode(_dataBufferRead);
-            //Call user callback
-            _callbackOnRead(_valueRead);
-        }
+        virtual void doConvEncode() override;
+        virtual void doConvDecode() override;
 
     private:
 

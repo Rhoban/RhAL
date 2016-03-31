@@ -39,6 +39,18 @@ set(LIB_SOURCES
     Protocol/DynamixelV1.cpp
     Protocol/FakeProtocol.cpp
     Protocol/ProtocolFactory.cpp
+    utils.cpp
+    Manager/Statistics.cpp
+    Manager/RegistersList.cpp
+    Manager/ParametersList.cpp
+    Manager/Register.cpp
+    Manager/Parameter.cpp
+    Manager/Device.cpp
+    Manager/CallManager.cpp
+    Manager/ConvertionUtils.cpp
+    Manager/Aggregation.cpp
+    Manager/BaseManager.cpp
+    RhAL.cpp
 )
 
 # Tests source files

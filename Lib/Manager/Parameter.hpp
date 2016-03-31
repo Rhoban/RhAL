@@ -22,12 +22,7 @@ struct Parameter
      * Initialization with parameter 
      * name and default value
      */
-    inline Parameter(const std::string& name, const T& value) :
-        name(name),
-        defaultValue(value),
-        value(value)
-    {
-    }
+    Parameter(const std::string& name, const T& value);
 };
 
 /**

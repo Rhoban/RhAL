@@ -75,30 +75,7 @@ namespace Impl {
  * new written value
  */
 template <typename T>
-inline T aggregateValue(AggregationPolicy policy, 
-    T oldValue, T newValue)
-{
-    switch (policy) {
-        case AggregateLast: 
-            return Impl::implAggregateLast(oldValue, newValue); 
-            break;
-        case AggregateFirst: 
-            return Impl::implAggregateFirst(oldValue, newValue); 
-            break;
-        case AggregateSum: 
-            return Impl::implAggregateSum(oldValue, newValue); 
-            break;
-        case AggregateMax: 
-            return Impl::implAggregateMax(oldValue, newValue); 
-            break;
-        case AggregateMin: 
-            return Impl::implAggregateMin(oldValue, newValue); 
-            break;
-        default: 
-            return T();
-            break;
-    }
-}
+T aggregateValue(AggregationPolicy policy, T oldValue, T newValue);
 
 }
 
