@@ -41,6 +41,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdLoadConf, this, std::placeholders::_1));
     _node->newCommand("rhalEM", "Send emergencu stop", 
         std::bind(&RhIOBinding::cmdEmergency, this, std::placeholders::_1));
+    _node->newCommand("em", "rhalEM alias", 
+        std::bind(&RhIOBinding::cmdEmergency, this, std::placeholders::_1));
     _node->newCommand("rhalExitEmergency", "Exit emergency state", 
         std::bind(&RhIOBinding::cmdEmergencyExit, this, std::placeholders::_1));
     _node->newCommand("rhalInit", "Enable all servos in zero position", 
