@@ -84,6 +84,8 @@ if (BUILD_RHAL_BINDING)
         RhIO
         zmq
     )
+    add_definitions(-DBUILD_RHAL_RHIO_BINDING)
+    message("RhAL RhIO Binding Enabled")
 endif (BUILD_RHAL_BINDING)
 
 # Prefix with lib directory path

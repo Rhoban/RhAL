@@ -31,6 +31,10 @@
 #include "Devices/Dynaban64.hpp"
 #include "Devices/RX24.hpp"
 
+#ifdef BUILD_RHAL_RHIO_BINDING
+    #include "Bindings/RhIOBinding.hpp"
+#endif
+
 /**
  * Define classic Manager typedef
  * with all implemented Device
