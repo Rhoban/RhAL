@@ -3,7 +3,7 @@
     "build": [
         "mkdir -p build",
         "cd build",
-        "cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_RHAL_BINDING=ON ..",
+        "cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_RHAL_BINDING=ON -DBUILD_RHAL_BINARY=ON ..",
         "make"
     ],
     "binaries": "build/bin",
