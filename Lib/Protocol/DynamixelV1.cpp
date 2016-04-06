@@ -264,9 +264,18 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
      */
     void DynamixelV1::emergencyStop()
     {
-        uint8_t data[1];
-        data[0] = 0;
-        writeData(Broadcast, 0x18, data, 1);
+        //Disable torque
+        uint8_t data1[1];
+        data1[0] = 0;
+        writeData(Broadcast, 0x18, data1, 1);
+        std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
+        
+        //Set torque limit to zero
+        uint8_t data2[2];
+        data2[0] = 0x00;
+        data2[1] = 0x00;
+        writeData(Broadcast, 0x22, data2, 2);
+        std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
     }
 
     /**
@@ -274,9 +283,18 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
      */
     void DynamixelV1::exitEmergencyState()
     {
-        uint8_t data[1];
-        data[0] = 1;
-        writeData(Broadcast, 0x18, data, 1);
+        //Enable torque
+        uint8_t data1[1];
+        data1[0] = 1;
+        writeData(Broadcast, 0x18, data1, 1);
+        std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
+
+        //Set torque to maximum
+        uint8_t data2[2];
+        data2[0] = 0xFF;
+        data2[1] = 0x03;
+        writeData(Broadcast, 0x22, data2, 2);
+        std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
     }
 
     void DynamixelV1::sendPacket(Packet &packet)
