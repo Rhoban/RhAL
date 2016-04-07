@@ -311,6 +311,15 @@ void BaseManager::flush(bool isForceSwap)
     //Statistics
     _stats.flushCount++;
     TimePoint pStart = getTimePoint();
+    if (_stats.lastFlushTimePoint != TimePoint()) {
+        TimeDurationMicro d = getTimeDuration<TimeDurationMicro>(
+            _stats.lastFlushTimePoint, pStart);
+        if (d > _stats.maxFlushPeriod) {
+            _stats.maxFlushPeriod = d;
+        }
+        _stats.sumFlushPeriod += d;
+    }
+    _stats.lastFlushTimePoint = pStart;
     //Wait for all user thread to have reach the 
     //first barrier
     //(During wait, the lock is release)
@@ -573,8 +582,12 @@ void BaseManager::forceRegisterRead(
         TimePoint pStop = getTimePoint();
         _stats.readCount++;
         _stats.readLength += reg->length;
-        _stats.readDuration +=
+        TimeDurationMicro duration = 
             getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumReadDuration += duration;
+        if (_stats.maxReadDuration < duration) {
+            _stats.maxReadDuration = duration;
+        }
         //Check response
         if (checkResponseState(state, _devicesById.at(id))) {
             //Valid case
@@ -632,8 +645,12 @@ void BaseManager::forceRegisterWrite(
     TimePoint pStop = getTimePoint();
     _stats.writeCount++;
     _stats.writeLength += reg->length;
-    _stats.writeDuration +=
+    TimeDurationMicro duration = 
         getTimeDuration<TimeDurationMicro>(pStart, pStop);
+    _stats.sumWriteDuration += duration;
+    if (_stats.maxWriteDuration < duration) {
+        _stats.maxWriteDuration = duration;
+    }
     //Wait delay in case of slow register
     if (reg->isSlowRegister) {
         std::this_thread::sleep_for(
@@ -877,8 +894,12 @@ void BaseManager::writeBatch(BatchedRegisters& batch)
         TimePoint pStop = getTimePoint();
         _stats.writeCount++;
         _stats.writeLength += batch.length;
-        _stats.writeDuration +=
+        TimeDurationMicro duration = 
             getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumWriteDuration += duration;
+        if (_stats.maxWriteDuration < duration) {
+            _stats.maxWriteDuration = duration;
+        }
     } else {
         //Synch Write multiple registers
         std::vector<const data_t*> datas;
@@ -894,8 +915,12 @@ void BaseManager::writeBatch(BatchedRegisters& batch)
         TimePoint pStop = getTimePoint();
         _stats.syncWriteCount++;
         _stats.syncWriteLength += batch.length;
-        _stats.syncWriteDuration +=
+        TimeDurationMicro duration = 
             getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumSyncWriteDuration += duration;
+        if (_stats.maxSyncWriteDuration < duration) {
+            _stats.maxSyncWriteDuration = duration;
+        }
     }
 }
 void BaseManager::readBatch(BatchedRegisters& batch)
@@ -923,8 +948,12 @@ void BaseManager::readBatch(BatchedRegisters& batch)
         TimePoint pStop = getTimePoint();
         _stats.readCount++;
         _stats.readLength += batch.length;
-        _stats.readDuration +=
+        TimeDurationMicro duration = 
             getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumReadDuration += duration;
+        if (_stats.maxReadDuration < duration) {
+            _stats.maxReadDuration = duration;
+        }
         //Check for communication error
         if (!checkResponseState(state, _devicesById.at(batch.ids.front()))) {
             //Error case
@@ -957,8 +986,12 @@ void BaseManager::readBatch(BatchedRegisters& batch)
         TimePoint pStop = getTimePoint();
         _stats.syncReadCount++;
         _stats.syncReadLength += batch.length;
-        _stats.syncReadDuration +=
+        TimeDurationMicro duration = 
             getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumSyncReadDuration += duration;
+        if (_stats.maxSyncReadDuration < duration) {
+            _stats.maxSyncReadDuration = duration;
+        }
         //Retrieve the read timestamp
         TimePoint timestamp = getTimePoint();
         for (size_t i=0;i<states.size();i++) {

@@ -29,10 +29,15 @@ struct Statistics
     unsigned long syncWriteLength;
     //Total time duration spent during Protocol
     //read/write/syncRead/syncWrite calls
-    TimeDurationMicro readDuration;
-    TimeDurationMicro writeDuration;
-    TimeDurationMicro syncReadDuration;
-    TimeDurationMicro syncWriteDuration;
+    //and maximum duration
+    TimeDurationMicro sumReadDuration;
+    TimeDurationMicro sumWriteDuration;
+    TimeDurationMicro sumSyncReadDuration;
+    TimeDurationMicro sumSyncWriteDuration;
+    TimeDurationMicro maxReadDuration;
+    TimeDurationMicro maxWriteDuration;
+    TimeDurationMicro maxSyncReadDuration;
+    TimeDurationMicro maxSyncWriteDuration;
     //Number of calls to Manager flush(),
     //waitNextFlush(), forceRead() and forceWrite()
     unsigned long flushCount;
@@ -47,6 +52,12 @@ struct Statistics
     //at nextFlush()
     TimeDurationMicro waitUsersDuration;
     TimeDurationMicro waitManagerDuration;
+    //Time Point of last flush() begin
+    TimePoint lastFlushTimePoint;
+    //Maximum abd sum duration between
+    //two consecutives flush() call
+    TimeDurationMicro maxFlushPeriod;
+    TimeDurationMicro sumFlushPeriod;
     //Number of calls to Manager
     //emergencyStop(), exitEmergencyState()
     unsigned long emergencyCount;
