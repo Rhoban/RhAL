@@ -160,7 +160,8 @@ class DXL : public Device
 			_angleLimitCWParameter("angleLimitCWParameter", 0.0),
 			_angleLimitCCWParameter("angleLimitCCWParameter", 0.0),
 			_inverted("inverse", false),
-			_zero("zero", 0.0)
+			_zero("zero", 0.0),
+                        _isSmoothingEnable(false)
         {
             _temperatureLimit.setMinValue(0);
             _temperatureLimit.setMaxValue(255); //uint8 but you should not go to 255°!!
