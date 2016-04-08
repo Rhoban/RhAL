@@ -13,7 +13,6 @@ CallManager::~CallManager()
 
 bool CallManager::isScheduleMode() const
 {
-    std::lock_guard<std::mutex> lock(_mutex);
     return _paramScheduleMode.value;
 }
 

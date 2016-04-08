@@ -21,6 +21,7 @@ int main()
     manager.devAdd<RhAL::ExampleDevice1>(2, "devTest2");
     manager.devAdd<RhAL::ExampleDevice1>(3, "devTest3");
     manager.devAdd<RhAL::ExampleDevice2>(5, "devTest5");
+    manager.devAdd<RhAL::RX64>(10, "devDXL");
 
     manager.startManagerThread();
 
