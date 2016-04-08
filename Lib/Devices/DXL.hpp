@@ -421,6 +421,32 @@ class DXL : public Device
 			setGoalPosition(Rad2Deg(goalPositionRad));
 		}
 
+                /**
+                 * Go to given goal position (degree or radian) smoothed
+                 * with given delay in seconds.
+                 */
+                inline void setGoalPositionSmooth(float goalPosition, float delay)
+                {
+                    _isSmoothingEnable = true;
+                    _smoothingStartGoal = getPosition();
+                    _smoothingEndGoal = goalPosition;
+                    _smoothingCurrentTime = 0.0;
+                    _smoothingEndTime = delay;
+                    setGoalPosition(_smoothingStartGoal);
+                }
+                inline void setGoalPositionRadSmooth(float goalPositionRad, float delay)
+                {
+                    setGoalPositionSmooth(Rad2Deg(goalPositionRad), delay);
+                }
+                /**
+                 * Return true if smoothing if currently enabled or 
+                 * is finished
+                 */
+                inline bool isSmoothingEnabled() const
+                {
+                    return _isSmoothingEnable;
+                }
+
 		/**
 		 * Returns the goal speed in degrees/s
 		 */
@@ -559,14 +585,38 @@ class DXL : public Device
 		ParameterNumber _zero;
 
 		//Values used to measure time
-		double t0;
-		double t;
+                TimePoint _lastTp;
+                double t;
 
-        inline virtual void onSwap() override
-       	{
-        	const TimePoint tp  = getTimePoint();
-        	t = duration_float(tp);
-  		}
+                //Smoothing stats
+                bool _isSmoothingEnable;
+                double _smoothingStartGoal;
+                double _smoothingEndGoal;
+                double _smoothingCurrentTime;
+                double _smoothingEndTime;
+
+                inline virtual void onSwap() override
+                {
+                    TimePoint tp = getTimePoint();
+                    t = duration_float(tp);
+                    float step = duration_float(_lastTp, tp);
+                    if (_lastTp == TimePoint()) {
+                        _lastTp = tp;
+                        return;
+                    }
+                    _lastTp = tp;
+
+                    if (_isSmoothingEnable) {
+                        double goal = ((_smoothingEndGoal - _smoothingStartGoal)/_smoothingEndTime) 
+                            * _smoothingCurrentTime
+                            + _smoothingStartGoal;
+                        setGoalPosition(goal);
+                        _smoothingCurrentTime += step;
+                        if (_smoothingCurrentTime >= _smoothingEndTime) {
+                            _isSmoothingEnable = false;
+                        }
+                    }
+                }
 
 		/**
 		 * Inherit.

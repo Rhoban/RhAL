@@ -382,7 +382,7 @@ std::string RhIOBinding::cmdInit(
     for (auto& dev : allDevices) {
         DXL* pt = dynamic_cast<DXL*>(dev.second);
         if (pt != nullptr) {
-            pt->setGoalPositionRad(0.0);
+            pt->setGoalPositionRadSmooth(0.0, 1.0);
         }
     }
 
