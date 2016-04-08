@@ -385,6 +385,7 @@ std::string RhIOBinding::cmdInit(
             pt->setGoalPositionRadSmooth(0.0, 1.0);
         }
     }
+    _manager->exitEmergencyState();
 
     return "Init all servos";
 }
