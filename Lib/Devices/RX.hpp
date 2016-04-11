@@ -358,6 +358,16 @@ class RX : public DXL
 		{
 			return _goalPosition.readValue().timestamp;
 		}
+                
+                /**
+                 * Return the current user written value in goal
+                 * position register in degrees or radians
+                 */
+                virtual float getWrittenGoalPosition() const override
+                {
+                    return _goalPosition.getWrittenValue();
+                }
+
 		/**
 		 * Sets the goal position in degrees
 		 */

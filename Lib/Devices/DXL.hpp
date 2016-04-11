@@ -394,7 +394,17 @@ class DXL : public Device
          * Returns the goal position in degrees
          */
         virtual float getGoalPosition() = 0;
-		virtual TimePoint getGoalPositionTs() = 0;
+	virtual TimePoint getGoalPositionTs() = 0;
+
+        /**
+         * Return the current user written value in goal
+         * position register in degrees or radians
+         */
+        virtual float getWrittenGoalPosition() const = 0;
+        inline float getWrittenGoalPositionRad() const
+        {
+            return Deg2Rad(getWrittenGoalPosition());
+        }
 
         /**
          * Sets the goal position in degrees. If a duration is specified,

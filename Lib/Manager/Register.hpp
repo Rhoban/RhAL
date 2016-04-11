@@ -378,14 +378,14 @@ class TypedRegister : public Register
          * that has been written by writeValue()
          * and aggregation policy.
          */
-        T getWrittenValue();
+        T getWrittenValue() const;
 
         /**
          * Return the value set by user
          * Encode and Decode really send 
          * on the bus.
          */
-        T getWrittenValueAfterEncode();
+        T getWrittenValueAfterEncode() const;
 
     protected:
 

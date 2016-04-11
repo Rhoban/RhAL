@@ -308,14 +308,14 @@ void TypedRegister<T>::writeValue(T val, bool noCallback)
 }
 
 template <typename T>
-T TypedRegister<T>::getWrittenValue()
+T TypedRegister<T>::getWrittenValue() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _valueWrite;
 }
 
 template <typename T>
-T TypedRegister<T>::getWrittenValueAfterEncode()
+T TypedRegister<T>::getWrittenValueAfterEncode() const
 {
     //Check read only
     if (isReadOnly) {
