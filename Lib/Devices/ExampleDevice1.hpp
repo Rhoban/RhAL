@@ -9,14 +9,11 @@
 
 namespace RhAL {
 
-inline void convIn1(RhAL::data_t* buffer, float value)
-{
-    *(reinterpret_cast<float*>(buffer)) = value;
-}
-inline float convOut1(const RhAL::data_t* buffer)
-{
-   return  *(reinterpret_cast<const float*>(buffer));
-}
+/**
+ * Convertion functions
+ */
+void convIn1(RhAL::data_t* buffer, float value);
+float convOut1(const RhAL::data_t* buffer);
 
 /**
  * BaseExampleDevice1
@@ -27,12 +24,15 @@ class BaseExampleDevice1 : public Device
 {
     public:
 
-        inline BaseExampleDevice1(const std::string& name, id_t id) :
-            Device(name, id),
-            //Registers configuration
-            _voltage("voltage", (addr_t)20, 4, convIn1, convOut1, 0)
-        {
-        }
+        /**
+         * Initialization
+         */
+        BaseExampleDevice1(const std::string& name, id_t id);
+
+        /**
+         * Register access
+         */
+        TypedRegisterFloat& voltage();
 
     protected:
 
@@ -44,10 +44,7 @@ class BaseExampleDevice1 : public Device
         /**
          * Test Inherit
          */
-        virtual inline void onSwap() override
-        {
-            std::cout << "ExampleDevice1 onSwap() " << this->name() << std::endl;
-        }
+        virtual void onSwap() override;
 };
 
 /**
@@ -63,93 +60,23 @@ class ExampleDevice1 : public BaseExampleDevice1
         /**
          * Initialization with name and id
          */
-        inline ExampleDevice1(const std::string& name, id_t id) :
-            BaseExampleDevice1(name, id),
-            //Registers configuration
-            _goal("goal", (addr_t)4, 4, convIn1, convOut1, 0),
-            _position("position", (addr_t)8, 4, convIn1, convOut1, 1),
-            _temperature("temperature", (addr_t)16, 4, convIn1, convOut1, 4),
-            //Parameters configuration
-            _inverted("inverse", false),
-            _zero("zero", 0.0),
-            _mutex()
-        {
-        }
+        ExampleDevice1(const std::string& name, id_t id);
 
         /**
-         * Assign target using current parameters
+         * Register access
          */
-        inline void setGoal(float angle)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            if (_inverted.value) {
-                _goal.writeValue(-angle - _zero.value);
-            } else {
-                _goal.writeValue(angle + _zero.value);
-            }
-        }
-
-        /**
-         * Return read value of position and temperature
-         */
-        inline ReadValueFloat getPosition()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _position.readValue();
-        }
-        inline ReadValueFloat getTemperature()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _temperature.readValue();
-        }
-
-        /**
-         * Return read value of voltage
-         */
-        inline float getVoltage()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _voltage.readValue().value;
-        }
-        inline TimePoint getVoltageTimestamp()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _voltage.readValue().timestamp;
-        }
-
-        /**
-         * Ask for read voltage at next flush()
-         */
-        inline void askVoltageRead()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _voltage.askRead();
-        }
+        TypedRegisterFloat& goal();
+        TypedRegisterFloat& position();
+        TypedRegisterFloat& temperature();
 
         /**
          * Parameters getter/setter
          * (thread safe)
          */
-        inline float getInverted() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _inverted.value;
-        }
-        inline void setInverted(float val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _inverted.value = val;
-        }
-        inline float getZero() const
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _zero.value;
-        }
-        inline void setZero(float val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _zero.value = val;
-        }
+        float getInverted() const;
+        void setInverted(float val);
+        float getZero() const;
+        void setZero(float val);
 
     protected:
 
@@ -157,15 +84,7 @@ class ExampleDevice1 : public BaseExampleDevice1
          * Inherit.
          * Declare Registers and parameters
          */
-        inline virtual void onInit() override
-        {
-            Device::registersList().add(&_goal);
-            Device::registersList().add(&_position);
-            Device::registersList().add(&_temperature);
-            Device::registersList().add(&_voltage);
-            Device::parametersList().add(&_inverted);
-            Device::parametersList().add(&_zero);
-        }
+        virtual void onInit() override;
         
     private:
 

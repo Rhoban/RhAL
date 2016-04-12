@@ -20,10 +20,10 @@ void userThread()
     for (size_t k=0;k<3;k++) {
         std::cout << "---- User cycle " << k << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;
-        std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;
-        dev2.setGoal(0.2);
-        dev3.setGoal(0.3);
+        std::cout << "Dev2Position: " << dev2.position() << std::endl;
+        std::cout << "Dev2Temperature: " << dev2.temperature() << std::endl;
+        dev2.goal() = 0.2;
+        dev3.goal() = 0.3;
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
         //Wait the next Manager cycle 
         //(wait for swap and selection of register for read/write)
@@ -56,25 +56,25 @@ int main()
         });
 
     //Display Device 2 state
-    std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;
-    std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;
+    std::cout << "Dev2Position: " << dev2.position() << std::endl;
+    std::cout << "Dev2Temperature: " << dev2.temperature() << std::endl;
 
     //Read/Write operations then swapping
     manager.flush(true);
 
     //Display Device 2 state
-    std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;
-    std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;
+    std::cout << "Dev2Position: " << dev2.position() << std::endl;
+    std::cout << "Dev2Temperature: " << dev2.temperature() << std::endl;
     //Write Goal
-    dev2.setGoal(0.1);
+    dev2.goal() = 0.1;
     
     //Read/Write operations then swapping
     manager.flush(true);
     
     //Display Device 2 state
     //(only position have been updated)
-    std::cout << "Dev2Position: " << dev2.getPosition().value << std::endl;
-    std::cout << "Dev2Temperature: " << dev2.getTemperature().value << std::endl;
+    std::cout << "Dev2Position: " << dev2.position() << std::endl;
+    std::cout << "Dev2Temperature: " << dev2.temperature() << std::endl;
     std::cout << std::endl;
 
     //Declare user threads

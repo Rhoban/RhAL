@@ -9,14 +9,11 @@
 
 namespace RhAL {
 
-inline void convIn2(RhAL::data_t* buffer, float value)
-{
-    *(reinterpret_cast<float*>(buffer)) = value;
-}
-inline float convOut2(const RhAL::data_t* buffer)
-{
-   return  *(reinterpret_cast<const float*>(buffer));
-}
+/**
+ * Convertion function
+ */
+void convIn2(RhAL::data_t* buffer, float value);
+float convOut2(const RhAL::data_t* buffer);
 
 /**
  * BaseExampleDevice2
@@ -25,10 +22,10 @@ class BaseExampleDevice2 : public Device
 {
     public:
 
-        inline BaseExampleDevice2(const std::string& name, id_t id) :
-            Device(name, id)
-        {
-        }
+        /**
+         * Initilization
+         */
+        BaseExampleDevice2(const std::string& name, id_t id);
 };
 
 /**
@@ -44,51 +41,14 @@ class ExampleDevice2 : public BaseExampleDevice2
         /**
          * Initialization with name and id
          */
-        inline ExampleDevice2(const std::string& name, id_t id) :
-            BaseExampleDevice2(name, id),
-            //Registers configuration
-            _pitch("pitch", (addr_t)4, 4, convIn2, convOut2, 2),
-            _roll("roll", (addr_t)8, 4, convIn2, convOut2, 0, true, false),
-            _mode("mode", (addr_t)12, 4, convIn2, convOut2, 0, false, true)
-        {
-        }
+        ExampleDevice2(const std::string& name, id_t id);
 
         /**
-         * Force immediate read of pitch and returned it
+         * Register access
          */
-        inline ReadValueFloat forcePitchRead()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _pitch.forceRead();
-            return _pitch.readValue();
-        }
-
-        /**
-         * Return current pitch value
-         */
-        inline ReadValueFloat getPitch()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _pitch.readValue();
-        }
-
-        /**
-         * Read roll (immediate roll)
-         */
-        inline ReadValueFloat getRoll()
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            return _roll.readValue();
-        }
-        
-        /**
-         * Set mode (imediate write)
-         */
-        inline void setMode(float mode)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _mode.writeValue(mode);
-        }
+        TypedRegisterFloat& pitch();
+        TypedRegisterFloat& roll();
+        TypedRegisterFloat& mode();
 
     protected:
 
@@ -96,12 +56,7 @@ class ExampleDevice2 : public BaseExampleDevice2
          * Inherit.
          * Declare Registers and parameters
          */
-        inline virtual void onInit() override
-        {
-            Device::registersList().add(&_pitch);
-            Device::registersList().add(&_roll);
-            Device::registersList().add(&_mode);
-        }
+        virtual void onInit() override;
         
     private:
 

@@ -276,20 +276,20 @@ void testImuAndPins() {
 				if (manager.devTypeName(it.second->name()) == "IMU") {
 					RhAL::IMU* devImu = (RhAL::IMU*) dev;
 
-					std::cout << "yaw = " << devImu->getYaw() << std::endl;
-					std::cout << "pitch = " << devImu->getPitch() << std::endl;
-					std::cout << "roll = " << devImu->getRoll() << std::endl;
-					std::cout << "accX = " << devImu->getAccX() << std::endl;
-					std::cout << "accY = " << devImu->getAccY() << std::endl;
-					std::cout << "accZ = " << devImu->getAccZ() << std::endl;
-					std::cout << "gyroX = " << devImu->getGyroX() << std::endl;
-					std::cout << "gyroY = " << devImu->getGyroY() << std::endl;
-					std::cout << "gyroZ = " << devImu->getGyroZ() << std::endl;
-					std::cout << "gyroYaw = " << devImu->getGyroYaw() << std::endl;
-					std::cout << "magnX = " << devImu->getMagnX() << std::endl;
-					std::cout << "magnY = " << devImu->getMagnY() << std::endl;
-					std::cout << "magnZ = " << devImu->getMagnZ() << std::endl;
-					std::cout << "magnAzimuth = " << devImu->getMagnAzimuth() << std::endl;
+					std::cout << "yaw = " << devImu->yaw() << std::endl;
+					std::cout << "pitch = " << devImu->pitch() << std::endl;
+					std::cout << "roll = " << devImu->roll() << std::endl;
+					std::cout << "accX = " << devImu->accX() << std::endl;
+					std::cout << "accY = " << devImu->accY() << std::endl;
+					std::cout << "accZ = " << devImu->accZ() << std::endl;
+					std::cout << "gyroX = " << devImu->gyroX() << std::endl;
+					std::cout << "gyroY = " << devImu->gyroY() << std::endl;
+					std::cout << "gyroZ = " << devImu->gyroZ() << std::endl;
+					std::cout << "gyroYaw = " << devImu->gyroYaw() << std::endl;
+					std::cout << "magnX = " << devImu->magnX() << std::endl;
+					std::cout << "magnY = " << devImu->magnY() << std::endl;
+					std::cout << "magnZ = " << devImu->magnZ() << std::endl;
+					std::cout << "magnAzimuth = " << devImu->magnAzimuth() << std::endl;
 
 				} else if (manager.devTypeName(it.second->name()) == "Pins") {
 					RhAL::Pins* devPins = (RhAL::Pins*) dev;

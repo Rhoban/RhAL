@@ -51,6 +51,11 @@ set(LIB_SOURCES
     Manager/Aggregation.cpp
     Manager/BaseManager.cpp
     RhAL.cpp
+    Devices/ExampleDevice1.cpp
+    Devices/ExampleDevice2.cpp
+    Devices/IMU.cpp
+    Devices/Pins.cpp
+    Devices/PressureSensor.cpp
 )
 
 # Tests source files

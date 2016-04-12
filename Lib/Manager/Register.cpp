@@ -333,6 +333,17 @@ T TypedRegister<T>::getWrittenValueAfterEncode() const
 }
 
 template <typename T>
+void TypedRegister<T>::operator=(const T& val)
+{
+    writeValue(val);
+}
+template <typename T>
+TypedRegister<T>::operator T ()
+{
+    return readValue().value;
+}
+
+template <typename T>
 void TypedRegister<T>::doConvEncode()
 {
     //Check read only

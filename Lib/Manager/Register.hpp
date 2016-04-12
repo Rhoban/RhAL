@@ -119,7 +119,7 @@ class Register
             addr_t addr,
             size_t length,
             unsigned int periodPackedRead = 0,
-            bool isForceRead = true,
+            bool isForceRead = false,
             bool isForceWrite = false,
             bool isSlowRegister = false,
             bool isReadOnly = false); 
@@ -308,7 +308,7 @@ class TypedRegister : public Register
             FuncConvEncode<T> funcConvEncode,
             FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
-            bool forceRead = true,
+            bool forceRead = false,
             bool forceWrite = false,
             bool isSlowRegister = false);
 
@@ -324,7 +324,7 @@ class TypedRegister : public Register
             size_t length,
             FuncConvDecode<T> funcConvDecode,
             unsigned int periodPackedRead = 0,
-            bool forceRead = true,
+            bool forceRead = false,
             bool forceWrite = false,
             bool isSlowRegister = false);
 
@@ -386,6 +386,14 @@ class TypedRegister : public Register
          * on the bus.
          */
         T getWrittenValueAfterEncode() const;
+
+        /**
+         * Operator overload assignement
+         * and static cast shortcut
+         * for writeValue() and readValue()
+         */
+        void operator=(const T& val);
+        operator T ();
 
     protected:
 
