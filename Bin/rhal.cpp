@@ -24,6 +24,8 @@ int main(int argc, char** argv)
         << " protocol=" << protocol.getValue() 
         << std::endl;
     manager.setProtocolConfig(port.getValue(), speed.getValue(), protocol.getValue());
+    manager.setThrowOnScan(false);
+    manager.setThrowOnRead(false);
     // Schedule mode
     manager.setScheduleMode(true);
 
