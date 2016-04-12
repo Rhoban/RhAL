@@ -64,7 +64,7 @@ class ImplManager<MX106> : public TypedManager<MX106>
 
         inline static type_t typeNumber()
         {
-            return 0x0164;
+            return 0x0140;
         }
 
         inline static std::string typeName()
