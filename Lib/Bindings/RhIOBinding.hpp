@@ -97,6 +97,8 @@ class RhIOBinding
             std::vector<std::string> argv);
         std::string cmdInit(
             std::vector<std::string> argv);
+        std::string cmdChangeId(
+            std::vector<std::string> argv);
 };
 
 }

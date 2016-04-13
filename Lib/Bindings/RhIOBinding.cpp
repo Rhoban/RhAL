@@ -47,6 +47,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdEmergencyExit, this, std::placeholders::_1));
     _node->newCommand("rhalInit", "Enable all servos in zero position", 
         std::bind(&RhIOBinding::cmdInit, this, std::placeholders::_1));
+    _node->newCommand("rhalChangeId", "Chaneg the Device id of given id to given id", 
+        std::bind(&RhIOBinding::cmdChangeId, this, std::placeholders::_1));
 
     //First RhIO/RhAL synchronisation
     update();
@@ -388,6 +390,19 @@ std::string RhIOBinding::cmdInit(
     _manager->exitEmergencyState();
 
     return "Init all servos";
+}
+
+std::string RhIOBinding::cmdChangeId(
+    std::vector<std::string> argv)
+{
+    if (argv.size() != 2) {
+        return "Invalid Argument. Usage:\nchangeId [old_id] [new_id]";
+    }
+    size_t oldId = std::stoi(argv[0]);
+    size_t newId = std::stoi(argv[1]);
+    _manager->changeDeviceId(oldId, newId);
+    return "Change id from" + argv[0] 
+        + " to " + argv[1] + ". RhAL Exit.";
 }
 
 }

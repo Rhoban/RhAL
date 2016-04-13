@@ -437,6 +437,29 @@ bool BaseManager::ping(id_t id)
     }
     return response;
 }
+        
+void BaseManager::changeDeviceId(id_t oldId, id_t newId)
+{
+    if (!ping(oldId)) {
+        throw std::logic_error(
+            "BaseManager device not responding: " 
+            + std::to_string(oldId));
+    }
+    std::lock_guard<std::mutex> lock(CallManager::_mutex);
+    std::lock_guard<std::mutex> lockBus(_mutexBus);
+    //Write to standard id register at address 3
+    uint8_t data = newId;
+    _protocol->writeData(
+        oldId,
+        0x03,
+        &data,
+        1);
+    std::cerr 
+        << "Changing Device id from " << oldId 
+        << " to " << newId << std::endl;
+    //Sucessfully stop the precessus
+    exit(0);
+}
 
 void BaseManager::scan()
 {

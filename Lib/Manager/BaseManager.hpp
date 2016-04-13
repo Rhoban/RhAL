@@ -158,6 +158,16 @@ class BaseManager : public CallManager
         bool ping(id_t id);
 
         /**
+         * Update the given Device id to
+         * new given id.
+         * Warning: due to internal structure
+         * coheerence, the processus is stopped
+         * (exit()) after the update.
+         * No return.
+         */
+        void changeDeviceId(id_t oldId, id_t newId);
+
+        /**
          * Ping all possible Device Id.
          * New discovered Devices are added.
          * All responding Devices are marked as present
