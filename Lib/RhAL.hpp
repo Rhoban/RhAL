@@ -54,7 +54,8 @@ namespace RhAL {
     Dynaban64,                      \
     MX106,                          \
     IMU,                            \
-    PressureSensor,                 \
+    PressureSensor4,                \
+    PressureSensor8,                \
     Pins                            \
 
 /**
