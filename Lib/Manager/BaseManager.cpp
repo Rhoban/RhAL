@@ -470,7 +470,9 @@ void BaseManager::scan()
                 //is already known with a different type
                 throw std::logic_error(
                     "BaseManager scan type mismatch: "
-                    + std::to_string(i));
+                    + std::string("id=") + std::to_string(i)
+                    + std::string(" is alreay known as ") + devById(i).name()
+                    + std::string(" with type ") + devTypeNameById(i));
             } else if (isExist) {
                 //If no type problem mark
                 //the Device as present
