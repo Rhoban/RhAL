@@ -471,6 +471,7 @@ void BaseManager::scan()
                 throw std::logic_error(
                     "BaseManager scan type mismatch: "
                     + std::string("id=") + std::to_string(i)
+                    + std::string(" type=") + std::to_string(type)
                     + std::string(" is alreay known as ") + devById(i).name()
                     + std::string(" with type ") + devTypeNameById(i));
             } else if (isExist) {
