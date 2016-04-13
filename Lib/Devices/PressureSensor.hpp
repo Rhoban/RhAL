@@ -24,14 +24,15 @@ class PressureSensor : public Device
          * Initialization with name and id
          */
         PressureSensor(const std::string& name, id_t id)
-            : Device(name, id)
+            : Device(name, id),
+	      _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
         {
             for (unsigned int i=0; i<GAUGES; i++) {
                 std::stringstream ss;
                 ss << "pressure_" << i;
                 _pressure.push_back(std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt(ss.str(), 0x24+3*i, 3, [i, this](const data_t* data) -> int {
                     std::lock_guard<std::mutex> lock(this->_mutex);
-                    int value = convDecode_3Bytes(data);
+                    int value = convDecode_3Bytes_signed(data);
                     return value - (int)this->_zero[i]->value;
                 }, 1)));
 
@@ -75,6 +76,9 @@ class PressureSensor : public Device
         //size and address in the hardware.
         std::vector<std::shared_ptr<TypedRegisterInt>> _pressure; // Starts at 0x24
 
+        // Led
+        TypedRegisterBool _led; // At 0x19
+
         /**
          * Parameters
          */
@@ -86,6 +90,7 @@ class PressureSensor : public Device
          */
         virtual void onInit() override
         {
+            Device::registersList().add(&_led);
             for (auto &reg : _pressure) {
                 Device::registersList().add(reg.get());
             }

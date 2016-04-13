@@ -112,7 +112,27 @@ uint16_t convDecode_2Bytes(const data_t* buffer)
 
 uint32_t convDecode_3Bytes(const data_t* buffer)
 {
-    return read2BytesFromBuffer(buffer);
+    return read3BytesFromBuffer(buffer);
+}
+
+#define VALUE_SIGN(value, length) \
+        ((value < (1<<(length-1))) ? \
+         (value) \
+         : (value-(1<<length)))
+
+int8_t convDecode_1Byte_signed(const data_t* buffer)
+{
+    return VALUE_SIGN(read1ByteFromBuffer(buffer), 8);
+}
+
+int16_t convDecode_2Bytes_signed(const data_t* buffer)
+{
+    return VALUE_SIGN(read2BytesFromBuffer(buffer), 16);
+}
+
+int32_t convDecode_3Bytes_signed(const data_t* buffer)
+{
+    return VALUE_SIGN(read3BytesFromBuffer(buffer), 24);
 }
 
 float convDecode_float(const data_t* buffer)

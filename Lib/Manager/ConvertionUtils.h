@@ -64,16 +64,19 @@ bool convDecode_Bool(const data_t* buffer);
  * Default 1Byte decode (raw copy)
  */
 uint8_t convDecode_1Byte(const data_t* buffer);
+int8_t convDecode_1Byte_signed(const data_t* buffer);
 
 /**
  * Default 2Bytes decode (raw copy)
  */
 uint16_t convDecode_2Bytes(const data_t* buffer);
+int16_t convDecode_2Bytes_signed(const data_t* buffer);
 
 /**
  * Default 3Bytes decode (raw copy)
  */
 uint32_t convDecode_3Bytes(const data_t* buffer);
+int32_t convDecode_3Bytes_signed(const data_t* buffer);
 
 /**
  * Default float decode (raw copy)
