@@ -36,7 +36,7 @@ class PressureSensor : public Device
                     return value - (int)this->_zero[i]->value;
                 }, 1)));
 
-                ss.clear();
+                ss.str("");
                 ss << "zero_" << i;
                 _zero.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 0.0)));
             }
