@@ -11,62 +11,28 @@
 namespace RhAL {
 
 /**
- * Encode function for current, input in A [-9.2115, 9.2115] (precision : 4.5 mA)
+ * Encode function for current, input in 
+ * A [-9.2115, 9.2115] (precision : 4.5 mA)
  */
-inline void convEncode_Current(data_t* buffer, float value)
-{
-	float maxValue = 9.2115;
-	if (value > maxValue) {
-		value = maxValue;
-	} else if (value < -maxValue) {
-		value = -maxValue;
-	}
-
-	uint16_t current = std::lround(2048 + value*1000.0/4.5);
-	write1ByteToBuffer(buffer, current);
-}
+void convEncode_Current(data_t* buffer, float value);
 /**
- * Decode function for current, output in A [-9.2115, 9.2115] (precision : 4.5 mA)
+ * Decode function for current, output 
+ * in A [-9.2115, 9.2115] (precision : 4.5 mA)
  */
-inline float convDecode_Current(const data_t* buffer)
-{
-	uint16_t val = read2BytesFromBuffer(buffer);
-	return val * 4.5 * (val - 2048.0);
-}
+float convDecode_Current(const data_t* buffer);
 
 /**
- * Encode function for goal torque, input in bullshits (precision 1/2048 bullshits).
+ * Encode function for goal torque, input in 
+ * bullshits (precision 1/2048 bullshits).
  * Actually expects a value between -1 and 1
  */
-inline void convEncode_GoalCurrent(data_t* buffer, float value)
-{
-	if (value > 1.0) {
-		value = 1.0;
-	} else if (value < -1.0) {
-		value = -1.0;
-	}
-
-	if (value >= 0) {
-		value = 2047 * value;
-	} else {
-		value = 2048 - 2047*value;
-	}
-	uint16_t result = std::lround(value);
-	write2BytesToBuffer(buffer, result);
-}
+void convEncode_GoalCurrent(data_t* buffer, float value);
 /**
- * Decode function for current, output in bullshit (precision 1/2048 bullshit).
+ * Decode function for current, output 
+ * in bullshit (precision 1/2048 bullshit).
  * Actually outputs a value between -1 and 1
  */
-inline float convDecode_GoalCurrent(const data_t* buffer)
-{
-	uint16_t val = read2BytesFromBuffer(buffer);
-	if (val < 2048) {
-		return val/2047.0;
-	} else {
-		return -(val - 2048)/2047.0;
-	}
-}
+float convDecode_GoalCurrent(const data_t* buffer);
 
 /**
  * MX64
@@ -81,45 +47,32 @@ class MX64 : public MX
         /**
          * Initialization with name and id
          */
-        inline MX64(const std::string& name, id_t id) :
-            MX(name, id),
-			_current("current", 0x44, 2, convDecode_Current, 0),
-			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
-			_goalCurrent("goalCurrent", 0x47, 2, convEncode_GoalCurrent, convDecode_GoalCurrent, 0)
-        {
-            _goalCurrent.setMinValue(-1.0);
-            _goalCurrent.setMaxValue(1.0);
-            _goalCurrent.setStepValue(0.0001);
+        MX64(const std::string& name, id_t id);
 
-            _current.setMinValue(-9.2115);
-            _current.setMaxValue(9.2115);
-            _current.setStepValue(0.0045);
-
-        }
-
-
+        /**
+         * Registers access
+         */
+        TypedRegisterFloat& current();
+        TypedRegisterBool& torqueControlModeEnable();
+        TypedRegisterFloat& goalCurrent();
 
     protected :
+
         /**
          * Inherit.
          * Declare Registers and parameters
          */
-        inline virtual void onInit() override
-        {
-        	MX::onInit();
-        	Device::registersList().add(&_current);
-        	Device::registersList().add(&_torqueControlModeEnable);
-        	Device::registersList().add(&_goalCurrent);
-        }
+        virtual void onInit() override;
 
         /**
          * Register
          */
-        //The following comments specify the register size and address in the hardware. A '*' means that the register is not present in the all of the MX children.
-		TypedRegisterFloat 	_current;					//2 44
-		TypedRegisterBool	_torqueControlModeEnable;	//1 46
-		TypedRegisterFloat 	_goalCurrent;				//2 47
-
+        //The following comments specify the register size and address 
+        //in the hardware. A '*' means that the register is not present 
+        //in the all of the MX children.
+        TypedRegisterFloat 	_current;                   //2 44
+        TypedRegisterBool	_torqueControlModeEnable;   //1 46
+        TypedRegisterFloat 	_goalCurrent;               //2 47
 };
 
 /**

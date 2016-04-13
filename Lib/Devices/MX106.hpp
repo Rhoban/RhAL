@@ -24,33 +24,32 @@ class MX106 : public MX
         /**
          * Initialization with name and id
          */
-        inline MX106(const std::string& name, id_t id) :
-            MX(name, id),
-			_current("current", 0x44, 2, convEncode_Current, convDecode_Current, 0),
-			_torqueControlModeEnable("torqueControlModeEnable", 0x46, 1, convEncode_Bool, convDecode_Bool, 0),
-			_goalTorque("goalTorque", 0x47, 2, convEncode_GoalCurrent, convDecode_GoalCurrent, 0)
-        {
-        }
+        MX106(const std::string& name, id_t id);
+
+        /**
+         * Registers access
+         */
+        TypedRegisterFloat& current();
+        TypedRegisterBool& torqueControlModeEnable();
+        TypedRegisterFloat& goalTorque();
+
     protected :
+
         /**
          * Inherit.
          * Declare Registers and parameters
          */
-        inline virtual void onInit() override
-        {
-        	MX::onInit();
-        	Device::registersList().add(&_current);
-        	Device::registersList().add(&_torqueControlModeEnable);
-        	Device::registersList().add(&_goalTorque);
-        }
+        virtual void onInit() override;
 
         /**
          * Register
          */
-        //The following comments specify the register size and address in the hardware. A '*' means that the register is not present in the all of the MX children.
-		TypedRegisterFloat 	_current;					//2 44
-		TypedRegisterBool	_torqueControlModeEnable;	//1 46
-		TypedRegisterFloat 	_goalTorque;				//2 47
+        //The following comments specify the register size and address 
+        //in the hardware. A '*' means that the register is not present 
+        //in the all of the MX children.
+        TypedRegisterFloat 	_current;                    //2 44
+        TypedRegisterBool	_torqueControlModeEnable;    //1 46
+        TypedRegisterFloat 	_goalTorque;                 //2 47
 
 };
 

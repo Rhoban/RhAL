@@ -23,20 +23,7 @@ class MX28 : public MX
         /**
          * Initialization with name and id
          */
-        inline MX28(const std::string& name, id_t id) :
-            MX(name, id)
-        {
-        }
-    protected :
-        /**
-         * Inherit.
-         * Declare Registers and parameters
-         */
-        inline virtual void onInit() override
-        {
-        	MX::onInit();
-        }
-
+        MX28(const std::string& name, id_t id);
 };
 
 /**
