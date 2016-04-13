@@ -23,20 +23,7 @@ class MX12 : public MX
         /**
          * Initialization with name and id
          */
-        inline MX12(const std::string& name, id_t id) :
-            MX(name, id)
-        {
-        }
-    protected :
-        /**
-         * Inherit.
-         * Declare Registers and parameters
-         */
-        inline virtual void onInit() override
-        {
-        	MX::onInit();
-        }
-
+        MX12(const std::string& name, id_t id);
 };
 
 /**

@@ -30,7 +30,7 @@
 #include "Devices/IMU.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
-#include "Devices/Dynaban64.hpp"
+//#include "Devices/Dynaban64.hpp"
 #include "Devices/RX24.hpp"
 
 #ifdef BUILD_RHAL_RHIO_BINDING
@@ -51,7 +51,7 @@ namespace RhAL {
     RX64,                           \
     MX12,                           \
     MX28,                           \
-    Dynaban64,                      \
+    MX64,                           \
     MX106,                          \
     IMU,                            \
     PressureSensor,                 \

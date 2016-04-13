@@ -63,23 +63,25 @@ void testRX64() {
 
 	    dev.enableTorque();
 
-	    float limits[2];
-		dev.getAngleLimits(limits);
-		std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+	    float limit1 = dev.angleLimitCW();
+	    float limit2 = dev.angleLimitCCW();
+		std::cout << "Angle limits = " << limit1 << ", " << limit2 << std::endl;
 
 		float t = 0.0;
 		int delay = 20;
-		int slope = 1;
+		int slope1 = 1;
+		int slope2 = 1;
 		while (true) {
-	    	std::cout << "Setting slope to " << slope << std::endl;
-	    	int slopes[2] = {slope, slope};
-	    	dev.setComplianceSlopes(slopes);
-	    	dev.getComplianceSlopes(slopes);
-	    	std::cout << "Slopes read = " << slopes[0] << ", " << slopes[1] << std::endl;
+	    	std::cout << "Setting slope to " << slope1 << std::endl;
+                dev.complianceSlopeCW() = slope1;
+                dev.complianceSlopeCCW() = slope2;
+                slope1 = dev.complianceSlopeCW();
+                slope2 = dev.complianceSlopeCCW();
+	    	std::cout << "Slopes read = " << slope1 << ", " << slope2 << std::endl;
 	    	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			while (true) {
 //				std::cout << "val " << 2*M_PI*2*t << std::endl;
-				dev.setGoalPosition(40*sin(2*M_PI*0.25*t));
+				dev.goalPosition() = (40*sin(2*M_PI*0.25*t));
 				std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 				t = t + delay/1000.0;
 				if (t >= 5.0) {
@@ -87,9 +89,11 @@ void testRX64() {
 					break;
 				}
 			}
-			slope++;
-			if (slope >= 8) {
-				slope = 1;
+			slope1++;
+			slope2++;
+			if (slope1 >= 8) {
+				slope1 = 1;
+				slope2 = 1;
 			}
 		}
 }
@@ -130,14 +134,16 @@ void testMX64() {
 
 	    dev.enableTorque();
 
-	    float limits[2];
+	    float limit1;
+	    float limit2;
 	//    limits[0] = 0.0;
 	//    limits[1] = 0.0;
 	//    dev.setAngleLimits(limits);
 
 	//    dev.setWheelMode();
-		dev.getAngleLimits(limits);
-		std::cout << "Angle limits = " << limits[0] << ", " << limits[1] << std::endl;
+                limit1 = dev.angleLimitCW();
+                limit2 = dev.angleLimitCCW();
+		std::cout << "Angle limits = " << limit1 << ", " << limit2 << std::endl;
 
 
 	//    std::cout << "Setting wheel mode !" << std::endl;
@@ -162,8 +168,8 @@ void testMX64() {
 		while (true) {
 			pos = pos + 20 * direction;
 			std::cout << "setting pos " << pos << std::endl;
-			dev.setGoalPosition(pos);
-			std::cout << "Position read = " << dev.getGoalPosition() << std::endl;
+			dev.goalPosition() = pos;
+			std::cout << "Position read = " << dev.goalPosition() << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(400));
 			if (pos >= 720) {
 				direction = -1 * direction;
@@ -173,22 +179,22 @@ void testMX64() {
 	    while (true) {
 	    	pos = -20;
 	    	std::cout << "setting pos " << pos << std::endl;
-	    	dev.setGoalPosition(pos);
+	    	dev.goalPosition() = pos;
 	        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
 	        pos = 0;
 			std::cout << "setting pos " << pos << std::endl;
-			dev.setGoalPosition(pos);
+			dev.goalPosition() = pos;
 			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
 			pos = 20;
 			std::cout << "setting pos " << pos << std::endl;
-			dev.setGoalPosition(pos);
+			dev.goalPosition() = pos;
 			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
 	        i++;
-	    	std::cout << "temp = " << dev.getTemperature() << std::endl;
-	    	std::cout << "voltage = " << dev.getVoltage() << std::endl;
+	    	std::cout << "temp = " << dev.temperature() << std::endl;
+	    	std::cout << "voltage = " << dev.voltage() << std::endl;
 	    }
 	    return;
 }
@@ -224,8 +230,8 @@ void testMX64AndDynaban() {
 				if (manager.devTypeName(it.second->name()) == "MX64") {
 					//Unchecked cast instead of dynamic_cast because the check was hand made :)
 					RhAL::MX * devMx = (RhAL::MX*) dev;
-					std::cout << "Position = " << devMx->getPositionRad() << std::endl;
-					devMx->setGoalPosition(180);
+					std::cout << "Position = " << devMx->position() << std::endl;
+					devMx->goalPosition() = 180;
 				}
 	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
@@ -491,10 +497,10 @@ void test() {
 			if (manager.devTypeName(it.second->name()) == "MX64") {
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				RhAL::MX * devMx = (RhAL::MX*) dev;
-				std::cout << "srl = " << devMx->getStatusReturnLevel() << std::endl;
+				std::cout << "srl = " << devMx->statusReturnLevel() << std::endl;
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-				devMx->setStatusReturnLevel(1);
+				devMx->statusReturnLevel() = 1;
 
 			}
 
@@ -519,7 +525,7 @@ void test() {
 					std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 					ledValue = !ledValue;
-					devMx->setLed(ledValue);
+					devMx->led() = ledValue;
 				}
 	//			RhAL::MX * devMx = dynamic_cast<RhAL::MX*>(dev);
 
@@ -580,18 +586,18 @@ void testMowgly() {
 				if (manager.devTypeName(it.second->name()) == "Dynaban64") {
 					RhAL::Dynaban64 * dev = (RhAL::Dynaban64*) devGen;
 
-					std::cout << dev->name() << " : " << dev->getPosition() << std::endl;
+					std::cout << dev->name() << " : " << dev->position() << std::endl;
 					dev->enableTorque();
-					dev->setGoalPosition(0);
+					dev->goalPosition(0);
 				}
 			}
 
 			std::cout << "RX : " << std::endl;
 			for (const auto& it : manager.devContainer<RhAL::RX>()) {
 				RhAL::RX * devGen = it.second;
-				std::cout << devGen->name() << " : " << devGen->getPosition() << std::endl;
+				std::cout << devGen->name() << " : " << devGen->position() << std::endl;
 				devGen->enableTorque();
-				devGen->setGoalPosition(0);
+				devGen->goalPosition() = 0;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			std::cout << "*******************************************************************" << std::endl;

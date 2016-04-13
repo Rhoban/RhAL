@@ -56,6 +56,18 @@ set(LIB_SOURCES
     Devices/IMU.cpp
     Devices/Pins.cpp
     Devices/PressureSensor.cpp
+    Devices/DXL.cpp
+    Devices/RX.cpp
+    Devices/AX12.cpp
+    Devices/AX18.cpp
+    Devices/RX24.cpp
+    Devices/RX28.cpp
+    Devices/RX64.cpp
+    Devices/MX.cpp
+    Devices/MX12.cpp
+    Devices/MX28.cpp
+    Devices/MX64.cpp
+    Devices/MX106.cpp
 )
 
 # Tests source files

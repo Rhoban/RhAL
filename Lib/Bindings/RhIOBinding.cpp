@@ -384,7 +384,7 @@ std::string RhIOBinding::cmdInit(
     for (auto& dev : allDevices) {
         DXL* pt = dynamic_cast<DXL*>(dev.second);
         if (pt != nullptr) {
-            pt->setGoalPositionRadSmooth(0.0, 1.0);
+            pt->setGoalPositionSmooth(0.0, 1.0);
         }
     }
     _manager->exitEmergencyState();
