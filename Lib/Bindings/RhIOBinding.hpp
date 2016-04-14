@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <RhIO.hpp>
+#include <Manager/Device.hpp>
 
 namespace RhAL {
 
@@ -44,6 +45,11 @@ class RhIOBinding
          * check for new Devices/parameeters)
          */
         void update();
+
+        /**
+         * Doing specific updates
+         */
+        void specificUpdate(RhIO::IONode *node, RhAL::Device *device);
 
     private:
 

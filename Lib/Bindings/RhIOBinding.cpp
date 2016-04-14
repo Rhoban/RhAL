@@ -4,6 +4,7 @@
 #include "Manager/BaseManager.hpp"
 #include "Manager/Device.hpp"
 #include "Devices/DXL.hpp"
+#include "Devices/GY85.hpp"
 
 namespace RhAL {
 
@@ -147,6 +148,8 @@ void RhIOBinding::update()
         RhIO::IONode* parametersNode = &(deviceNode->child("parameters"));
         //Update all parameters
         updateParameters(device.second->parametersList(), parametersNode);
+        //Specific updates
+        specificUpdate(deviceNode, device.second);
     }
 
     //Create a RhIO node for Manager parameters
@@ -164,6 +167,45 @@ void RhIOBinding::update()
     RhIO::IONode* parametersProtocolNode = &(_node->child("Protocol"));
     //Update all parameters
     updateParameters(_manager->protocolParametersList(), parametersProtocolNode);
+}
+
+void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
+{
+    //If the device is a GY85
+    if (auto gy85 = dynamic_cast<RhAL::GY85*>(device)) {
+        if (deviceNode->getValueType("accX") == RhIO::NoValue) {
+            deviceNode->newFloat("accX");
+            deviceNode->newFloat("accY");
+            deviceNode->newFloat("accZ");
+            deviceNode->newFloat("gyroX");
+            deviceNode->newFloat("gyroY");
+            deviceNode->newFloat("gyroZ");
+            deviceNode->newFloat("magnX");
+            deviceNode->newFloat("magnY");
+            deviceNode->newFloat("magnZ");
+            deviceNode->newFloat("yaw");
+            deviceNode->newFloat("pitch");
+            deviceNode->newFloat("roll");
+            deviceNode->newFloat("gyroYaw");
+
+            std::function<void()> update = [deviceNode, gy85] {
+                deviceNode->setFloat("accX", gy85->getAccX());
+                deviceNode->setFloat("accY", gy85->getAccY());
+                deviceNode->setFloat("accZ", gy85->getAccZ());
+                deviceNode->setFloat("gyroX", gy85->getGyroX());
+                deviceNode->setFloat("gyroY", gy85->getGyroY());
+                deviceNode->setFloat("gyroZ", gy85->getGyroZ());
+                deviceNode->setFloat("magnX", gy85->getMagnX());
+                deviceNode->setFloat("magnY", gy85->getMagnY());
+                deviceNode->setFloat("gyroYaw", 180*gy85->getGyroYaw()/M_PI);
+                deviceNode->setFloat("yaw", 180*gy85->getYaw()/M_PI);
+                deviceNode->setFloat("pitch", 180*gy85->getPitch()/M_PI);
+                deviceNode->setFloat("roll", 180*gy85->getRoll()/M_PI);
+            };
+            update();
+            gy85->setCallback(update);
+        }
+    }
 }
         
 void RhIOBinding::updateParameters(

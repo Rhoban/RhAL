@@ -28,6 +28,7 @@
 #include "Devices/AX18.hpp"
 #include "Devices/AX12.hpp"
 #include "Devices/IMU.hpp"
+#include "Devices/GY85.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
 //#include "Devices/Dynaban64.hpp"
@@ -56,7 +57,8 @@ namespace RhAL {
     IMU,                            \
     PressureSensor4,                \
     PressureSensor8,                \
-    Pins                            \
+    Pins,                           \
+    GY85
 
 /**
  * StandardManager typedef

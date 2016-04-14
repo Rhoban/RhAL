@@ -50,6 +50,12 @@ uint32_t read3BytesFromBuffer(const data_t* buffer)
     val = (*(buffer + 2) << 16) | (*(buffer + 1) << 8) | (*(buffer));
     return val;
 }
+uint32_t read4BytesFromBuffer(const data_t* buffer)
+{
+    uint32_t val = 0;
+    val = (*(buffer + 3) << 24) | (*(buffer + 2) << 16) | (*(buffer + 1) << 8) | (*(buffer));
+    return val;
+}
 float readFloatFromBuffer(const data_t* buffer)
 {
     //Attention ! To be tested
@@ -115,6 +121,11 @@ uint32_t convDecode_3Bytes(const data_t* buffer)
     return read3BytesFromBuffer(buffer);
 }
 
+uint32_t convDecode_4Bytes(const data_t* buffer)
+{
+    return read4BytesFromBuffer(buffer);
+}
+
 #define VALUE_SIGN(value, length) \
         ((value < (1<<(length-1))) ? \
          (value) \
@@ -133,6 +144,11 @@ int16_t convDecode_2Bytes_signed(const data_t* buffer)
 int32_t convDecode_3Bytes_signed(const data_t* buffer)
 {
     return VALUE_SIGN(read3BytesFromBuffer(buffer), 24);
+}
+
+int32_t convDecode_4Bytes_signed(const data_t* buffer)
+{
+    return (int32_t)read4BytesFromBuffer(buffer);
 }
 
 float convDecode_float(const data_t* buffer)

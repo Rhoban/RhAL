@@ -79,6 +79,12 @@ uint32_t convDecode_3Bytes(const data_t* buffer);
 int32_t convDecode_3Bytes_signed(const data_t* buffer);
 
 /**
+ * Default 4Bytes decode (raw copy)
+ */
+uint32_t convDecode_4Bytes(const data_t* buffer);
+int32_t convDecode_4Bytes_signed(const data_t* buffer);
+
+/**
  * Default float decode (raw copy)
  */
 float convDecode_float(const data_t* buffer);
