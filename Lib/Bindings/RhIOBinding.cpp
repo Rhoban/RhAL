@@ -197,7 +197,7 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
                 deviceNode->setFloat("gyroZ", gy85->getGyroZ());
                 deviceNode->setFloat("magnX", gy85->getMagnX());
                 deviceNode->setFloat("magnY", gy85->getMagnY());
-                deviceNode->setFloat("magnZ", gy85->getMagnY());
+                deviceNode->setFloat("magnZ", gy85->getMagnZ());
                 deviceNode->setFloat("gyroYaw", 180*gy85->getGyroYaw()/M_PI);
                 deviceNode->setFloat("yaw", 180*gy85->getYaw()/M_PI);
                 deviceNode->setFloat("pitch", 180*gy85->getPitch()/M_PI);
