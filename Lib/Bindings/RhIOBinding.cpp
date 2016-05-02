@@ -26,6 +26,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdScan, this, std::placeholders::_1));
     _node->newCommand("rhalStats", "Display RhAL statistics", 
         std::bind(&RhIOBinding::cmdStats, this, std::placeholders::_1));
+    _node->newCommand("rhalResetStats", "Reset all RhAL statistics", 
+        std::bind(&RhIOBinding::cmdResetStats, this, std::placeholders::_1));
     _node->newCommand("rhalReadDev", "Re-read all registers of given device name", 
         std::bind(&RhIOBinding::cmdReadDev, this, std::placeholders::_1));
     _node->newCommand("rhalReadReg", "Re-read in the given device name the given register name", 
@@ -268,6 +270,16 @@ std::string RhIOBinding::cmdStats(
     _manager->getStatistics().print(oss);
 
     return oss.str();
+}
+
+std::string RhIOBinding::cmdResetStats(
+    std::vector<std::string> argv)
+{
+    (void)argv;
+    std::ostringstream oss;
+    _manager->resetStatistics();
+
+    return "RhAL Statistics Reseted";
 }
             
 std::string RhIOBinding::cmdReadDev(

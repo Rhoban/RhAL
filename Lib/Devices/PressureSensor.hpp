@@ -23,18 +23,21 @@ class PressureSensor : public Device
         /**
          * Initialization with name and id
          */
-        PressureSensor(const std::string& name, id_t id)
-            : Device(name, id),
-	      _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
+        PressureSensor(const std::string& name, id_t id) : 
+            Device(name, id),
+            _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
         {
-            for (unsigned int i=0; i<GAUGES; i++) {
+            for (unsigned int i=0;i<GAUGES;i++) {
                 std::stringstream ss;
                 ss << "pressure_" << i;
-                _pressure.push_back(std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt(ss.str(), 0x24+3*i, 3, [i, this](const data_t* data) -> int {
-                    std::lock_guard<std::mutex> lock(this->_mutex);
-                    int value = convDecode_3Bytes_signed(data);
-                    return value - (int)this->_zero[i]->value;
-                }, 1)));
+                _pressure.push_back(std::shared_ptr<TypedRegisterInt>(
+                    new TypedRegisterInt(ss.str(), 0x24+3*i, 3, 
+                    [i, this](const data_t* data) -> int {
+                        std::lock_guard<std::mutex> lock(this->_mutex);
+                        int value = convDecode_3Bytes_signed(data);
+                        return value - (int)this->_zero[i]->value;
+                    }, 
+                    1)));
 
                 ss.str("");
                 ss << "zero_" << i;
@@ -119,9 +122,15 @@ class ImplManager<PressureSensor<GAUGES>> : public TypedManager<PressureSensor<G
         }
 };
 
+/**
+ * Explicit template instanciation
+ */
 extern template class PressureSensor<4>;
 extern template class PressureSensor<8>;
 
+/**
+ * Typedef 
+ */
 typedef PressureSensor<4> PressureSensor4;
 typedef PressureSensor<8> PressureSensor8;
 

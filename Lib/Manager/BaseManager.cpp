@@ -690,6 +690,12 @@ Statistics BaseManager::getStatistics() const
     return _stats;
 }
 
+void BaseManager::resetStatistics()
+{
+    std::lock_guard<std::mutex> lock(CallManager::_mutex);
+    _stats.reset();
+}
+
 const ParametersList& BaseManager::parametersList() const
 {
     return _parametersList;

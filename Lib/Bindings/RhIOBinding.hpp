@@ -4,12 +4,12 @@
 #include <vector>
 #include <string>
 #include <RhIO.hpp>
-#include <Manager/Device.hpp>
 
 namespace RhAL {
 
 class BaseManager;
 class ParametersList;
+class Device;
 
 /**
  * RhIOBinding
@@ -48,8 +48,10 @@ class RhIOBinding
 
         /**
          * Doing specific updates
+         * on float registers.
          */
-        void specificUpdate(RhIO::IONode *node, RhAL::Device *device);
+        void specificUpdate(
+            RhIO::IONode *node, RhAL::Device *device);
 
     private:
 
@@ -82,6 +84,8 @@ class RhIOBinding
         std::string cmdScan(
             std::vector<std::string> argv);
         std::string cmdStats(
+            std::vector<std::string> argv);
+        std::string cmdResetStats(
             std::vector<std::string> argv);
         std::string cmdReadDev(
             std::vector<std::string> argv);

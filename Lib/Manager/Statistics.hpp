@@ -77,6 +77,11 @@ struct Statistics
     Statistics();
 
     /**
+     * Reset to zero all statistics
+     */
+    void reset();
+
+    /**
      * Display on given output stream the
      * textual statitics summary.
      * (default is std::cout)

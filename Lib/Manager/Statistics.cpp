@@ -4,40 +4,45 @@
 namespace RhAL {
     
 Statistics::Statistics() :
-    managerStart(getTimePoint()),
-    readCount(0),
-    writeCount(0),
-    syncReadCount(0),
-    syncWriteCount(0),
-    readLength(0),
-    writeLength(0),
-    syncReadLength(0),
-    syncWriteLength(0),
-    sumReadDuration(0),
-    sumWriteDuration(0),
-    sumSyncReadDuration(0),
-    sumSyncWriteDuration(0),
-    maxReadDuration(0),
-    maxWriteDuration(0),
-    maxSyncReadDuration(0),
-    maxSyncWriteDuration(0),
-    flushCount(0),
-    waitNextFlushCount(0),
-    waitNextFlushCooperativeCount(0),
-    forceReadCount(0),
-    forceWriteCount(0),
-    waitUsersDuration(0),
-    waitManagerDuration(0),
-    lastFlushTimePoint(),
-    maxFlushPeriod(0),
-    sumFlushPeriod(0),
-    emergencyCount(0),
-    exitEmergencyCount(0),
-    deviceOKCount(0),
-    deviceWarningCount(0),
-    deviceQuietCount(0),
-    deviceErrorCount(0)
+    managerStart(getTimePoint())
 {
+    reset();
+}
+    
+void Statistics::reset()
+{
+    readCount = 0;
+    writeCount = 0;
+    syncReadCount = 0;
+    syncWriteCount = 0;
+    readLength = 0;
+    writeLength = 0;
+    syncReadLength = 0;
+    syncWriteLength = 0;
+    sumReadDuration = TimeDurationMicro(0);
+    sumWriteDuration = TimeDurationMicro(0);
+    sumSyncReadDuration = TimeDurationMicro(0);
+    sumSyncWriteDuration = TimeDurationMicro(0);
+    maxReadDuration = TimeDurationMicro(0);
+    maxWriteDuration = TimeDurationMicro(0);
+    maxSyncReadDuration = TimeDurationMicro(0);
+    maxSyncWriteDuration = TimeDurationMicro(0);
+    flushCount = 0;
+    waitNextFlushCount = 0;
+    waitNextFlushCooperativeCount = 0;
+    forceReadCount = 0;
+    forceWriteCount = 0;
+    waitUsersDuration = TimeDurationMicro(0);
+    waitManagerDuration = TimeDurationMicro(0);
+    lastFlushTimePoint = TimePoint();
+    maxFlushPeriod = TimeDurationMicro(0);
+    sumFlushPeriod = TimeDurationMicro(0);
+    emergencyCount = 0;
+    exitEmergencyCount = 0;
+    deviceOKCount = 0;
+    deviceWarningCount = 0;
+    deviceQuietCount = 0;
+    deviceErrorCount = 0;
 }
 
 void Statistics::print(std::ostream& os) const

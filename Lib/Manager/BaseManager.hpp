@@ -224,6 +224,11 @@ class BaseManager : public CallManager
         Statistics getStatistics() const;
 
         /**
+         * Reset all Manager Statistics
+         */
+        void resetStatistics();
+
+        /**
          * Read/Write access to Manager Parameters list
          */
         const ParametersList& parametersList() const;
