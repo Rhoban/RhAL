@@ -96,7 +96,7 @@ DXL::DXL(const std::string& name, id_t id) :
     _angleLimitCCWParameter("angleLimitCCWParameter", 0.0),
     _inverted("inverse", false),
     _zero("zero", 0.0),
-    _isSmoothingEnable(false)
+    _isSmoothingActive(false)
 {
     _temperatureLimit.setMinValue(0);
     _temperatureLimit.setMaxValue(255); //uint8 but you should not go to 255°!!
@@ -163,16 +163,16 @@ void DXL::disableTorque()
 
 void DXL::setGoalPositionSmooth(float angle, float delay)
 {
-    _isSmoothingEnable = true;
+    _isSmoothingActive = true;
     _smoothingStartGoal = position().readValue().value;
     _smoothingEndGoal = angle;
     _smoothingCurrentTime = 0.0;
     _smoothingEndTime = delay;
     goalPosition().writeValue(_smoothingStartGoal);
 }
-bool DXL::isSmoothingEnabled() const
+bool DXL::isSmoothingActive() const
 {
-    return _isSmoothingEnable;
+    return _isSmoothingActive;
 }
 
 bool DXL::getInverted()
@@ -207,7 +207,7 @@ void DXL::onSwap()
     }
     _lastTp = tp;
 
-    if (_isSmoothingEnable) {
+    if (_isSmoothingActive) {
         double goal = 
             ((_smoothingEndGoal - _smoothingStartGoal)/_smoothingEndTime) 
             * _smoothingCurrentTime
@@ -215,7 +215,7 @@ void DXL::onSwap()
         goalPosition().writeValue(goal);
         _smoothingCurrentTime += step;
         if (_smoothingCurrentTime >= _smoothingEndTime) {
-            _isSmoothingEnable = false;
+            _isSmoothingActive = false;
         }
     }
 }
