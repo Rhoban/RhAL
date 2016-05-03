@@ -21,7 +21,7 @@
 #include "Devices/DXL.hpp"
 #include "Devices/MX106.hpp"
 #include "Devices/MX64.hpp"
-//#include "Devices/Dynaban64.hpp"
+#include "Devices/Dynaban64.hpp"
 #include "Devices/MX28.hpp"
 #include "Devices/MX12.hpp"
 #include "Devices/RX64.hpp"
@@ -53,7 +53,7 @@ namespace RhAL {
     RX64,                           \
     MX12,                           \
     MX28,                           \
-    MX64,                           \
+	Dynaban64,                      \
     MX106,                          \
     IMU,                            \
     PressureSensor4,                \
