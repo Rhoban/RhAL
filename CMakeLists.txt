@@ -63,6 +63,7 @@ set(LIB_SOURCES
     Devices/RX24.cpp
     Devices/RX28.cpp
     Devices/RX64.cpp
+    Devices/Dynaban64.cpp
     Devices/MX.cpp
     Devices/MX12.cpp
     Devices/MX28.cpp

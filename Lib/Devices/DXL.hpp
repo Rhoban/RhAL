@@ -225,7 +225,7 @@ class DXL : public Device
          * Return true if smoothing if currently enabled or 
          * is finished
          */
-        bool isSmoothingEnabled() const;
+        bool isSmoothingActive() const;
 
         /**
          * Parameters get/set
@@ -286,7 +286,7 @@ class DXL : public Device
         /**
          * Goal position smoothing state
          */
-        bool _isSmoothingEnable;
+        bool _isSmoothingActive;
         double _smoothingStartGoal;
         double _smoothingEndGoal;
         double _smoothingCurrentTime;
