@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <mutex>
 #include "types.h"
-#include "utils.h"
+#include "timestamp.h"
 #include "Aggregation.h"
 
 namespace RhAL {

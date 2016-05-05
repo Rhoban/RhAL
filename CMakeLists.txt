@@ -39,7 +39,7 @@ set(LIB_SOURCES
     Protocol/DynamixelV1.cpp
     Protocol/FakeProtocol.cpp
     Protocol/ProtocolFactory.cpp
-    utils.cpp
+    timestamp.cpp
     Manager/Statistics.cpp
     Manager/RegistersList.cpp
     Manager/ParametersList.cpp
