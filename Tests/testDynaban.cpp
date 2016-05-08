@@ -109,18 +109,12 @@ void testDynaban() {
 					}
 					if ((max - min > 1) && !(max == 3 && min == 0)) {
 						std::cout << "De-Synchronisation detected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+						manager.getStatistics().print();
+						return;
 					}
 				}
 
-//				nbUpdates++;
-//				if (nbUpdates >= nbDevices) {
-//					//Next time we'll send a different traj
-//					index = (index + 1)%4;
-//					nbUpdates = 0;
-//					if (index == 0) {
-//						nbRepetitions++;
-//					}
-//				}
+
 			}
 		}
 	}

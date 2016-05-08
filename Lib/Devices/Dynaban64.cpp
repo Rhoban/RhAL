@@ -589,7 +589,7 @@ void Dynaban64::updateNextTrajectory(float * positionCoefs, int nbPositionCoefs,
     	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
     	setTorqueTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
     	//TODO why do we need to comment this line???
-    	torquePoly2Size() = nbTorqueCoefs;
+    	//torquePoly2Size() = nbTorqueCoefs;
 	}
 	/*
 	 * We set copy next buffer to 1, this tells dynaban to use our new trajectory once the last one has finished.
