@@ -53,7 +53,7 @@ namespace RhAL {
     RX64,                           \
     MX12,                           \
     MX28,                           \
-	Dynaban64,                      \
+    Dynaban64,                      \
     MX106,                          \
     IMU,                            \
     PressureSensor4,                \

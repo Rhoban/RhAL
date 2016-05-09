@@ -199,7 +199,15 @@ class Register
          * If false, the current user 
          * read value has not been updated
          */
-        bool _isLastError;
+        bool _isLastReadError;
+        
+        /**
+         * If true, the last write attempt
+         * on this register has failed
+         * (write error) and have to be re send
+         * or replace with aggregation reseted.
+         */
+        bool _isLastWriteError;
 
         /**
          * Pointer to a base class
@@ -231,7 +239,7 @@ class Register
          * Mark the register as selected for write.
          * Current write typed value is converted into
          * the write data buffer.
-         * Set needWrite to false (reset aggregation).
+         * Set needWrite to false.
          * (Call by Manager)
          */
         void selectForWrite();
@@ -258,6 +266,14 @@ class Register
          * (Call by Manager)
          */
         void readError();
+
+        /**
+         * Mark the register as last write
+         * operatio failed.
+         * Re mark the regiser as needed 
+         * to be write again.
+         */
+        void writeError();
 
         /**
          * If the register swap is needed,

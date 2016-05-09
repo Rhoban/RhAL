@@ -43,6 +43,7 @@ void Statistics::reset()
     deviceWarningCount = 0;
     deviceQuietCount = 0;
     deviceErrorCount = 0;
+    writeErrorCount = 0;
 }
 
 void Statistics::print(std::ostream& os) const
@@ -113,6 +114,7 @@ void Statistics::print(std::ostream& os) const
     os << "Devices warning responses: " << deviceWarningCount << std::endl;
     os << "Devices quiet responses: " << deviceQuietCount << std::endl;
     os << "Devices error responses: " << deviceErrorCount << std::endl;
+    os << "Detected write() errors count: " << writeErrorCount << std::endl;
 }
 
 }

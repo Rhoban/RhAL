@@ -29,6 +29,7 @@ BaseManager::BaseManager() :
     _paramProtocolName("protocol", "FakeProtocol"),
     _paramEnableSyncRead("enableSyncRead", true),
     _paramEnableSyncWrite("enableSyncWrite", true),
+    _paramWaitWriteCheckResponse("waitWriteCheckResponse", true),
     _paramThrowErrorOnScan("throwErrorOnScan", true),
     _paramThrowErrorOnRead("throwErrorOnRead", true)
 {
@@ -39,6 +40,7 @@ BaseManager::BaseManager() :
     _parametersList.add(&_paramProtocolName);
     _parametersList.add(&_paramEnableSyncRead);
     _parametersList.add(&_paramEnableSyncWrite);
+    _parametersList.add(&_paramWaitWriteCheckResponse);
     _parametersList.add(&_paramThrowErrorOnScan);
     _parametersList.add(&_paramThrowErrorOnRead);
     //Initialize the low level communication
@@ -449,16 +451,36 @@ void BaseManager::changeDeviceId(id_t oldId, id_t newId)
     std::lock_guard<std::mutex> lockBus(_mutexBus);
     //Write to standard id register at address 3
     uint8_t data = newId;
-    _protocol->writeData(
-        oldId,
-        0x03,
-        &data,
-        1);
-    std::cerr 
-        << "Changing Device id from " << oldId 
-        << " to " << newId << std::endl;
-    //Sucessfully stop the precessus
-    exit(0);
+    if (_paramWaitWriteCheckResponse.value) {
+        ResponseState state = _protocol->writeAndCheckData(
+            oldId,
+            0x03,
+            &data,
+            1);
+        if (checkResponseState(state, nullptr)) {
+            std::cerr 
+                << "Changing Device id from " << oldId 
+                << " to " << newId << std::endl;
+            //Sucessfully stop the processus
+            exit(0);
+        } else {
+            _stats.writeErrorCount++;
+            std::cerr 
+                << "Error: Fail changing Device id from " << oldId 
+                << " to " << newId << std::endl;
+        }
+    } else {
+        _protocol->writeData(
+            oldId,
+            0x03,
+            &data,
+            1);
+        std::cerr 
+            << "Changing Device id from " << oldId 
+            << " to " << newId << std::endl;
+        //Sucessfully stop the processus
+        exit(0);
+    }
 }
 
 void BaseManager::scan()
@@ -622,7 +644,7 @@ void BaseManager::forceRegisterRead(
             //Error case
             reg->readError();
             nbFails++;
-            if (nbFails >= MaxForceReadTries) {
+            if (nbFails >= MaxForceReTries) {
                 if (_paramThrowErrorOnRead.value) {
                     throw std::runtime_error(
                         "BaseManager max tries reached when read error: "
@@ -662,20 +684,58 @@ void BaseManager::forceRegisterWrite(
     //Export typed value into data buffer
     reg->selectForWrite();
     //Write the register
-    TimePoint pStart = getTimePoint();
-    _protocol->writeData(
-        reg->id,
-        reg->addr,
-        reg->_dataBufferWrite,
-        reg->length);
-    TimePoint pStop = getTimePoint();
-    _stats.writeCount++;
-    _stats.writeLength += reg->length;
-    TimeDurationMicro duration = 
-        getTimeDuration<TimeDurationMicro>(pStart, pStop);
-    _stats.sumWriteDuration += duration;
-    if (_stats.maxWriteDuration < duration) {
-        _stats.maxWriteDuration = duration;
+    unsigned int nbFails = 0;
+    bool isContinue = true;
+    while (isContinue) {
+        TimePoint pStart = getTimePoint();
+        if (_paramWaitWriteCheckResponse.value) {
+            //Write and check response state
+            ResponseState state = _protocol->writeAndCheckData(
+                reg->id,
+                reg->addr,
+                reg->_dataBufferWrite,
+                reg->length);
+            //Check for communication error
+            if (checkResponseState(state, &(devById(id)))) {
+                isContinue = false;
+            } else {
+                //If error, retries until max limit is reached.
+                _stats.writeErrorCount++;
+                nbFails++;
+                if (nbFails >= MaxForceReTries) {
+                    reg->writeError();
+                    if (_paramThrowErrorOnRead.value) {
+                        throw std::runtime_error(
+                            "BaseManager max tries reached when write error: "
+                            + reg->name 
+                            + ", on device id : " + std::to_string(id));
+                    } else {
+                        std::cerr <<
+                            "BaseManager max tries reached when write error: "
+                            << reg->name 
+                            << ", on device id : " << id << std::endl;
+                        return;
+                    }
+                }
+            }
+        } else {
+            //Direct no write check case
+            _protocol->writeData(
+                reg->id,
+                reg->addr,
+                reg->_dataBufferWrite,
+                reg->length);
+            isContinue = false;
+        }
+        TimePoint pStop = getTimePoint();
+        _stats.writeCount++;
+        _stats.writeLength += reg->length;
+        TimeDurationMicro duration = 
+            getTimeDuration<TimeDurationMicro>(pStart, pStop);
+        _stats.sumWriteDuration += duration;
+        if (_stats.maxWriteDuration < duration) {
+            _stats.maxWriteDuration = duration;
+        }
     }
     //Wait delay in case of slow register
     if (reg->isSlowRegister) {
@@ -746,6 +806,11 @@ void BaseManager::setEnableSyncWrite(bool isEnable)
 {
     std::lock_guard<std::mutex> lock(CallManager::_mutex);
     _paramEnableSyncWrite.value = isEnable;
+}
+void BaseManager::setWaitWriteCheckResponse(bool isEnable)
+{
+    std::lock_guard<std::mutex> lock(CallManager::_mutex);
+    _paramWaitWriteCheckResponse.value = isEnable;
 }
 void BaseManager::setThrowOnScan(bool isEnable)
 {
@@ -918,11 +983,30 @@ void BaseManager::writeBatch(BatchedRegisters& batch)
     if (batch.ids.size() == 1) {
         //Write single register
         TimePoint pStart = getTimePoint();
-        _protocol->writeData(
-            batch.ids.front(),
-            batch.addr,
-            batch.regs.front().front()->_dataBufferWrite,
-            batch.length);
+        if (_paramWaitWriteCheckResponse.value) {
+            //Write and check response state
+            ResponseState state = _protocol->writeAndCheckData(
+                batch.ids.front(),
+                batch.addr,
+                batch.regs.front().front()->_dataBufferWrite,
+                batch.length);
+            //Check for communication error
+            if (!checkResponseState(state, _devicesById.at(batch.ids.front()))) {
+                //Error case
+                _stats.writeErrorCount++;
+                //Re-write the value at next cycle
+                for (size_t j=0;j<batch.regs.front().size();j++) {
+                    batch.regs.front()[j]->writeError();
+                }
+            } 
+        } else {
+            //Direct write no check case
+            _protocol->writeData(
+                batch.ids.front(),
+                batch.addr,
+                batch.regs.front().front()->_dataBufferWrite,
+                batch.length);
+        }
         TimePoint pStop = getTimePoint();
         _stats.writeCount++;
         _stats.writeLength += batch.length;
@@ -939,11 +1023,32 @@ void BaseManager::writeBatch(BatchedRegisters& batch)
             datas.push_back(batch.regs[i].front()->_dataBufferWrite);
         }
         TimePoint pStart = getTimePoint();
-        _protocol->syncWrite(
-            batch.ids,
-            batch.addr,
-            datas,
-            batch.length);
+        if (_paramWaitWriteCheckResponse.value) {
+            //Write and check response state
+            std::vector<ResponseState> states = _protocol->syncWriteAndCheck(
+                batch.ids,
+                batch.addr,
+                datas,
+                batch.length);
+            for (size_t i=0;i<states.size();i++) {
+                //Check for communication error
+                if (!checkResponseState(states[i], _devicesById.at(batch.ids[i]))) {
+                    //Error case
+                    _stats.writeErrorCount++;
+                    //Re-write the value at next cycle
+                    for (size_t j=0;j<batch.regs[i].size();j++) {
+                        batch.regs[i][j]->writeError();
+                    }
+                }
+            }
+        } else {
+            //Direct write no check case
+            _protocol->syncWrite(
+                batch.ids,
+                batch.addr,
+                datas,
+                batch.length);
+        }
         TimePoint pStop = getTimePoint();
         _stats.syncWriteCount++;
         _stats.syncWriteLength += batch.length;

@@ -28,7 +28,7 @@ constexpr unsigned int SlowRegisterDelayMs = 100;
  * Number of consecutive trials when trying
  * to immediate read before abording
  */
-constexpr unsigned int MaxForceReadTries = 20;
+constexpr unsigned int MaxForceReTries = 20;
 
 /**
  * Device register address
