@@ -80,7 +80,7 @@ void testDynaban() {
 	}
 	manager.flush();
 	int indexs[6] = {0, 0, 0, 0, 0, 0};
-
+	int counter = 0;
 	while(true) {
 		manager.flush();
 		int i = -1;
@@ -88,6 +88,7 @@ void testDynaban() {
 			i++;
 			RhAL::Dynaban64 * dev = it.second;
 			if(dev->isReadyForNextTrajectory()) {
+				counter++;
 				dev->updateNextTrajectory(coefs[indexs[i]], 5, torques[indexs[i]], 5, 0.5000);
 //				std::cout << "New traj for " << it.first << std::endl;
 				indexs[i] = (indexs[i] + 1)%4;
@@ -107,14 +108,16 @@ void testDynaban() {
 					} else {
 						std::cout << indexs[i] << ", ";
 					}
-					if ((max - min > 1) && !(max == 3 && min == 0)) {
+					if ((max - min > 1) && !(max == 3 && min == 0) && false) {
 						std::cout << "De-Synchronisation detected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 						manager.getStatistics().print();
 						return;
 					}
 				}
-
-
+			}
+			if (counter > 10) {
+				manager.getStatistics().print();
+				return;
 			}
 		}
 	}

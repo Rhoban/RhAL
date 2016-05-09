@@ -3,61 +3,11 @@
         "devices": [
             {
                 "id": 1,
-                "name": "One",
+                "name": "one",
                 "parameters": {
                     "angleLimitCCWParameter": 180.0,
                     "angleLimitCWParameter": -180.0,
-                    "inverse": false,
-                    "zero": 0.0
-                }
-            },
-            {
-                "id": 2,
-                "name": "Two",
-                "parameters": {
-                    "angleLimitCCWParameter": 180.0,
-                    "angleLimitCWParameter": -180.0,
-                    "inverse": false,
-                    "zero": 0.0
-                }
-            },
-            {
-                "id": 3,
-                "name": "three",
-                "parameters": {
-                    "angleLimitCCWParameter": 180.0,
-                    "angleLimitCWParameter": -180.0,
-                    "inverse": false,
-                    "zero": 0.0
-                }
-            },
-            {
-                "id": 4,
-                "name": "four",
-                "parameters": {
-                    "angleLimitCCWParameter": 180.0,
-                    "angleLimitCWParameter": -180.0,
-                    "inverse": false,
-                    "zero": 0.0
-                }
-            },
-            {
-                "id": 5,
-                "name": "five",
-                "parameters": {
-                    "angleLimitCCWParameter": 180.0,
-                    "angleLimitCWParameter": -180.0,
-                    "inverse": false,
-                    "zero": 0.0
-                }
-            },
-            {
-                "id": 6,
-                "name": "six",
-                "parameters": {
-                    "angleLimitCCWParameter": 180.0,
-                    "angleLimitCWParameter": -180.0,
-                    "inverse": false,
+                    "inverse": true,
                     "zero": 0.0
                 }
             }
@@ -73,9 +23,11 @@
         "protocol": "DynamixelV1",
         "scheduleMode": true,
         "throwErrorOnRead": true,
-        "throwErrorOnScan": true
+        "throwErrorOnScan": true,
+        "waitWriteCheckResponse" : true
     },
     "Protocol": {
         "timeout": 0.01
     }
 }
+
