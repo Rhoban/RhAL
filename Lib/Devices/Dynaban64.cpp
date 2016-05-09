@@ -1,5 +1,8 @@
 #include "Devices/Dynaban64.hpp"
 
+// All the positions have an offset of 180 degrees (also true for the MXs and the RXs). This is because dxl's zeros are not the same among different servomotors, so we unified them.
+#define OFFSET 180
+
 namespace RhAL {
 
 void convEncode_PolyDuration(data_t* buffer, float value)
@@ -42,14 +45,14 @@ float convDecode_speedDelay(const data_t* buffer)
 	return result;
 }
 
-void convEncode_positionTraj(data_t* buffer, float positionInRads) {
-	float result = positionInRads * 4096/(2*M_PI);
+void convEncode_positionTraj(data_t* buffer, float positionInDegrees) {
+	float result = positionInDegrees * 4096/(360.0);
 	writeFloatToBuffer(buffer, result);
 }
 
 float convDecode_positionTraj(const data_t* buffer) {
 	float val = readFloatFromBuffer(buffer);
-	float result = val*2*M_PI/4096.0;
+	float result = val*360.0/4096.0;
 
 	return result;
 }
@@ -59,30 +62,350 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
     MX64(name, id),
 	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
 	_trajPoly1Size("trajPoly1Size", 0x4A, 1, convEncode_1Byte, convDecode_1Byte, 0),
-	_traj1a0("traj1a0", 0x4B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj1a1("traj1a1", 0x4F, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj1a2("traj1a2", 0x53, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj1a3("traj1a3", 0x57, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj1a4("traj1a4", 0x5B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
+	_traj1a0("traj1a0", 0x4B, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, (value + this->_zero.value + OFFSET)*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value - (this->_zero.value - OFFSET);
+	            return value;
+	        }, 0),
+	_traj1a1("traj1a1", 0x4F, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj1a2("traj1a2", 0x53, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj1a3("traj1a3", 0x57, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj1a4("traj1a4", 0x5B, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
 	_torquePoly1Size("torquePoly1Size", 0x5F, 1, convEncode_1Byte, convDecode_1Byte, 0),
-	_torque1a0("torque1a0", 0x60, 4, convEncode_float, convDecode_float, 0),
-	_torque1a1("torque1a1", 0x64, 4, convEncode_float, convDecode_float, 0),
-	_torque1a2("torque1a2", 0x68, 4, convEncode_float, convDecode_float, 0),
-	_torque1a3("torque1a3", 0x6C, 4, convEncode_float, convDecode_float, 0),
-	_torque1a4("torque1a4", 0x70, 4, convEncode_float, convDecode_float, 0),
+	_torque1a0("torque1a0", 0x60, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque1a1("torque1a1", 0x64, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque1a2("torque1a2", 0x68, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque1a3("torque1a3", 0x6C, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque1a4("torque1a4", 0x70, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
 	_duration1("duration1", 0x74, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 	_trajPoly2Size("trajPoly2Size", 0x76, 1, convEncode_1Byte, convDecode_1Byte, 0),
-	_traj2a0("traj2a0", 0x77, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj2a1("traj2a1", 0x7B, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj2a2("traj2a2", 0x7F, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj2a3("traj2a3", 0x83, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
-	_traj2a4("traj2a4", 0x87, 4, convEncode_positionTraj, convDecode_positionTraj, 0),
+	_traj2a0("traj2a0", 0x77, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, (value + this->_zero.value + OFFSET)*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value - (this->_zero.value - OFFSET);
+	            return value;
+	        }, 0),
+	_traj2a1("traj2a1", 0x7B, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj2a2("traj2a2", 0x7F, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj2a3("traj2a3", 0x83, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_traj2a4("traj2a4", 0x87, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
 	_torquePoly2Size("torquePoly2Size", 0x8B, 1, convEncode_1Byte, convDecode_1Byte, 0),
-	_torque2a0("torque2a0", 0x8C, 4, convEncode_float, convDecode_float, 0),
-	_torque2a1("torque2a1", 0x90, 4, convEncode_float, convDecode_float, 0),
-	_torque2a2("torque2a2", 0x94, 4, convEncode_float, convDecode_float, 0),
-	_torque2a3("torque2a3", 0x98, 4, convEncode_float, convDecode_float, 0),
-	_torque2a4("torque2a4", 0x9C, 4, convEncode_float, convDecode_float, 0),
+	_torque2a0("torque2a0", 0x8C, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque2a1("torque2a1", 0x90, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque2a2("torque2a2", 0x94, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque2a3("torque2a3", 0x98, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
+	_torque2a4("torque2a4", 0x9C, 4,
+	        [this](data_t* data, float value) {
+	            std::lock_guard<std::mutex> lock(this->_mutex);
+	            int direction = 1;
+	    		if (this->_inverted.value == true) {
+	    			direction = -1;
+	    		}
+	    		convEncode_positionTraj(data, value*direction);
+	        }, [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_positionTraj(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            value = value;
+	            return value;
+	        }, 0),
 	_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 	_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
@@ -185,17 +508,6 @@ void Dynaban64::prepareFirstTrajectory(float * positionCoefs, int nbPositionCoef
 									float * torqueCoefs, int nbTorqueCoefs,
 									float duration)
 {
-	int direction = 1;
-	float zero = 0;
-	{
-		// Braces for lock_guard
-		std::lock_guard<std::mutex> lock(this->_mutex);
-		if (this->_inverted.value == true) {
-			direction = -1;
-		}
-		zero = Deg2Rad(this->_zero.value) + M_PI;
-	}
-
 	float fivePositionCoefs[5];
 
 	if (nbPositionCoefs != 0) {
@@ -203,12 +515,7 @@ void Dynaban64::prepareFirstTrajectory(float * positionCoefs, int nbPositionCoef
     	duration1() = duration;
 
     	for (int i = 0; i < nbPositionCoefs; i++) {
-    		if (i == 0) {
-    			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
-    		} else {
-    			fivePositionCoefs[i] = positionCoefs[i]*direction;
-    		}
-
+    		fivePositionCoefs[i] = positionCoefs[i];
     	}
     	for (int i = nbPositionCoefs; i < 5; i++) {
     		fivePositionCoefs[i] = 0.0;
@@ -221,7 +528,7 @@ void Dynaban64::prepareFirstTrajectory(float * positionCoefs, int nbPositionCoef
 	//Same goes for the torque coefs, unless there are none
 	if (nbTorqueCoefs != 0) {
     	for (int i = 0; i < nbTorqueCoefs; i++) {
-    		fivePositionCoefs[i] = torqueCoefs[i]*direction;
+    		fivePositionCoefs[i] = torqueCoefs[i];
     	}
     	for (int i = nbTorqueCoefs; i < 5; i++) {
     		fivePositionCoefs[i] = 0.0;
@@ -254,17 +561,6 @@ void Dynaban64::updateNextTrajectory(float * positionCoefs, int nbPositionCoefs,
 		float * torqueCoefs, int nbTorqueCoefs,
 		float duration)
 {
-	int direction = 1;
-	float zero = 0;
-	{
-		// Braces for lock_guard
-		std::lock_guard<std::mutex> lock(this->_mutex);
-		if (_inverted.value == true) {
-			direction = -1;
-		}
-		zero = Deg2Rad(_zero.value) + M_PI;
-	}
-
 	float fivePositionCoefs[5];
 
 	if (nbPositionCoefs != 0) {
@@ -272,12 +568,7 @@ void Dynaban64::updateNextTrajectory(float * positionCoefs, int nbPositionCoefs,
     	duration2() = duration;
 
     	for (int i = 0; i < nbPositionCoefs; i++) {
-    		if (i == 0) {
-    			fivePositionCoefs[i] = (positionCoefs[i] + zero)*direction;
-    		} else {
-    			fivePositionCoefs[i] = positionCoefs[i]*direction;
-    		}
-
+    		fivePositionCoefs[i] = positionCoefs[i];
     	}
     	for (int i = nbPositionCoefs; i < 5; i++) {
     		fivePositionCoefs[i] = 0.0;
@@ -290,15 +581,15 @@ void Dynaban64::updateNextTrajectory(float * positionCoefs, int nbPositionCoefs,
 	//Same goes for the torque coefs, unless there are none
 	if (nbTorqueCoefs != 0) {
     	for (int i = 0; i < nbTorqueCoefs; i++) {
-    		fivePositionCoefs[i] = torqueCoefs[i]*direction;
+    		fivePositionCoefs[i] = torqueCoefs[i];
     	}
     	for (int i = nbTorqueCoefs; i < 5; i++) {
     		fivePositionCoefs[i] = 0.0;
     	}
     	// fivePositionCoefs contains always 5 coefs, the lasts ones are 0.0 if the user asked for less than 5 coefs.
     	setTorqueTrajectory2(fivePositionCoefs[0], fivePositionCoefs[1], fivePositionCoefs[2], fivePositionCoefs[3], fivePositionCoefs[4]);
-    	//TODO why do we need to comment this???
-//    	torquePoly2Size() = nbTorqueCoefs;
+    	//TODO why do we need to comment this line???
+    	//torquePoly2Size() = nbTorqueCoefs;
 	}
 	/*
 	 * We set copy next buffer to 1, this tells dynaban to use our new trajectory once the last one has finished.

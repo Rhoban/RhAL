@@ -1,0 +1,81 @@
+{
+    "Dynaban64": {
+        "devices": [
+            {
+                "id": 1,
+                "name": "One",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            },
+            {
+                "id": 2,
+                "name": "Two",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            },
+            {
+                "id": 3,
+                "name": "three",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            },
+            {
+                "id": 4,
+                "name": "four",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            },
+            {
+                "id": 5,
+                "name": "five",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            },
+            {
+                "id": 6,
+                "name": "six",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": false,
+                    "zero": 0.0
+                }
+            }
+        ],
+        "parameters": null
+    },
+
+    "Manager": {
+        "baudrate": 1000000.0,
+        "enableSyncRead": false,
+        "enableSyncWrite": false,
+        "port": "/dev/ttyUSB0",
+        "protocol": "DynamixelV1",
+        "scheduleMode": true,
+        "throwErrorOnRead": true,
+        "throwErrorOnScan": true
+    },
+    "Protocol": {
+        "timeout": 0.01
+    }
+}

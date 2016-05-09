@@ -83,6 +83,8 @@ set(TESTS_SOURCES
     testManager
     testReadWrite
     testSync
+    test1
+    testDynaban
 )
 
 # Examples source files
@@ -92,7 +94,6 @@ set(EXAMPLES_SOURCES
     example3
     example4
     example5
-    test1
 )
 
 # Link Library List

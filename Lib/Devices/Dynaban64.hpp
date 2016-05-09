@@ -30,12 +30,12 @@ void convEncode_speedDelay(data_t* buffer, float value);
 float convDecode_speedDelay(const data_t* buffer);
 
 /**
- * Encode function for polynomial coefficients. Input in rads.
+ * Encode function for polynomial coefficients. Input in degrees.
  */
 void convEncode_positionTraj(data_t* buffer, float positionInRads);
 
 /**
- * Decode function for polynomial coefficients. Output in rads.
+ * Decode function for polynomial coefficients. Output in degrees.
  */
 float convDecode_positionTraj(const data_t* buffer);
 
@@ -60,7 +60,7 @@ class Dynaban64 : public MX64
          */
         /**
          * This function will send to the servo the first position trajectory and torque trajectory with their durations.
-         * Units are SI (rads, seconds)
+         * Units are degrees and seconds
          * Once this is done, call startFirstTrajectoryNow to start the trajectory.
          * If you want the trajectory to be continued by an other one call updateNextTrajectory.
          */
