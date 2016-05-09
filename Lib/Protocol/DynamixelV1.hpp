@@ -12,7 +12,8 @@ namespace RhAL
             CommandRead = 0x02,
             CommandWrite = 0x03,
             CommandSyncWrite = 0x83,
-            CommandSyncRead = 0x84
+            CommandSyncRead = 0x84,
+            CommandSyncWriteAndCheck = 0x85,
         };
 
         enum DynamixelV1Error {
@@ -86,15 +87,20 @@ namespace RhAL
          */
         void writeData(id_t id, addr_t address,
                        const uint8_t *data, size_t size);
-            ResponseState readData(id_t id, addr_t address,
+        ResponseState writeAndCheckData(id_t id, addr_t address,
+	               uint8_t *data, size_t size);
+        ResponseState readData(id_t id, addr_t address,
                     uint8_t *data, size_t size);
-            bool ping(id_t id);
-            std::vector<ResponseState> syncRead(
+        bool ping(id_t id);
+        std::vector<ResponseState> syncRead(
                 const std::vector<id_t>& ids, addr_t address,
                 const std::vector<uint8_t*>& datas, size_t size);
         void syncWrite(
-            const std::vector<id_t>& ids, addr_t address,
-            const std::vector<const uint8_t*>& datas, size_t size);
+                const std::vector<id_t>& ids, addr_t address,
+                const std::vector<const uint8_t*>& datas, size_t size);
+        std::vector<ResponseState> syncWriteAndCheck(
+                const std::vector<id_t>& ids, addr_t address,
+                const std::vector<uint8_t*>& datas, size_t size);
         /**
          * Broadcasts a "disable torque" command
          */
@@ -113,8 +119,24 @@ namespace RhAL
 
         /**
          * Waits to receive a packet over the bus
-        */
+         */
         ResponseState receivePacket(Packet* &response, id_t id);
+
+        /**
+	 * Uses sendPacket and receivePacket to exchange data with the 
+	 * device
+         */
+        ResponseState sendAndReceiveData(
+                DynamixelV1Command instruction, id_t id, addr_t address,
+		uint8_t *data, size_t size);
+        /**
+	 * Uses sendPacket and receivePacket to exchange data with several
+         * devices at once
+        */
+        std::vector<ResponseState> syncSendAndReceiveData(
+	        DynamixelV1Command instruction, 
+                const std::vector<id_t>& ids, addr_t address,
+                const std::vector<uint8_t*>& datas, size_t size);
 
       private:
 
