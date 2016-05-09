@@ -54,7 +54,7 @@ class Protocol
      * The appropriate ResponsState is returned to indicate if it failed and why  
      */
     virtual ResponseState writeAndCheckData(id_t id, addr_t address,
-  	uint8_t *data, size_t size)=0;
+  	const uint8_t *data, size_t size)=0;
     /**
      * Reads size bytes of data on device with id at given address
      *
@@ -96,8 +96,8 @@ class Protocol
    * Performs a synchronized write and reads the ResponseState of each write
    */
       virtual std::vector<ResponseState> syncWriteAndCheck(
-      const std::vector<id_t>& ids, addr_t address,
-      const std::vector<uint8_t*>& datas, size_t size)=0;
+          const std::vector<id_t>& ids, addr_t address,
+          const std::vector<const uint8_t*>& datas, size_t size)=0;
 
     /**
      * Sends a broadcasted signal to put all the devices

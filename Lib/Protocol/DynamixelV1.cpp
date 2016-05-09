@@ -117,19 +117,19 @@ namespace RhAL
    *Exactly the same structure than a read
    */
   ResponseState DynamixelV1::writeAndCheckData(id_t id, addr_t address,
-                                    uint8_t *data, size_t size)
+          const uint8_t *data, size_t size)
   {
-    return sendAndReceiveData(CommandWrite, id, address, data, size);
+    return sendAndReceiveData(CommandWrite, id, address, const_cast<uint8_t*>(data), size);
   }
 
   ResponseState DynamixelV1::readData(id_t id, addr_t address,
-                                    uint8_t *data, size_t size)
+          uint8_t *data, size_t size)
   {
     return sendAndReceiveData(CommandRead, id, address, data, size);
   }
 
   ResponseState DynamixelV1::sendAndReceiveData(DynamixelV1Command instruction, id_t id, addr_t address,
-                                    uint8_t *data, size_t size)
+          uint8_t *data, size_t size)
   {
     Packet packet(id, instruction, 2);
     packet.append(address);
@@ -286,9 +286,10 @@ std::vector<ResponseState> DynamixelV1::syncSendAndReceiveData(
 
   std::vector<ResponseState> DynamixelV1::syncWriteAndCheck(
         const std::vector<id_t>& ids, addr_t address,
-        const std::vector<uint8_t*>& datas, size_t size)
+        const std::vector<const uint8_t*>& datas, size_t size)
     {
-      return syncSendAndReceiveData(CommandSyncWriteAndCheck, ids, address, datas, size);
+      return syncSendAndReceiveData(CommandSyncWriteAndCheck, ids, address, 
+            reinterpret_cast<const std::vector<uint8_t*>&>(datas), size);
     }
 
     /**

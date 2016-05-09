@@ -49,12 +49,16 @@ ResponseState FakeProtocol::readData(
 }
 
 
-  ResponseState FakeProtocol::writeAndCheckData(id_t id, addr_t address,
-                                    uint8_t *data, size_t size)
-  {
+ResponseState FakeProtocol::writeAndCheckData(id_t id, addr_t address,
+        const uint8_t *data, size_t size)
+{
+    (void)id;
+    (void)address;
+    (void)data;
+    (void)size;
     std::cout << "Not implemented yet in fakeProtocol" << std::endl;
     return ResponseOK;
-  }
+}
 
 bool FakeProtocol::ping(id_t id) 
 {
@@ -114,14 +118,17 @@ void FakeProtocol::syncWrite(
 
 std::vector<ResponseState> FakeProtocol::syncWriteAndCheck(
         const std::vector<id_t>& ids, addr_t address,
-        const std::vector<uint8_t*>& datas, size_t size)
+        const std::vector<const uint8_t*>& datas, size_t size)
 {
-      std::cout << "Not implemented yet in fakeProtocol" << std::endl;
-      std::vector<ResponseState> output;
-      for (unsigned int i = 0; i < ids.size(); i++) {
-	output.push_back(ResponseOK);
-      }
-      return output;
+    (void)address;
+    (void)datas;
+    (void)size;
+        std::cout << "Not implemented yet in fakeProtocol" << std::endl;
+    std::vector<ResponseState> output;
+    for (unsigned int i = 0; i < ids.size(); i++) {
+        output.push_back(ResponseOK);
+    }
+    return output;
 }
 
 void FakeProtocol::emergencyStop()
