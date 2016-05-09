@@ -54,68 +54,84 @@ namespace RhAL
     }
 
 
-uint8_t DynamixelV1::Packet::computeChecksum()
-{
+  uint8_t DynamixelV1::Packet::computeChecksum()
+  {
     uint8_t checksum = 0;
     for (size_t k=2; k<5+parameters; k++) {
-        checksum += buffer[k];
+      checksum += buffer[k];
     }
-
+    
     return ~checksum;
-}
+  }
 
-void DynamixelV1::Packet::prepare()
-{
+  void DynamixelV1::Packet::prepare()
+  {
     buffer[0] = 0xff;
     buffer[1] = 0xff;
     buffer[5 + parameters] = computeChecksum();
-}
+  }
 
-void DynamixelV1::Packet::setError(uint8_t error)
-{
+  void DynamixelV1::Packet::setError(uint8_t error)
+  {
     buffer[4] = error;
-}
-
-uint8_t DynamixelV1::Packet::getError()
-{
+  }
+  
+  uint8_t DynamixelV1::Packet::getError()
+  {
     return buffer[4];
-}
+  }
 
-size_t DynamixelV1::Packet::getSize()
-{
+  size_t DynamixelV1::Packet::getSize()
+  {
     // A packet is: Header (2), ID, length, instruction, parameters and checksum
     return 2 + 1 + 1 + 1 + parameters + 1;
-}
+  }
 
-uint8_t *DynamixelV1::Packet::getParameters()
-{
+  uint8_t *DynamixelV1::Packet::getParameters()
+  {
     return buffer + 5;
-}
+  }
 
-DynamixelV1::DynamixelV1(Bus &bus): 
+  DynamixelV1::DynamixelV1(Bus &bus): 
     Protocol(bus),
     _timeout("timeout", 0.01),
     _waitAfterWrite("waitAfterWrite", 0.0005)
-{
+  {
     _parametersList.add(&_timeout);
     _parametersList.add(&_waitAfterWrite);
-}
+  }
 
-void DynamixelV1::writeData(id_t id, addr_t address,
-                            const uint8_t *data, size_t size)
-{
+  void DynamixelV1::writeData(id_t id, addr_t address,
+			      const uint8_t *data, size_t size)
+  {
     Packet packet(id, CommandWrite, size+1);
     packet.append(address);
     packet.append(data, size);
     sendPacket(packet);
     // Can't talk to the servos too soon
     std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
-}
+  }
 
-ResponseState DynamixelV1::readData(id_t id, addr_t address,
+
+  /**
+   *Exactly the same structure than a read
+   */
+  ResponseState DynamixelV1::writeAndCheckData(id_t id, addr_t address,
                                     uint8_t *data, size_t size)
-{
-    Packet packet(id, CommandRead, 2);
+  {
+    return sendAndReceiveData(CommandWrite, id, address, data, size);
+  }
+
+  ResponseState DynamixelV1::readData(id_t id, addr_t address,
+                                    uint8_t *data, size_t size)
+  {
+    return sendAndReceiveData(CommandRead, id, address, data, size);
+  }
+
+  ResponseState DynamixelV1::sendAndReceiveData(DynamixelV1Command instruction, id_t id, addr_t address,
+                                    uint8_t *data, size_t size)
+  {
+    Packet packet(id, instruction, 2);
     packet.append(address);
     packet.append(size);
     sendPacket(packet);
@@ -134,14 +150,14 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
             std::cout << std::endl;
         }
 #endif
-        if (code & ResponseOK) {
-            memcpy(data, response->getParameters(), size);
-            delete response;
-        }
-        return code;
+     if (code & ResponseOK) {
+       memcpy(data, response->getParameters(), size);
+       delete response;
+     }
+     return code;
     }
 
-    bool DynamixelV1::ping(id_t id)
+  bool DynamixelV1::ping(id_t id)
     {
         Packet packet(id, CommandPing, 0);
         sendPacket(packet);
@@ -155,13 +171,13 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
             return false;
         }
     }
-
-    std::vector<ResponseState> DynamixelV1::syncRead(
-        const std::vector<id_t>& ids, addr_t address,
+  
+std::vector<ResponseState> DynamixelV1::syncSendAndReceiveData(
+	DynamixelV1Command instruction, const std::vector<id_t>& ids, addr_t address,
         const std::vector<uint8_t*>& datas, size_t size)
     {
-
-        Packet packet(0xfd, CommandSyncRead, ids.size()+2); //Number of motor ids + starting address and size
+        // Here instruction is either CommandSyncRead or CommandSyncWriteAndCheck
+        Packet packet(0xfd, instruction, ids.size()+2); //Number of motor ids + starting address and size
         // packet.buffer[3]=ids.size()+4;     //length has to be 4+(number of ids) but packet already adds 2 so we replace
         //adress from where we start to read
         packet.append(address);
@@ -238,6 +254,14 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
     }
 
 
+    std::vector<ResponseState> DynamixelV1::syncRead(
+        const std::vector<id_t>& ids, addr_t address,
+        const std::vector<uint8_t*>& datas, size_t size)
+    {
+      return syncSendAndReceiveData(CommandSyncRead, ids, address, datas, size);
+    }
+
+
     void DynamixelV1::syncWrite(
         const std::vector<id_t>& ids, addr_t address,
         const std::vector<const uint8_t*>& datas, size_t size)
@@ -257,6 +281,14 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
         sendPacket(packet);
         // Can't talk to the servos too soon
         std::this_thread::sleep_for(TimeDurationFloat(_waitAfterWrite.value));
+    }
+
+
+  std::vector<ResponseState> DynamixelV1::syncWriteAndCheck(
+        const std::vector<id_t>& ids, addr_t address,
+        const std::vector<uint8_t*>& datas, size_t size)
+    {
+      return syncSendAndReceiveData(CommandSyncWriteAndCheck, ids, address, datas, size);
     }
 
     /**
@@ -363,7 +395,7 @@ ResponseState DynamixelV1::readData(id_t id, addr_t address,
                             } else {
                                 if (response->computeChecksum() == byte) {
                                     uint8_t error = response->getError();
-
+				    
                                     if (error & ErrorChecksum) {
                                         delete response;
                                         return ResponseDeviceBadChecksum;
