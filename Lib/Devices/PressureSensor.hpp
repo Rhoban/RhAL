@@ -223,7 +223,9 @@ class ImplManager<PressureSensor<GAUGES>> : public TypedManager<PressureSensor<G
 
         inline static std::string typeName()
         {
-            return "PressureSensor";
+            std::stringstream ss;
+            ss << "PressureSensor" << GAUGES;
+            return ss.str();
         }
 };
 
