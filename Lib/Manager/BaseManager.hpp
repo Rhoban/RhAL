@@ -224,6 +224,11 @@ class BaseManager : public CallManager
         Statistics getStatistics() const;
 
         /**
+         * Reset all Manager Statistics
+         */
+        void resetStatistics();
+
+        /**
          * Read/Write access to Manager Parameters list
          */
         const ParametersList& parametersList() const;
@@ -250,6 +255,7 @@ class BaseManager : public CallManager
          */
         void setEnableSyncRead(bool isEnable);
         void setEnableSyncWrite(bool isEnable);
+        void setWaitWriteCheckResponse(bool isEnable);
         void setThrowOnScan(bool isEnable);
         void setThrowOnRead(bool isEnable);
 
@@ -398,6 +404,15 @@ class BaseManager : public CallManager
          */
         ParameterBool _paramEnableSyncRead;
         ParameterBool _paramEnableSyncWrite;
+
+        /**
+         * Write check behaviour. If false, the Manager
+         * assume that write protocol command does not
+         * return a acknoledgement message and does wait
+         * for it. If true, the Manager wait after each
+         * write for a check response from devices.
+         */
+        ParameterBool _paramWaitWriteCheckResponse;
 
         /**
          * Exception error configuration.

@@ -24,6 +24,7 @@ namespace RhAL {
 class GY85 : public Device
 {
     public:
+
         /**
          * A value in the device
          */
@@ -73,6 +74,7 @@ class GY85 : public Device
         float getGyroYaw();
 
     protected:
+
         /**
          * The IMU filter
          */

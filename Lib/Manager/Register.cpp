@@ -30,7 +30,8 @@ Register::Register(
     _needRead(false),
     _needWrite(false),
     _needSwaping(false),
-    _isLastError(true),
+    _isLastReadError(true),
+    _isLastWriteError(false),
     _manager(nullptr),
     _mutex()
 {
@@ -111,6 +112,7 @@ void Register::selectForWrite()
     std::lock_guard<std::mutex> lock(_mutex);
     doConvEncode();
     _needWrite = false;
+    _isLastWriteError = false;
 }
 
 void Register::readyForRead()
@@ -129,8 +131,15 @@ void Register::finishRead(TimePoint timestamp)
 void Register::readError()
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    _isLastError = true;
+    _isLastReadError = true;
     _needRead = true;
+}
+        
+void Register::writeError()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    _needWrite = true;
+    _isLastWriteError = true;
 }
 
 void Register::swapRead()
@@ -140,7 +149,7 @@ void Register::swapRead()
         return;
     }
     _needSwaping = false;
-    _isLastError = false;
+    _isLastReadError = false;
     doConvDecode();
     _lastDevReadUser = _lastDevReadManager;
 }
@@ -266,7 +275,7 @@ ReadValue<T> TypedRegister<T>::readValue()
         forceRead();
     }
     std::lock_guard<std::mutex> lock(_mutex);
-    return ReadValue<T>(_lastDevReadUser, _valueRead, _isLastError);
+    return ReadValue<T>(_lastDevReadUser, _valueRead, _isLastReadError);
 }
 
 template <typename T>
@@ -282,8 +291,10 @@ void TypedRegister<T>::writeValue(T val, bool noCallback)
     std::unique_lock<std::mutex> lock(_mutex);
 
     //Compute aggregation if the value
-    //has already been written
-    if (_needWrite) {
+    //has already been written and this is not
+    //a write error that need to be re-sent
+    //(Which could lead to over aggregation error).
+    if (_needWrite && !_isLastWriteError) {
         _valueWrite = aggregateValue(
             _aggregationPolicy, _valueWrite, val);
     } else {

@@ -39,7 +39,7 @@ set(LIB_SOURCES
     Protocol/DynamixelV1.cpp
     Protocol/FakeProtocol.cpp
     Protocol/ProtocolFactory.cpp
-    utils.cpp
+    timestamp.cpp
     Manager/Statistics.cpp
     Manager/RegistersList.cpp
     Manager/ParametersList.cpp
@@ -63,6 +63,7 @@ set(LIB_SOURCES
     Devices/RX24.cpp
     Devices/RX28.cpp
     Devices/RX64.cpp
+    Devices/Dynaban64.cpp
     Devices/MX.cpp
     Devices/MX12.cpp
     Devices/MX28.cpp
@@ -82,6 +83,8 @@ set(TESTS_SOURCES
     testManager
     testReadWrite
     testSync
+    test1
+    testDynaban
 )
 
 # Examples source files
@@ -91,7 +94,6 @@ set(EXAMPLES_SOURCES
     example3
     example4
     example5
-    test1
 )
 
 # Link Library List

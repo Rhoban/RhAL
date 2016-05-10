@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.h"
-#include "utils.h"
+#include "timestamp.h"
 
 #include "Manager/Aggregation.h"
 #include "Manager/Statistics.hpp"
@@ -21,6 +21,7 @@
 #include "Devices/DXL.hpp"
 #include "Devices/MX106.hpp"
 #include "Devices/MX64.hpp"
+#include "Devices/Dynaban64.hpp"
 #include "Devices/MX28.hpp"
 #include "Devices/MX12.hpp"
 #include "Devices/RX64.hpp"
@@ -31,7 +32,7 @@
 #include "Devices/GY85.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
-//#include "Devices/Dynaban64.hpp"
+
 #include "Devices/RX24.hpp"
 
 #ifdef BUILD_RHAL_RHIO_BINDING
@@ -52,7 +53,7 @@ namespace RhAL {
     RX64,                           \
     MX12,                           \
     MX28,                           \
-    MX64,                           \
+    Dynaban64,                      \
     MX106,                          \
     IMU,                            \
     PressureSensor4,                \

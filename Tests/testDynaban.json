@@ -1,0 +1,33 @@
+{
+    "Dynaban64": {
+        "devices": [
+            {
+                "id": 1,
+                "name": "one",
+                "parameters": {
+                    "angleLimitCCWParameter": 180.0,
+                    "angleLimitCWParameter": -180.0,
+                    "inverse": true,
+                    "zero": 0.0
+                }
+            }
+        ],
+        "parameters": null
+    },
+
+    "Manager": {
+        "baudrate": 1000000.0,
+        "enableSyncRead": false,
+        "enableSyncWrite": false,
+        "port": "/dev/ttyUSB0",
+        "protocol": "DynamixelV1",
+        "scheduleMode": true,
+        "throwErrorOnRead": true,
+        "throwErrorOnScan": true,
+        "waitWriteCheckResponse" : true
+    },
+    "Protocol": {
+        "timeout": 0.01
+    }
+}
+

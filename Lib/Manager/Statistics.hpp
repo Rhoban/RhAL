@@ -70,11 +70,18 @@ struct Statistics
     unsigned long deviceQuietCount;
     //Number of read() non quiet errors
     unsigned long deviceErrorCount;
+    //Number of detected write errors
+    unsigned long writeErrorCount;
 
     /**
      * Initialization
      */
     Statistics();
+
+    /**
+     * Reset to zero all statistics
+     */
+    void reset();
 
     /**
      * Display on given output stream the

@@ -127,9 +127,9 @@ uint32_t convDecode_4Bytes(const data_t* buffer)
 }
 
 #define VALUE_SIGN(value, length) \
-        ((value < (1<<(length-1))) ? \
-         (value) \
-         : (value-(1<<length)))
+    ((value < (1<<(length-1))) ? \
+    (value) \
+    : (value-(1<<length)))
 
 int8_t convDecode_1Byte_signed(const data_t* buffer)
 {
