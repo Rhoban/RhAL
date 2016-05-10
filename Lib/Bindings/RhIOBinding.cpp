@@ -212,6 +212,22 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
             gy85->setCallback(update);
         }
     }
+    // Pressure sensors
+    if (auto ps = dynamic_cast<RhAL::PressureSensorBase*>(device)) {
+        if (deviceNode->getValueType("x") == RhIO::NoValue) {
+            deviceNode->newFloat("x");
+            deviceNode->newFloat("y");
+            deviceNode->newFloat("weight");
+
+            std::function<void()> update = [deviceNode, ps] {
+                deviceNode->setFloat("x", ps->getX());
+                deviceNode->setFloat("y", ps->getY());
+                deviceNode->setFloat("weight", ps->getWeight());
+            };
+            update();
+            ps->setCallback(update);
+        }
+    }
 }
         
 void RhIOBinding::updateParameters(
@@ -490,7 +506,7 @@ std::string RhIOBinding::cmdTare(
         for (int k=0; k<samples; k++) {
             for (auto &ps : sensors) {
                 for (int g=0; g<ps->gauges(); g++) {
-                    zeros[ps][g] += ps->pressure(g);
+                    zeros[ps][g] += ps->gain(g)*ps->pressure(g);
                 }
             }
             _manager->flush();

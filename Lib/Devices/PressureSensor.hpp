@@ -16,13 +16,30 @@ class PressureSensorBase : public Device
 {
     public:
         PressureSensorBase(const std::string& name, id_t id)
-            : Device(name, id)
+            : Device(name, id),
+              callback([]{})
         {
         }
 
         virtual int gauges()=0;
+        virtual float gain(int index)=0;
         virtual TypedRegisterInt& pressure(int index)=0;
         virtual void setZero(int index, float value)=0;
+        
+        virtual float getX()=0;
+        virtual float getY()=0;
+        virtual float getWeight()=0;
+        
+        void setCallback(std::function<void()> callback_)
+        {
+            callback = callback_;
+        }
+        
+    protected:
+        /**
+         * A callback that is invoked after a filtering
+         */
+        std::function<void()> callback;
 };
 
 /**
@@ -48,14 +65,44 @@ class PressureSensor : public PressureSensorBase
                     [i, this](const data_t* data) -> int {
                         std::lock_guard<std::mutex> lock(this->_mutex);
                         int value = convDecode_3Bytes_signed(data);
-                        return value - (int)this->_zero[i]->value;
+                        return ((float)this->_gain[i]->value)*(value - (int)this->_zero[i]->value);
                     }, 
                     1)));
 
                 ss.str("");
                 ss << "zero_" << i;
                 _zero.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 0.0)));
+                ss.str("");
+                ss << "x_" << i;
+                _x.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 0.0)));
+                ss.str("");
+                ss << "y_" << i;
+                _y.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 0.0)));
+                ss.str("");
+                ss << "gain_" << i;
+                _gain.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 1.0)));
             }
+        }
+
+        void onSwap()
+        {
+            float total = 0;
+            unsigned int n = _zero.size();
+            float x_ = 0;
+            float y_ = 0;
+            for (unsigned int k=0; k<n; k++) {
+                float weight_ = pressure(k);
+                if (weight_ > 0) {
+                    total += weight_;
+                    x_ += _x[k]->value*weight_;
+                    y_ += _y[k]->value*weight_;
+                }
+            }
+            weight = total;
+            x = x_/weight;
+            y = y_/weight;
+            
+            callback();
         }
     
         /**
@@ -64,6 +111,14 @@ class PressureSensor : public PressureSensorBase
         int gauges()
         {
             return GAUGES;
+        }
+        
+        /**
+         * Gain
+         */
+        float gain(int index)
+        {
+            return _gain[index]->value;
         }
 
         /**
@@ -91,8 +146,28 @@ class PressureSensor : public PressureSensorBase
             _zero[index]->value = value;
         }
 
-    protected:
+        float getX()
+        {
+            return x;
+        }
+        float getY()
+        {
+            return y;
+        }
+        float getWeight()
+        {
+            return weight;
+        }
+        
+        /**
+         * Sets the filter callback
+         */
+        void setCallback(std::function<void()> callback_)
+        {
+            callback = callback_;
+        }
 
+    protected:
         /**
          * Registers
          */
@@ -100,13 +175,19 @@ class PressureSensor : public PressureSensorBase
         //size and address in the hardware.
         std::vector<std::shared_ptr<TypedRegisterInt>> _pressure; // Starts at 0x24
 
+        // Parameters for calibration
+        std::vector<std::shared_ptr<ParameterNumber>> _zero;
+        std::vector<std::shared_ptr<ParameterNumber>> _x;
+        std::vector<std::shared_ptr<ParameterNumber>> _y;
+        std::vector<std::shared_ptr<ParameterNumber>> _gain;
+
         // Led
         TypedRegisterBool _led; // At 0x19
 
         /**
          * Parameters
          */
-        std::vector<std::shared_ptr<ParameterNumber>> _zero;
+        float x, y, weight;
 
         /**
          * Inherit.
@@ -118,8 +199,11 @@ class PressureSensor : public PressureSensorBase
             for (auto &reg : _pressure) {
                 Device::registersList().add(reg.get());
             }
-            for (auto &parameter : _zero) {
-                Device::parametersList().add(parameter.get());
+            for (unsigned int k=0; k<_zero.size(); k++) {
+                Device::parametersList().add(_zero[k].get());
+                Device::parametersList().add(_x[k].get());
+                Device::parametersList().add(_y[k].get());
+                Device::parametersList().add(_gain[k].get());
             }
         }
 };
