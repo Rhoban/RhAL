@@ -12,20 +12,33 @@
 
 namespace RhAL {
 
+class PressureSensorBase : public Device
+{
+    public:
+        PressureSensorBase(const std::string& name, id_t id)
+            : Device(name, id)
+        {
+        }
+
+        virtual int gauges()=0;
+        virtual TypedRegisterInt& pressure(int index)=0;
+        virtual void setZero(int index, float value)=0;
+};
+
 /**
  * PressureSensor
  */
 template <int GAUGES>
-class PressureSensor : public Device
+class PressureSensor : public PressureSensorBase
 {
     public:
 
         /**
          * Initialization with name and id
          */
-        PressureSensor(const std::string& name, id_t id) : 
-            Device(name, id),
-            _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
+        PressureSensor(const std::string& name, id_t id)
+            : PressureSensorBase(name, id),
+	      _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
         {
             for (unsigned int i=0;i<GAUGES;i++) {
                 std::stringstream ss;
@@ -43,6 +56,14 @@ class PressureSensor : public Device
                 ss << "zero_" << i;
                 _zero.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 0.0)));
             }
+        }
+    
+        /**
+         * How many gauges are managed?
+         */
+        int gauges()
+        {
+            return GAUGES;
         }
 
         /**

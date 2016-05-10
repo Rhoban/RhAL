@@ -5,6 +5,7 @@
 #include "Manager/Device.hpp"
 #include "Devices/DXL.hpp"
 #include "Devices/GY85.hpp"
+#include "Devices/PressureSensor.hpp"
 
 namespace RhAL {
 
@@ -52,6 +53,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdInit, this, std::placeholders::_1));
     _node->newCommand("rhalChangeId", "Chaneg the Device id of given id to given id", 
         std::bind(&RhIOBinding::cmdChangeId, this, std::placeholders::_1));
+    _node->newCommand("rhalTare", "Tare all pressure devices", 
+        std::bind(&RhIOBinding::cmdTare, this, std::placeholders::_1));
 
     //First RhIO/RhAL synchronisation
     update();
@@ -458,6 +461,48 @@ std::string RhIOBinding::cmdChangeId(
     _manager->changeDeviceId(oldId, newId);
     return "Change id from" + argv[0] 
         + " to " + argv[1] + ". RhAL Exit.";
+}
+
+std::string RhIOBinding::cmdTare(
+    std::vector<std::string> argv)
+{
+    std::vector<PressureSensorBase*> sensors;
+    std::map<PressureSensorBase*, std::vector<double>> zeros;
+    auto allDevices = _manager->devContainer();
+    for (auto& dev : allDevices) {
+        PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
+        if (ps != nullptr) {
+            sensors.push_back(ps);
+            zeros[ps] = std::vector<double>();
+            for (int g=0; g<ps->gauges(); g++) {
+                // Reseting the zeros
+                ps->setZero(g, 0);
+                zeros[ps].push_back(0);
+            }
+        }
+    }
+
+    if (sensors.size() == 0) {
+        return "No pressure devices found";
+    } else {
+        std::stringstream ss;
+        int samples = 500;
+        for (int k=0; k<samples; k++) {
+            for (auto &ps : sensors) {
+                for (int g=0; g<ps->gauges(); g++) {
+                    zeros[ps][g] += ps->pressure(g);
+                }
+            }
+            _manager->flush();
+        }
+        for (auto &ps : sensors) {
+            for (int g=0; g<ps->gauges(); g++) {
+                ps->setZero(g, zeros[ps][g]/samples);
+            }
+        }
+        ss << "Tare on " << sensors.size() << " devices.";
+        return ss.str();
+    }
 }
 
 }
