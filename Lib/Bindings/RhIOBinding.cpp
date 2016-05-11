@@ -55,6 +55,8 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdChangeId, this, std::placeholders::_1));
     _node->newCommand("rhalTare", "Tare all pressure devices", 
         std::bind(&RhIOBinding::cmdTare, this, std::placeholders::_1));
+    _node->newCommand("rhalGyroTare", "Tare all gyro devices", 
+        std::bind(&RhIOBinding::cmdGyroTare, this, std::placeholders::_1));
 
     //First RhIO/RhAL synchronisation
     update();
@@ -98,7 +100,7 @@ void RhIOBinding::update()
 
         // In the case of the GY85, move registers to the registers/ sub node
         RhIO::IONode *registersNode = deviceNode;
-        if (auto gy85 = dynamic_cast<RhAL::GY85*>(device.second)) {
+        if (dynamic_cast<RhAL::GY85*>(device.second) != nullptr) {
             if (!registersNode->childExist("registers")) {
                 registersNode->newChild("registers");
             }
@@ -198,10 +200,21 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
             deviceNode->newFloat("magnX");
             deviceNode->newFloat("magnY");
             deviceNode->newFloat("magnZ");
+            deviceNode->newFloat("accXRaw");
+            deviceNode->newFloat("accYRaw");
+            deviceNode->newFloat("accZRaw");
+            deviceNode->newFloat("gyroXRaw");
+            deviceNode->newFloat("gyroYRaw");
+            deviceNode->newFloat("gyroZRaw");
+            deviceNode->newFloat("magnXRaw");
+            deviceNode->newFloat("magnYRaw");
+            deviceNode->newFloat("magnZRaw");
             deviceNode->newFloat("yaw");
             deviceNode->newFloat("pitch");
             deviceNode->newFloat("roll");
             deviceNode->newFloat("gyroYaw");
+            deviceNode->newFloat("magnHeading");
+            deviceNode->newFloat("magnAzimuth");
 
             std::function<void()> update = [deviceNode, gy85] {
                 deviceNode->setFloat("accX", gy85->getAccX());
@@ -213,6 +226,17 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
                 deviceNode->setFloat("magnX", gy85->getMagnX());
                 deviceNode->setFloat("magnY", gy85->getMagnY());
                 deviceNode->setFloat("magnZ", gy85->getMagnZ());
+                deviceNode->setFloat("accXRaw", gy85->getAccXRaw());
+                deviceNode->setFloat("accYRaw", gy85->getAccYRaw());
+                deviceNode->setFloat("accZRaw", gy85->getAccZRaw());
+                deviceNode->setFloat("gyroXRaw", gy85->getGyroXRaw());
+                deviceNode->setFloat("gyroYRaw", gy85->getGyroYRaw());
+                deviceNode->setFloat("gyroZRaw", gy85->getGyroZRaw());
+                deviceNode->setFloat("magnXRaw", gy85->getMagnXRaw());
+                deviceNode->setFloat("magnYRaw", gy85->getMagnYRaw());
+                deviceNode->setFloat("magnZRaw", gy85->getMagnZRaw());
+                deviceNode->setFloat("magnHeading", 180*gy85->getMagnHeading()/M_PI);
+                deviceNode->setFloat("magnAzimuth", 180*gy85->getMagnAzimuth()/M_PI);
                 deviceNode->setFloat("gyroYaw", 180*gy85->getGyroYaw()/M_PI);
                 deviceNode->setFloat("yaw", 180*gy85->getYaw()/M_PI);
                 deviceNode->setFloat("pitch", 180*gy85->getPitch()/M_PI);
@@ -492,6 +516,7 @@ std::string RhIOBinding::cmdChangeId(
 std::string RhIOBinding::cmdTare(
     std::vector<std::string> argv)
 {
+    (void)argv;
     std::vector<PressureSensorBase*> sensors;
     std::map<PressureSensorBase*, std::vector<double>> zeros;
     auto allDevices = _manager->devContainer();
@@ -529,6 +554,30 @@ std::string RhIOBinding::cmdTare(
         ss << "Tare on " << sensors.size() << " devices.";
         return ss.str();
     }
+}
+
+std::string RhIOBinding::cmdGyroTare(
+    std::vector<std::string> argv)
+{
+    (void)argv;
+    /*
+    std::vector<PressureSensorBase*> sensors;
+    std::map<PressureSensorBase*, std::vector<double>> zeros;
+    auto allDevices = _manager->devContainer();
+    for (auto& dev : allDevices) {
+        PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
+        if (ps != nullptr) {
+            sensors.push_back(ps);
+            zeros[ps] = std::vector<double>();
+            for (int g=0; g<ps->gauges(); g++) {
+                // Reseting the zeros
+                ps->setZero(g, 0);
+                zeros[ps].push_back(0);
+            }
+        }
+    }
+    */
+    return "Not yet implemented.";
 }
 
 }

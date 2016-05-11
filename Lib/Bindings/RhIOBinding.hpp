@@ -111,6 +111,8 @@ class RhIOBinding
             std::vector<std::string> argv);
         std::string cmdTare(
             std::vector<std::string> argv);
+        std::string cmdGyroTare(
+            std::vector<std::string> argv);
 };
 
 }

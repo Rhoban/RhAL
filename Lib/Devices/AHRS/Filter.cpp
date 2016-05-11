@@ -169,8 +169,8 @@ namespace AHRS
         // We make the gyro YAW drift correction based on compass magnetic heading
 
         if (useCompass) {
-            mag_heading_x = cos(MAG_Heading);
-            mag_heading_y = sin(MAG_Heading);
+            mag_heading_x = cos(magnHeading);
+            mag_heading_y = sin(magnHeading);
             errorCourse=(DCM_Matrix[0][0]*mag_heading_y) - (DCM_Matrix[1][0]*mag_heading_x);  //Calculating YAW error
             Vector_Scale(errorYaw,&DCM_Matrix[2][0],errorCourse); //Applys the yaw correction to the XYZ rotation of the aircraft, depeding the position.
 
@@ -254,7 +254,7 @@ namespace AHRS
         // Tilt compensated magnetic field Y
         mag_y = magnetom[1] * cos_roll - magnetom[2] * sin_roll;
         // Magnetic Heading
-        MAG_Heading = atan2(-mag_y, mag_x);
+        magnHeading = atan2(-mag_y, mag_x);
     }
 
     Filter::Filter(bool useCompass)
@@ -272,6 +272,9 @@ namespace AHRS
         gyroYaw += gyro[2]*G_Dt;
         while (gyroYaw > M_PI) gyroYaw -= 2*M_PI;
         while (gyroYaw < -M_PI) gyroYaw += 2*M_PI;
+
+        // Updating magn azimuth
+        magnAzimuth = atan2(magnetom[2], magnetom[0]);
 
         if (useCompass) {
             Compass_Heading();

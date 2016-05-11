@@ -64,6 +64,15 @@ class GY85 : public Device
         float getMagnX();
         float getMagnY();
         float getMagnZ();
+        float getAccXRaw();
+        float getAccYRaw();
+        float getAccZRaw();
+        float getGyroXRaw();
+        float getGyroYRaw();
+        float getGyroZRaw();
+        float getMagnXRaw();
+        float getMagnYRaw();
+        float getMagnZRaw();
 
         /**
          * Filter output
@@ -72,23 +81,48 @@ class GY85 : public Device
         float getPitch();
         float getRoll();
         float getGyroYaw();
+        float getYawCompass();
+        float getPitchCompass();
+        float getRollCompass();
+        float getMagnAzimuth();
+        float getMagnHeading();
+
+        /**
+         * Calibration
+         */
+        void setGyroCalibration(float x, float y, float z);
 
     protected:
-
+        
         /**
          * The IMU filter
          */
         AHRS::Filter filter;
+        AHRS::Filter compassFilter;
 
         /**
          * A callback that is invoked after a filtering
          */
         std::function<void()> callback;
+        
+        /**
+         * Calibration
+         */
+        std::shared_ptr<ParameterNumber> _gyroXOffset, _gyroYOffset, _gyroZOffset;
+        std::shared_ptr<ParameterNumber> _accXMin, _accXMax, _accYMin, _accYMax, _accZMin, _accZMax;
+        std::shared_ptr<ParameterNumber> _magnXMin, _magnXMax, _magnYMin, _magnYMax, _magnZMin, _magnZMax;
 
         /**
          * Last sensor values
          */
         uint32_t sequence;
+
+        // Raw
+        float accXRaw, accYRaw, accZRaw;
+        float gyroXRaw, gyroYRaw, gyroZRaw;
+        float magnXRaw, magnYRaw, magnZRaw;
+        
+        // Calibrated
         float accX, accY, accZ;
         float gyroX, gyroY, gyroZ;
         float magnX, magnY, magnZ;

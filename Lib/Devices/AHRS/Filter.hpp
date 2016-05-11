@@ -22,6 +22,10 @@ namespace AHRS
             float pitch;
             float roll;
             float gyroYaw;
+            
+            // Magnetometer
+            float magnAzimuth;
+            float magnHeading;
 
         protected:
             // DCM variables

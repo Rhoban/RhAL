@@ -30,6 +30,7 @@ static float gyroscopeDecode(const data_t *data)
 GY85::GY85(const std::string& name, id_t id) :
     Device(name, id),
     filter(false),
+    compassFilter(true),
     callback([]{}),
     sequence(0)
 {
@@ -74,6 +75,24 @@ GY85::GY85(const std::string& name, id_t id) :
         values[k].sequence = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt(ss.str(),
                     0x36 +offset, 4, convDecode_4Bytes, 1));
     }
+
+    _gyroXOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroXOffset", 0.0));
+    _gyroYOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroYOffset", 0.0));
+    _gyroZOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroZOffset", 0.0));
+    
+    _accXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMin", -256.0));
+    _accXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMax", 256.0));
+    _accYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMin", -256.0));
+    _accYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMax", 256.0));
+    _accZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMin", -256.0));
+    _accZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMax", 256.0));
+    
+    _magnXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMin", -100.0));
+    _magnXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMax", 100.0));
+    _magnYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnYMin", -100.0));
+    _magnYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnYMax", 100.0));
+    _magnZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnZMin", -100.0));
+    _magnZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnZMax", 100.0));
 }
 
 void GY85::onInit()
@@ -90,11 +109,34 @@ void GY85::onInit()
         Device::registersList().add(values[k].magnZ.get());
         Device::registersList().add(values[k].sequence.get());
     }
+    Device::parametersList().add(_gyroXOffset.get());
+    Device::parametersList().add(_gyroYOffset.get());
+    Device::parametersList().add(_gyroZOffset.get());
+    Device::parametersList().add(_accXMin.get());
+    Device::parametersList().add(_accXMax.get());
+    Device::parametersList().add(_accYMin.get());
+    Device::parametersList().add(_accYMax.get());
+    Device::parametersList().add(_accZMin.get());
+    Device::parametersList().add(_accZMax.get());
+    Device::parametersList().add(_magnXMin.get());
+    Device::parametersList().add(_magnXMax.get());
+    Device::parametersList().add(_magnYMin.get());
+    Device::parametersList().add(_magnYMax.get());
+    Device::parametersList().add(_magnZMin.get());
+    Device::parametersList().add(_magnZMax.get());
 }
         
 void GY85::setCallback(std::function<void()> callback_)
 {
     callback = callback_;
+}
+        
+void GY85::setGyroCalibration(float x, float y, float z)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    _gyroXOffset->value = x;
+    _gyroYOffset->value = y;
+    _gyroZOffset->value = z;
 }
 
 float GY85::getAccX()
@@ -144,6 +186,55 @@ float GY85::getMagnZ()
     std::lock_guard<std::mutex> lock(_mutex);
     return magnZ;
 }
+
+float GY85::getAccXRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return accXRaw;
+}
+float GY85::getAccYRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return accYRaw;
+}
+float GY85::getAccZRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return accZRaw;
+}
+
+float GY85::getGyroXRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return gyroX;
+}
+float GY85::getGyroYRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return gyroYRaw;
+}
+float GY85::getGyroZRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return gyroZRaw;
+}
+
+float GY85::getMagnXRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return magnXRaw;
+}
+float GY85::getMagnYRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return magnYRaw;
+}
+float GY85::getMagnZRaw()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return magnZRaw;
+}
+
 float GY85::getGyroYaw()
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -163,6 +254,32 @@ float GY85::getRoll()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return filter.roll;
+}
+
+float GY85::getYawCompass()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.yaw;
+}
+float GY85::getPitchCompass()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.pitch;
+}
+float GY85::getRollCompass()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.roll;
+}
+float GY85::getMagnAzimuth()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.magnAzimuth;
+}
+float GY85::getMagnHeading()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.magnHeading;
 }
         
 void GY85::onSwap()
@@ -206,30 +323,42 @@ void GY85::onSwap()
         }
 
         // Update current values
-        accX = values[currentPos].accX->readValue().value;
-        accY = values[currentPos].accY->readValue().value;
-        accZ = values[currentPos].accZ->readValue().value;
-        gyroX = values[currentPos].gyroX->readValue().value;
-        gyroY = values[currentPos].gyroY->readValue().value;
-        gyroZ = values[currentPos].gyroZ->readValue().value;
-        magnX = values[currentPos].magnX->readValue().value;
-        magnY = values[currentPos].magnY->readValue().value;
-        magnZ = values[currentPos].magnZ->readValue().value;
+        accXRaw = values[currentPos].accX->readValue().value;
+        accYRaw = values[currentPos].accY->readValue().value;
+        accZRaw = values[currentPos].accZ->readValue().value;
+        gyroXRaw = values[currentPos].gyroX->readValue().value;
+        gyroYRaw = values[currentPos].gyroY->readValue().value;
+        gyroZRaw = values[currentPos].gyroZ->readValue().value;
+        magnXRaw = values[currentPos].magnX->readValue().value;
+        magnYRaw = values[currentPos].magnY->readValue().value;
+        magnZRaw = values[currentPos].magnZ->readValue().value;
         sequence = (uint32_t)values[currentPos].sequence->readValue().value;
+
+        // XXX: Apply calibration
+        accX = accXRaw;
+        accY = accYRaw;
+        accZ = accZRaw;
+        gyroX = gyroXRaw;
+        gyroY = gyroYRaw;
+        gyroZ = gyroZRaw;
+        magnX = magnXRaw;
+        magnY = magnYRaw;
+        magnZ = magnZRaw;
         
         updated = true;
 
-        // Updating filter
-        filter.accel[0] = accX;
-        filter.accel[1] = accY;
-        filter.accel[2] = accZ;
-        filter.gyro[0] = gyroX;
-        filter.gyro[1] = gyroY;
-        filter.gyro[2] = gyroZ;
-        filter.magnetom[0] = magnX;
-        filter.magnetom[1] = magnY;
-        filter.magnetom[2] = magnZ;
+        // Updating filters
+        compassFilter.accel[0] = filter.accel[0] = accX;
+        compassFilter.accel[1] = filter.accel[1] = accY;
+        compassFilter.accel[2] = filter.accel[2] = accZ;
+        compassFilter.gyro[0] = filter.gyro[0] = gyroX;
+        compassFilter.gyro[1] = filter.gyro[1] = gyroY;
+        compassFilter.gyro[2] = filter.gyro[2] = gyroZ;
+        compassFilter.magnetom[0] = filter.magnetom[0] = magnX;
+        compassFilter.magnetom[1] = filter.magnetom[1] = magnY;
+        compassFilter.magnetom[2] = filter.magnetom[2] = magnZ;
         filter.update();
+        compassFilter.update();
     }
 
     _mutex.unlock();
