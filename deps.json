@@ -1,13 +1,14 @@
 {
     "name": "rhoban/rhal",
+    "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap", "rhoban/rhio"],
+    "includes": "Lib",
+    "binaries": "build/bin",
+    "libraries": "build",
+    "links": "build/libRhAL.so",
     "build": [
         "mkdir -p build",
         "cd build",
         "cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_RHAL_BINDING=ON -DBUILD_RHAL_BINARY=ON ..",
         "make"
-    ],
-    "binaries": "build/bin",
-    "libraries": "build",
-    "includes": "Lib",
-    "deps": ["rhobandeps/serial", "rhobandeps/json", "rhobandeps/tclap", "rhoban/rhio"]
+    ]
 }
