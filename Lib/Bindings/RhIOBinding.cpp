@@ -509,7 +509,7 @@ std::string RhIOBinding::cmdTare(
                     zeros[ps][g] += ps->gain(g)*ps->pressure(g);
                 }
             }
-            _manager->flush();
+            _manager->waitNextFlush();
         }
         for (auto &ps : sensors) {
             for (int g=0; g<ps->gauges(); g++) {
