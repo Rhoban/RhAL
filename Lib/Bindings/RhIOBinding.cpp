@@ -95,18 +95,28 @@ void RhIOBinding::update()
             _node->newChild(device.first);
         }
         RhIO::IONode* deviceNode = &(_node->child(device.first));
+
+        // In the case of the GY85, move registers to the registers/ sub node
+        RhIO::IONode *registersNode = deviceNode;
+        if (auto gy85 = dynamic_cast<RhAL::GY85*>(device.second)) {
+            if (!registersNode->childExist("registers")) {
+                registersNode->newChild("registers");
+            }
+            registersNode = &registersNode->child("registers");
+        }
+
         //Iterate over all Registers Bool
         for (const auto& reg : device.second->registersList().containerBool()) {
             //Create a RhIO Node if it not exists associated
             //with the register
-            if (deviceNode->getValueType(reg.first) == RhIO::NoValue) {
-                deviceNode->newBool(reg.first);
-                deviceNode->setBool(reg.first, reg.second->readValue().value);
-                deviceNode->setCallbackBool(reg.first, [reg](bool newValue) {
+            if (registersNode->getValueType(reg.first) == RhIO::NoValue) {
+                registersNode->newBool(reg.first);
+                registersNode->setBool(reg.first, reg.second->readValue().value);
+                registersNode->setCallbackBool(reg.first, [reg](bool newValue) {
                     reg.second->writeValue(newValue, true);
                 });
-                auto callback = [deviceNode, reg](bool newValue) {
-                    deviceNode->setBool(reg.first, newValue, true);
+                auto callback = [registersNode, reg](bool newValue) {
+                    registersNode->setBool(reg.first, newValue, true);
                 };
                 reg.second->setCallbackRead(callback);
                 reg.second->setCallbackWrite(callback);
@@ -116,14 +126,14 @@ void RhIOBinding::update()
         for (const auto& reg : device.second->registersList().containerInt()) {
             //Create a RhIO Node if it not exists associated
             //with the register
-            if (deviceNode->getValueType(reg.first) == RhIO::NoValue) {
-                deviceNode->newInt(reg.first);
-                deviceNode->setInt(reg.first, reg.second->readValue().value);
-                deviceNode->setCallbackInt(reg.first, [reg](long newValue) {
+            if (registersNode->getValueType(reg.first) == RhIO::NoValue) {
+                registersNode->newInt(reg.first);
+                registersNode->setInt(reg.first, reg.second->readValue().value);
+                registersNode->setCallbackInt(reg.first, [reg](long newValue) {
                     reg.second->writeValue(newValue, true);
                 });
-                auto callback = [deviceNode, reg](long newValue) {
-                    deviceNode->setInt(reg.first, newValue, true);
+                auto callback = [registersNode, reg](long newValue) {
+                    registersNode->setInt(reg.first, newValue, true);
                 };
                 reg.second->setCallbackRead(callback);
                 reg.second->setCallbackWrite(callback);
@@ -133,14 +143,14 @@ void RhIOBinding::update()
         for (const auto& reg : device.second->registersList().containerFloat()) {
             //Create a RhIO Node if it not exists associated
             //with the register
-            if (deviceNode->getValueType(reg.first) == RhIO::NoValue) {
-                deviceNode->newFloat(reg.first);
-                deviceNode->setFloat(reg.first, reg.second->readValue().value);
-                deviceNode->setCallbackFloat(reg.first, [reg](double newValue) {
+            if (registersNode->getValueType(reg.first) == RhIO::NoValue) {
+                registersNode->newFloat(reg.first);
+                registersNode->setFloat(reg.first, reg.second->readValue().value);
+                registersNode->setCallbackFloat(reg.first, [reg](double newValue) {
                     reg.second->writeValue(newValue, true);
                 });
-                auto callback = [deviceNode, reg](double newValue) {
-                    deviceNode->setFloat(reg.first, newValue, true);
+                auto callback = [registersNode, reg](double newValue) {
+                    registersNode->setFloat(reg.first, newValue, true);
                 };
                 reg.second->setCallbackRead(callback);
                 reg.second->setCallbackWrite(callback);
