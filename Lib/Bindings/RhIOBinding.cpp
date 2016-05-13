@@ -87,7 +87,7 @@ RhIOBinding::~RhIOBinding()
 void RhIOBinding::update()
 {
     //Retrive all contained Devices indexed by name
-    auto allDevices = _manager->devContainer();
+    const auto& allDevices = _manager->devContainer();
 
     //Iterate over all Devices
     for (const auto& device : allDevices) {
@@ -189,7 +189,7 @@ void RhIOBinding::update()
 void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
 {
     //If the device is a GY85
-    if (auto gy85 = dynamic_cast<RhAL::GY85*>(device)) {
+    if (RhAL::GY85* gy85 = dynamic_cast<RhAL::GY85*>(device)) {
         if (deviceNode->getValueType("accX") == RhIO::NoValue) {
             deviceNode->newFloat("accX");
             deviceNode->newFloat("accY");
@@ -247,7 +247,7 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
         }
     }
     // Pressure sensors
-    if (auto ps = dynamic_cast<RhAL::PressureSensorBase*>(device)) {
+    if (RhAL::PressureSensorBase* ps = dynamic_cast<RhAL::PressureSensorBase*>(device)) {
         if (deviceNode->getValueType("x") == RhIO::NoValue) {
             deviceNode->newFloat("x");
             deviceNode->newFloat("y");
@@ -345,8 +345,8 @@ std::string RhIOBinding::cmdReadDev(
     if (!_manager->devExists(argv[0])) {
         return "Unknown device name: " + argv[0];
     }
-    auto &device = _manager->devByName(argv[0]);
-    for (auto& reg : device.registersList().container()) {
+    Device& device = _manager->devByName(argv[0]);
+    for (const auto& reg : device.registersList().container()) {
         reg.second->forceRead();
     }
     update();
@@ -401,7 +401,7 @@ std::string RhIOBinding::cmdStatus(
     std::vector<std::string> argv)
 {
     (void)argv;
-    auto allDevices = _manager->devContainer();
+    const auto& allDevices = _manager->devContainer();
 
     std::string msg;
     for (const auto& dev : allDevices) {
@@ -434,7 +434,7 @@ std::string RhIOBinding::cmdCheck(
         return "All devices are present";
     } else {
         std::string msg;
-        auto allDevices = _manager->devContainer();
+        const auto& allDevices = _manager->devContainer();
         for (const auto& dev : allDevices) {
             if (!dev.second->isPresent()) {
                 msg += "Missing " + dev.first + "\n";
@@ -487,9 +487,9 @@ std::string RhIOBinding::cmdInit(
     std::vector<std::string> argv)
 {
     (void)argv;
-    auto allDevices = _manager->devContainer();
+    const auto& allDevices = _manager->devContainer();
     //Iterate over all DXL Devices
-    for (auto& dev : allDevices) {
+    for (const auto& dev : allDevices) {
         DXL* pt = dynamic_cast<DXL*>(dev.second);
         if (pt != nullptr) {
             pt->setGoalPositionSmooth(0.0, 1.0);
@@ -519,8 +519,8 @@ std::string RhIOBinding::cmdTare(
     (void)argv;
     std::vector<PressureSensorBase*> sensors;
     std::map<PressureSensorBase*, std::vector<double>> zeros;
-    auto allDevices = _manager->devContainer();
-    for (auto& dev : allDevices) {
+    const auto& allDevices = _manager->devContainer();
+    for (const auto& dev : allDevices) {
         PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
         if (ps != nullptr) {
             sensors.push_back(ps);
@@ -539,14 +539,14 @@ std::string RhIOBinding::cmdTare(
         std::stringstream ss;
         int samples = 500;
         for (int k=0; k<samples; k++) {
-            for (auto &ps : sensors) {
+            for (const auto& ps : sensors) {
                 for (int g=0; g<ps->gauges(); g++) {
                     zeros[ps][g] += ps->gain(g)*ps->pressure(g);
                 }
             }
             _manager->waitNextFlush();
         }
-        for (auto &ps : sensors) {
+        for (const auto& ps : sensors) {
             for (int g=0; g<ps->gauges(); g++) {
                 ps->setZero(g, zeros[ps][g]/samples);
             }
@@ -563,8 +563,8 @@ std::string RhIOBinding::cmdGyroTare(
     /*
     std::vector<PressureSensorBase*> sensors;
     std::map<PressureSensorBase*, std::vector<double>> zeros;
-    auto allDevices = _manager->devContainer();
-    for (auto& dev : allDevices) {
+    const auto& allDevices = _manager->devContainer();
+    for (const auto& dev : allDevices) {
         PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
         if (ps != nullptr) {
             sensors.push_back(ps);
