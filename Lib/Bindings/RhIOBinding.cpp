@@ -45,8 +45,6 @@ RhIOBinding::RhIOBinding(
         std::bind(&RhIOBinding::cmdLoadConf, this, std::placeholders::_1));
     _node->newCommand("rhalEM", "Send emergencu stop", 
         std::bind(&RhIOBinding::cmdEmergency, this, std::placeholders::_1));
-    _node->newCommand("em", "rhalEM alias", 
-        std::bind(&RhIOBinding::cmdEmergency, this, std::placeholders::_1));
     _node->newCommand("rhalExitEmergency", "Exit emergency state", 
         std::bind(&RhIOBinding::cmdEmergencyExit, this, std::placeholders::_1));
     _node->newCommand("rhalInit", "Enable all servos in zero position", 
@@ -403,26 +401,32 @@ std::string RhIOBinding::cmdStatus(
     (void)argv;
     const auto& allDevices = _manager->devContainer();
 
-    std::string msg;
+    std::ostringstream os;
+    os << std::setfill(' ') << std::setw(4) << "id";
+    os << std::setfill(' ') << std::setw(30) << "name";
+    os << std::setfill(' ') << std::setw(20) << "type";
+    os << std::setfill(' ') << std::setw(15) << "status";
+    os << std::endl;
+    os << std::setfill('-') << std::setw(4+30+20+15) << "-" << std::endl;
     for (const auto& dev : allDevices) {
-        msg += "id=" + std::to_string(dev.second->id());
-        msg += " name=" + dev.first;
-        msg += " type=" + _manager->devTypeNameById(dev.second->id());
+        os << std::setfill(' ') << std::setw(4) << std::to_string(dev.second->id());
+        os << std::setfill(' ') << std::setw(30) << dev.first;
+        os << std::setfill(' ') << std::setw(20) << _manager->devTypeNameById(dev.second->id());
         if (dev.second->isPresent()) {
-            msg += " isPresent";
+            os << std::setw(15) << "present";
         } else {
-            msg += " missing";
+            os << std::setw(15) << "missing";
         }
         if (dev.second->isWarning()) {
-            msg += " isWarning";
+            os << std::setw(15) << "warning";
         }
         if (dev.second->isError()) {
-            msg += " isError";
+            os << std::setw(15) << "error";
         }
-        msg += "\n";
+        os << std::endl;
     }
 
-    return msg;
+    return os.str();
 }
 
 std::string RhIOBinding::cmdCheck(
