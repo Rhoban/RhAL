@@ -80,12 +80,12 @@ GY85::GY85(const std::string& name, id_t id) :
     _gyroYOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroYOffset", 0.0));
     _gyroZOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroZOffset", 0.0));
     
-    _accXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMin", -256.0));
-    _accXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMax", 256.0));
-    _accYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMin", -256.0));
-    _accYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMax", 256.0));
-    _accZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMin", -256.0));
-    _accZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMax", 256.0));
+    _accXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMin", -1.0));
+    _accXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMax", 1.0));
+    _accYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMin", -1.0));
+    _accYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMax", 1.0));
+    _accZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMin", -1.0));
+    _accZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMax", 1.0));
     
     _magnXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMin", -100.0));
     _magnXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMax", 100.0));
@@ -206,7 +206,7 @@ float GY85::getAccZRaw()
 float GY85::getGyroXRaw()
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    return gyroX;
+    return gyroXRaw;
 }
 float GY85::getGyroYRaw()
 {
@@ -281,6 +281,15 @@ float GY85::getMagnHeading()
     std::lock_guard<std::mutex> lock(_mutex);
     return compassFilter.magnHeading;
 }
+
+static float compensation(float value, float min, float max)
+{
+    float offset = (min+max)/2;
+    float range = max-min;
+
+
+    // XXX: Complete
+}
         
 void GY85::onSwap()
 {
@@ -335,12 +344,12 @@ void GY85::onSwap()
         sequence = (uint32_t)values[currentPos].sequence->readValue().value;
 
         // XXX: Apply calibration
-        accX = accXRaw;
+        accX = compensation(accXRaw, _accXMin->value, _accXMax->value);
         accY = accYRaw;
         accZ = accZRaw;
-        gyroX = gyroXRaw;
-        gyroY = gyroYRaw;
-        gyroZ = gyroZRaw;
+        gyroX = gyroXRaw - _gyroXOffset->value;
+        gyroY = gyroYRaw - _gyroYOffset->value;
+        gyroZ = gyroZRaw - _gyroZOffset->value;
         magnX = magnXRaw;
         magnY = magnYRaw;
         magnZ = magnZRaw;
