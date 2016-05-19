@@ -541,7 +541,7 @@ std::string RhIOBinding::cmdTare(
         return "No pressure devices found";
     } else {
         std::stringstream ss;
-        int samples = 500;
+        int samples = 1000;
         for (int k=0; k<samples; k++) {
             for (const auto& ps : sensors) {
                 for (int g=0; g<ps->gauges(); g++) {
@@ -564,24 +564,38 @@ std::string RhIOBinding::cmdGyroTare(
     std::vector<std::string> argv)
 {
     (void)argv;
-    /*
-    std::vector<PressureSensorBase*> sensors;
-    std::map<PressureSensorBase*, std::vector<double>> zeros;
-    const auto& allDevices = _manager->devContainer();
-    for (const auto& dev : allDevices) {
-        PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
-        if (ps != nullptr) {
-            sensors.push_back(ps);
-            zeros[ps] = std::vector<double>();
-            for (int g=0; g<ps->gauges(); g++) {
-                // Reseting the zeros
-                ps->setZero(g, 0);
-                zeros[ps].push_back(0);
-            }
+    std::vector<GY85*> sensors;
+    std::map<GY85*, std::map<std::string, double>> zeros;
+
+    auto allDevices = _manager->devContainer();
+    for (auto& dev : allDevices) {
+        GY85 *gy85 = dynamic_cast<GY85*>(dev.second);
+        if (gy85 != nullptr) {
+            sensors.push_back(gy85);
+            zeros[gy85] = std::map<std::string, double>();
+            zeros[gy85]["x"] = 0;
+            zeros[gy85]["y"] = 0;
+            zeros[gy85]["z"] = 0;
         }
     }
-    */
-    return "Not yet implemented.";
+
+    if (!sensors.size()) {
+        return "No sensor found";
+    } else {
+        int samples = 1000;
+        for (int k=0; k<samples; k++) {
+            for (auto &gy85 : sensors) {
+                zeros[gy85]["x"] += gy85->getGyroXRaw()/(float)samples;
+                zeros[gy85]["y"] += gy85->getGyroYRaw()/(float)samples;
+                zeros[gy85]["z"] += gy85->getGyroZRaw()/(float)samples;
+            }
+            _manager->waitNextFlush();
+        }
+        for (auto &gy85 : sensors) {
+            gy85->setGyroCalibration(zeros[gy85]["x"], zeros[gy85]["y"], zeros[gy85]["z"]);
+        }
+        return "Done.";
+    }
 }
 
 }
