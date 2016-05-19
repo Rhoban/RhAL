@@ -130,7 +130,7 @@ foreach(SOURCE ${LIB_SOURCES})
 endforeach()
 
 # Build the RhAL Library
-add_library(RhAL ${PREFIXED_LIB_SOURCES})
+add_library(RhAL SHARED ${PREFIXED_LIB_SOURCES})
 target_link_libraries(RhAL ${LIBRARIES})
 
 # Build all Tests binary
