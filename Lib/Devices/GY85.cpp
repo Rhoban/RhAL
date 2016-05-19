@@ -282,13 +282,12 @@ float GY85::getMagnHeading()
     return compassFilter.magnHeading;
 }
 
-static float compensation(float value, float min, float max)
+inline static float compensation(float value, float min, float max)
 {
     float offset = (min+max)/2;
-    float range = max-min;
+    float range = (max-min)/2;
 
-
-    // XXX: Complete
+    return (value-offset)/range;
 }
         
 void GY85::onSwap()
@@ -345,14 +344,14 @@ void GY85::onSwap()
 
         // XXX: Apply calibration
         accX = compensation(accXRaw, _accXMin->value, _accXMax->value);
-        accY = accYRaw;
-        accZ = accZRaw;
+        accY = compensation(accYRaw, _accYMin->value, _accYMax->value);
+        accZ = compensation(accZRaw, _accZMin->value, _accZMax->value);
         gyroX = gyroXRaw - _gyroXOffset->value;
         gyroY = gyroYRaw - _gyroYOffset->value;
         gyroZ = gyroZRaw - _gyroZOffset->value;
-        magnX = magnXRaw;
-        magnY = magnYRaw;
-        magnZ = magnZRaw;
+        magnX = compensation(magnXRaw, _magnXMin->value, _magnXMax->value);
+        magnY = compensation(magnYRaw, _magnYMin->value, _magnYMax->value);
+        magnZ = compensation(magnZRaw, _magnZMin->value, _magnZMax->value);
         
         updated = true;
 
