@@ -2,10 +2,15 @@
 #include <vector>
 #include <iostream>
 #include <tclap/CmdLine.h>
+#include <stdexcept>
+#include <fenv.h>
 #include "RhAL.hpp"
 
 int main(int argc, char** argv)
 {
+    // Enabling FE exceptions
+    feenableexcept(FE_DIVBYZERO| FE_INVALID | FE_OVERFLOW);
+
     // Reading command line
     TCLAP::CmdLine cmd("RhAL command line tool", ' ', "0.1");
     TCLAP::ValueArg<std::string> port("l", "port", "Serial port", false, "/dev/ttyACM0", "port", cmd);
