@@ -99,8 +99,12 @@ class PressureSensor : public PressureSensorBase
                 }
             }
             weight = total;
-            x = x_/weight;
-            y = y_/weight;
+            if (weight > 1e-6) {
+                x = x_/weight;
+                y = y_/weight;
+            } else {
+                x = y = 0;
+            }
             
             callback();
         }
