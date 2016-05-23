@@ -112,6 +112,9 @@ class GY85 : public Device
         std::shared_ptr<ParameterNumber> _accXMin, _accXMax, _accYMin, _accYMax, _accZMin, _accZMax;
         std::shared_ptr<ParameterNumber> _magnXMin, _magnXMax, _magnYMin, _magnYMax, _magnZMin, _magnZMax;
 
+        // Invert the orientation of the robot (if the IMU X axis is backward)
+        std::shared_ptr<ParameterBool> _invertOrientation;
+
         /**
          * Last sensor values
          */

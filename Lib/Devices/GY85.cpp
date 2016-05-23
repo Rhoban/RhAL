@@ -75,6 +75,8 @@ GY85::GY85(const std::string& name, id_t id) :
                     0x36 +offset, 4, convDecode_4Bytes, 1));
     }
 
+    _invertOrientation = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientation", false));
+
     _gyroXOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroXOffset", 0.0));
     _gyroYOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroYOffset", 0.0));
     _gyroZOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroZOffset", 0.0));
@@ -108,6 +110,7 @@ void GY85::onInit()
         Device::registersList().add(values[k].magnZ.get());
         Device::registersList().add(values[k].sequence.get());
     }
+    Device::parametersList().add(_invertOrientation.get());
     Device::parametersList().add(_gyroXOffset.get());
     Device::parametersList().add(_gyroYOffset.get());
     Device::parametersList().add(_gyroZOffset.get());
@@ -366,6 +369,13 @@ void GY85::onSwap()
         compassFilter.magnetom[2] = filter.magnetom[2] = magnZ;
         filter.update();
         compassFilter.update();
+
+        if (_invertOrientation->value) {
+            filter.pitch = -filter.pitch;
+            filter.roll = -filter.roll;
+            compassFilter.pitch = -compassFilter.pitch;
+            compassFilter.roll = -compassFilter.roll;
+        }
     }
 
     _mutex.unlock();
