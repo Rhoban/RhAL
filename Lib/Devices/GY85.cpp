@@ -18,8 +18,7 @@ namespace RhAL {
 
 static float accelerometerDecode(const data_t *data)
 {
-    // We store negated acceleration, for compatibility with the AHRS format
-    return -ACC_GAIN*convDecode_2Bytes_signed(data);
+    return ACC_GAIN*convDecode_2Bytes_signed(data);
 }
 
 static float gyroscopeDecode(const data_t *data)
