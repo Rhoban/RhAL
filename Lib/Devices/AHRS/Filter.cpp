@@ -3,8 +3,6 @@
 #include "Filter.hpp"
 
 #define GRAVITY 256.0
-#define Kp_ROLLPITCH 0.02f
-#define Ki_ROLLPITCH 0.00002f
 #define Kp_YAW 1.2f
 #define Ki_YAW 0.00002f
 // XXX: Be more accurate?
@@ -160,9 +158,9 @@ namespace AHRS
         Accel_weight = constrain(1 - 2*fabs(1 - Accel_magnitude),0,1);  //  
 
         Vector_Cross_Product(&errorRollPitch[0],&Accel_Vector[0],&DCM_Matrix[2][0]); //adjust the ground of reference
-        Vector_Scale(&Omega_P[0],&errorRollPitch[0],Kp_ROLLPITCH*Accel_weight);
+        Vector_Scale(&Omega_P[0],&errorRollPitch[0],Kp_rollPitch*Accel_weight);
 
-        Vector_Scale(&Scaled_Omega_I[0],&errorRollPitch[0],Ki_ROLLPITCH*Accel_weight);
+        Vector_Scale(&Scaled_Omega_I[0],&errorRollPitch[0],Ki_rollPitch*Accel_weight);
         Vector_Add(Omega_I,Omega_I,Scaled_Omega_I);     
 
         //*****YAW***************

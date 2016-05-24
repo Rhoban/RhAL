@@ -27,6 +27,10 @@ namespace AHRS
             float magnAzimuth;
             float magnHeading;
 
+            // Kp & Ki for filter
+            float Kp_rollPitch;
+            float Ki_rollPitch;
+
         protected:
             // DCM variables
             float MAG_Heading = 0;

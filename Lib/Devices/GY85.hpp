@@ -114,6 +114,10 @@ class GY85 : public Device
 
         // Invert the orientation of the robot (if the IMU X axis is backward)
         std::shared_ptr<ParameterBool> _invertOrientation;
+        
+        // Filters gains
+        std::shared_ptr<ParameterNumber> _kp_rollpitch;
+        std::shared_ptr<ParameterNumber> _ki_rollpitch;
 
         /**
          * Last sensor values

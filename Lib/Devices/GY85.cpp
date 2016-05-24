@@ -74,6 +74,9 @@ GY85::GY85(const std::string& name, id_t id) :
         values[k].sequence = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt(ss.str(),
                     0x36 +offset, 4, convDecode_4Bytes, 1));
     }
+    
+    _kp_rollpitch = std::shared_ptr<ParameterNumber>(new ParameterNumber("kp_rollpitch", 0.02));
+    _ki_rollpitch = std::shared_ptr<ParameterNumber>(new ParameterNumber("ki_rollpitch", 0.00002));
 
     _invertOrientation = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientation", false));
 
@@ -110,6 +113,8 @@ void GY85::onInit()
         Device::registersList().add(values[k].magnZ.get());
         Device::registersList().add(values[k].sequence.get());
     }
+    Device::parametersList().add(_kp_rollpitch.get());
+    Device::parametersList().add(_ki_rollpitch.get());
     Device::parametersList().add(_invertOrientation.get());
     Device::parametersList().add(_gyroXOffset.get());
     Device::parametersList().add(_gyroYOffset.get());
@@ -367,6 +372,8 @@ void GY85::onSwap()
         compassFilter.magnetom[0] = filter.magnetom[0] = magnX;
         compassFilter.magnetom[1] = filter.magnetom[1] = magnY;
         compassFilter.magnetom[2] = filter.magnetom[2] = magnZ;
+        compassFilter.Kp_rollPitch = filter.Kp_rollPitch = _kp_rollpitch->value;
+        compassFilter.Ki_rollPitch = filter.Ki_rollPitch = _ki_rollpitch->value;
         filter.update();
         compassFilter.update();
 
