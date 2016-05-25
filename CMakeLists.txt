@@ -83,7 +83,7 @@ set(TESTS_SOURCES
     testManager
     testReadWrite
     testSync
-    test1
+    #test1
     testDynaban
 )
 
