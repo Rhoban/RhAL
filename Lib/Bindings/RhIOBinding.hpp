@@ -52,37 +52,6 @@ class RhIOBinding
          */
         void specificUpdate(
             RhIO::IONode *node, RhAL::Device *device);
-       
-        /**
-         * Initializes DXL servos
-         */
-        std::string cmdInit(
-            std::vector<std::string> argv);
-
-    private:
-
-        /**
-         * Binding Thread
-         */
-        std::thread* _thread;
-        bool _isOver;
-
-        /**
-         * Main Manager instance 
-         */
-        BaseManager* _manager;
-
-        /**
-         * Pointer to RhIO node
-         */
-        RhIO::IONode* _node;
-
-        /**
-         * Update RhIO on given RhAL ParameterList
-         */
-        void updateParameters(
-            ParametersList& params,
-            RhIO::IONode* node);
 
         /**
          * RhIO scan command
@@ -117,6 +86,33 @@ class RhIOBinding
             std::vector<std::string> argv);
         std::string cmdGyroTare(
             std::vector<std::string> argv);
+        std::string cmdInit(
+            std::vector<std::string> argv);
+
+    private:
+
+        /**
+         * Binding Thread
+         */
+        std::thread* _thread;
+        bool _isOver;
+
+        /**
+         * Main Manager instance 
+         */
+        BaseManager* _manager;
+
+        /**
+         * Pointer to RhIO node
+         */
+        RhIO::IONode* _node;
+
+        /**
+         * Update RhIO on given RhAL ParameterList
+         */
+        void updateParameters(
+            ParametersList& params,
+            RhIO::IONode* node);
 };
 
 }
