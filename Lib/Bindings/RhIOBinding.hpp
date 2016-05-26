@@ -52,6 +52,12 @@ class RhIOBinding
          */
         void specificUpdate(
             RhIO::IONode *node, RhAL::Device *device);
+       
+        /**
+         * Initializes DXL servos
+         */
+        std::string cmdInit(
+            std::vector<std::string> argv);
 
     private:
 
@@ -104,8 +110,6 @@ class RhIOBinding
         std::string cmdEmergency(
             std::vector<std::string> argv);
         std::string cmdEmergencyExit(
-            std::vector<std::string> argv);
-        std::string cmdInit(
             std::vector<std::string> argv);
         std::string cmdChangeId(
             std::vector<std::string> argv);
