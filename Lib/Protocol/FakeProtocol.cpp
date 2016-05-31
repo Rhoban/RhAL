@@ -10,7 +10,8 @@ namespace RhAL
 {
         
 FakeProtocol::FakeProtocol(Bus& bus) :
-    Protocol(bus)
+    Protocol(bus),
+    _verbose("verbose", false)
 {
 }
 
@@ -19,14 +20,16 @@ void FakeProtocol::writeData(
     const uint8_t *data, size_t size) 
 {
     (void)data;
-    std::cout << "WriteData id=" << id 
-        << " addr=" << address
-        << " size=" << size;
-    if (size == 4) {
-        std::cout << " valFloat=" 
-            << *(reinterpret_cast<const float*>(data));
+    if (_verbose.value) {
+        std::cout << "WriteData id=" << id 
+            << " addr=" << address
+            << " size=" << size;
+        if (size == 4) {
+            std::cout << " valFloat=" 
+                << *(reinterpret_cast<const float*>(data));
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
@@ -35,15 +38,17 @@ ResponseState FakeProtocol::readData(
     uint8_t *data, size_t size) 
 {
     (void)data;
-    std::cout << "ReadData id=" << id 
-        << " addr=" << address
-        << " size=" << size;
+    if (_verbose.value) {
+        std::cout << "ReadData id=" << id 
+            << " addr=" << address
+            << " size=" << size;
+    }
     if (size == 4) {
         float val = dist(generator);
         *(reinterpret_cast<float*>(data)) = val;
-        std::cout << " valFloat=" << val;
+        if (_verbose.value) std::cout << " valFloat=" << val;
     }
-    std::cout << std::endl;
+    if (_verbose.value) std::cout << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     return ResponseOK;
 }
@@ -56,13 +61,17 @@ ResponseState FakeProtocol::writeAndCheckData(id_t id, addr_t address,
     (void)address;
     (void)data;
     (void)size;
-    std::cout << "Not implemented yet in fakeProtocol" << std::endl;
+    if (_verbose.value) {
+        std::cout << "Not implemented yet in fakeProtocol" << std::endl;
+    }
     return ResponseOK;
 }
 
 bool FakeProtocol::ping(id_t id) 
 {
-    std::cout << "Ping id=" << id << std::endl;
+    if (_verbose.value) {
+        std::cout << "Ping id=" << id << std::endl;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     return false;
 }
@@ -73,22 +82,24 @@ std::vector<ResponseState> FakeProtocol::syncRead(
 {
     (void)datas;
     std::vector<ResponseState> states;
-    std::cout << "SyncRead ids={";
+    if (_verbose.value) std::cout << "SyncRead ids={";
     for (size_t i=0;i<ids.size();i++) {
-        std::cout << ids[i] << ",";
+        if (_verbose.value) std::cout << ids[i] << ",";
         states.push_back(ResponseOK);
     }
-    std::cout << "} addr=" << address 
-        << " size=" << size;
+    if (_verbose.value) {
+        std::cout << "} addr=" << address 
+            << " size=" << size;
+    }
     if (size == 4) {
-        std::cout << " valFoat: ";
+        if (_verbose.value) std::cout << " valFoat: ";
         for (size_t i=0;i<datas.size();i++) {
             float val = dist(generator);
-            std::cout << val << ", ";
+            if (_verbose.value) std::cout << val << ", ";
             *(reinterpret_cast<float*>(datas[i])) = val;
         }
     }
-    std::cout << std::endl;
+    if (_verbose.value) std::cout << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     return states;
@@ -99,20 +110,22 @@ void FakeProtocol::syncWrite(
     const std::vector<const uint8_t*>& datas, size_t size) 
 {
     (void)datas;
-    std::cout << "SyncWrite ids={";
-    for (size_t i=0;i<ids.size();i++) {
-        std::cout << ids[i] << ",";
-    }
-    std::cout << "} addr=" << address 
-        << " size=" << size;
-    if (size == 4) {
-        std::cout << " valFoat: ";
-        for (size_t i=0;i<datas.size();i++) {
-            std::cout << *(reinterpret_cast<const float*>(datas[i]))
-                << ", ";
+    if (_verbose.value) {
+        std::cout << "SyncWrite ids={";
+        for (size_t i=0;i<ids.size();i++) {
+            std::cout << ids[i] << ",";
         }
+        std::cout << "} addr=" << address 
+            << " size=" << size;
+        if (size == 4) {
+            std::cout << " valFoat: ";
+            for (size_t i=0;i<datas.size();i++) {
+                std::cout << *(reinterpret_cast<const float*>(datas[i]))
+                    << ", ";
+            }
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
@@ -123,7 +136,9 @@ std::vector<ResponseState> FakeProtocol::syncWriteAndCheck(
     (void)address;
     (void)datas;
     (void)size;
+    if (_verbose.value) {
         std::cout << "Not implemented yet in fakeProtocol" << std::endl;
+    }
     std::vector<ResponseState> output;
     for (unsigned int i = 0; i < ids.size(); i++) {
         output.push_back(ResponseOK);
@@ -133,11 +148,15 @@ std::vector<ResponseState> FakeProtocol::syncWriteAndCheck(
 
 void FakeProtocol::emergencyStop()
 {
-	std::cout << "Emergency stop not implemented" << std::endl;
+    if (_verbose.value) {
+        std::cout << "Emergency stop not implemented" << std::endl;
+    }
 }
 void FakeProtocol::exitEmergencyState()
 {
-	std::cout << "Exit emergency state not implemented" << std::endl;
+    if (_verbose.value) {
+        std::cout << "Exit emergency state not implemented" << std::endl;
+    }
 }
 
 }
