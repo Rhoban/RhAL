@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Protocol.hpp"
+#include "Manager/Parameter.hpp"
 
 namespace RhAL {
 
@@ -36,6 +37,14 @@ class FakeProtocol : public Protocol
                 const std::vector<const uint8_t*>& datas, size_t size);
         virtual void emergencyStop() override;
         virtual void exitEmergencyState() override;
+
+    private:
+
+        /**
+         * Parameters
+         * verbose: enable FakeProtocol display message
+         */
+        ParameterBool _verbose;
 };
 
 }
