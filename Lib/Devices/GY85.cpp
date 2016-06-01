@@ -288,6 +288,16 @@ float GY85::getMagnHeading()
     std::lock_guard<std::mutex> lock(_mutex);
     return compassFilter.magnHeading;
 }
+Eigen::Matrix3d GY85::getMatrix()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return filter.getMatrix();
+}
+Eigen::Matrix3d GY85::getMatrixCompass()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return compassFilter.getMatrix();
+}
 
 inline static float compensation(float value, float min, float max)
 {

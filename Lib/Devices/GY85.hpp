@@ -73,6 +73,12 @@ class GY85 : public Device
         float getMagnXRaw();
         float getMagnYRaw();
         float getMagnZRaw();
+    
+        /**
+         * Filter matrix
+         */
+        Eigen::Matrix3d getMatrix();
+        Eigen::Matrix3d getMatrixCompass();
 
         /**
          * Filter output

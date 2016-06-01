@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Dense>
+
 namespace AHRS
 {
     class Filter
@@ -8,6 +10,9 @@ namespace AHRS
             Filter(bool useCompass=false);
 
             void update();
+
+            // Get DCM matrix
+            Eigen::Matrix3d getMatrix();
 
             // Use compass?
             bool useCompass;
@@ -22,7 +27,7 @@ namespace AHRS
             float pitch;
             float roll;
             float gyroYaw;
-            
+ 
             // Magnetometer
             float magnAzimuth;
             float magnHeading;

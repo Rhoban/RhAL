@@ -226,6 +226,18 @@ namespace AHRS
         }
     }
 
+    Eigen::Matrix3d Filter::getMatrix()
+    {
+        Eigen::Matrix3d m;
+        for (int r=0; r<3; r++) {
+            for (int c=0; c<3; c++) {
+                m(r, c) = DCM_Matrix[r][c];
+            }
+        }
+
+        return m;
+    }
+
     void Filter::Euler_angles(void)
     {
         pitch = -asin(DCM_Matrix[2][0]);
