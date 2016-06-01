@@ -213,6 +213,15 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
             deviceNode->newFloat("gyroYaw");
             deviceNode->newFloat("magnHeading");
             deviceNode->newFloat("magnAzimuth");
+            deviceNode->newFloat("matrix_0_0");
+            deviceNode->newFloat("matrix_0_1");
+            deviceNode->newFloat("matrix_0_2");
+            deviceNode->newFloat("matrix_1_0");
+            deviceNode->newFloat("matrix_1_1");
+            deviceNode->newFloat("matrix_1_2");
+            deviceNode->newFloat("matrix_2_0");
+            deviceNode->newFloat("matrix_2_1");
+            deviceNode->newFloat("matrix_2_2");
 
             std::function<void()> update = [deviceNode, gy85] {
                 deviceNode->setFloat("accX", gy85->getAccX());
@@ -239,6 +248,15 @@ void RhIOBinding::specificUpdate(RhIO::IONode *deviceNode, RhAL::Device *device)
                 deviceNode->setFloat("yaw", 180*gy85->getYaw()/M_PI);
                 deviceNode->setFloat("pitch", 180*gy85->getPitch()/M_PI);
                 deviceNode->setFloat("roll", 180*gy85->getRoll()/M_PI);
+                deviceNode->setFloat("matrix_0_0", gy85->getMatrix()(0,0));
+                deviceNode->setFloat("matrix_0_1", gy85->getMatrix()(0,1));
+                deviceNode->setFloat("matrix_0_2", gy85->getMatrix()(0,2));
+                deviceNode->setFloat("matrix_1_0", gy85->getMatrix()(1,0));
+                deviceNode->setFloat("matrix_1_1", gy85->getMatrix()(1,1));
+                deviceNode->setFloat("matrix_1_2", gy85->getMatrix()(1,2));
+                deviceNode->setFloat("matrix_2_0", gy85->getMatrix()(2,0));
+                deviceNode->setFloat("matrix_2_1", gy85->getMatrix()(2,1));
+                deviceNode->setFloat("matrix_2_2", gy85->getMatrix()(2,2));
             };
             update();
             gy85->setCallback(update);
