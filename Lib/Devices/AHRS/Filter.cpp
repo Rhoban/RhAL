@@ -231,7 +231,11 @@ namespace AHRS
         Eigen::Matrix3d m;
         for (int r=0; r<3; r++) {
             for (int c=0; c<3; c++) {
-                m(r, c) = DCM_Matrix[r][c];
+                if (invert && c<2) {
+                    m(r, c) = -DCM_Matrix[r][c];
+                } else {
+                    m(r, c) = DCM_Matrix[r][c];
+                }
             }
         }
 
@@ -240,9 +244,11 @@ namespace AHRS
 
     void Filter::Euler_angles(void)
     {
-        pitch = -asin(DCM_Matrix[2][0]);
-        roll = atan2(DCM_Matrix[2][1],DCM_Matrix[2][2]);
-        yaw = atan2(DCM_Matrix[1][0],DCM_Matrix[0][0]);
+        auto m = getMatrix();
+
+        pitch = -asin(m(2,0));
+        roll = atan2(m(2,1),m(2,2));
+        yaw = atan2(m(1,0),m(0,0));
     }
 
     void Filter::Compass_Heading()
@@ -274,6 +280,7 @@ namespace AHRS
         pitch = 0;
         roll = 0;
         gyroYaw = 0;
+        invert = false;
     }
 
     void Filter::update()

@@ -36,6 +36,9 @@ namespace AHRS
             float Kp_rollPitch;
             float Ki_rollPitch;
 
+            // Invert? (X Axis backward)
+            bool invert;
+
         protected:
             // DCM variables
             float MAG_Heading = 0;

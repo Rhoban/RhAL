@@ -384,15 +384,12 @@ void GY85::onSwap()
         compassFilter.magnetom[2] = filter.magnetom[2] = magnZ;
         compassFilter.Kp_rollPitch = filter.Kp_rollPitch = _kp_rollpitch->value;
         compassFilter.Ki_rollPitch = filter.Ki_rollPitch = _ki_rollpitch->value;
+
         filter.update();
         compassFilter.update();
 
-        if (_invertOrientation->value) {
-            filter.pitch = -filter.pitch;
-            filter.roll = -filter.roll;
-            compassFilter.pitch = -compassFilter.pitch;
-            compassFilter.roll = -compassFilter.roll;
-        }
+        filter.invert = _invertOrientation->value;
+        compassFilter.invert = _invertOrientation->value;
     }
 
     _mutex.unlock();
