@@ -2,6 +2,7 @@
 
 #include <string>
 #include <serial/serial.h>
+#include <mutex>
 #include "Bus.hpp"
 
 namespace RhAL
@@ -20,5 +21,6 @@ namespace RhAL
 
         protected:
             serial::Serial serial;
+            std::mutex mutex;
     };
 }

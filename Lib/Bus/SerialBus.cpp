@@ -10,6 +10,7 @@ namespace RhAL
 
     bool SerialBus::sendData(uint8_t *data, size_t size)
     {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
             return serial.write(data, size)==size;
         } catch (serial::IOException e) {
@@ -20,6 +21,7 @@ namespace RhAL
 
     bool SerialBus::waitForData(double timeout)
     {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
             return serial.waitReadable(timeout);
         } catch (serial::IOException e) {
@@ -30,6 +32,7 @@ namespace RhAL
 
     size_t SerialBus::available()
     {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
             return serial.available();
         } catch (serial::IOException e) {
@@ -40,6 +43,7 @@ namespace RhAL
 
     size_t SerialBus::readData(uint8_t *data, size_t size)
     {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
             return serial.read(data, size);
         } catch (serial::IOException e) {
@@ -50,6 +54,7 @@ namespace RhAL
 
     void SerialBus::flush()
     {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
             serial.flush();
         } catch (serial::IOException e) {
@@ -58,6 +63,7 @@ namespace RhAL
     }
 
     void SerialBus::clearInputBuffer() {
+        std::lock_guard<std::mutex> lock(mutex);
         try {
         	serial.flushInput();
         } catch (serial::IOException e) {
