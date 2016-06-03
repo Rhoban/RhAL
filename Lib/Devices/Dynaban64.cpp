@@ -496,6 +496,7 @@ void Dynaban64::onInit()
 
 void Dynaban64::onSwap()
 {
+    this->DXL::onSwap();
 //	const TimePoint tp  = getTimePoint();
 //	t = duration_float(tp);
 }
