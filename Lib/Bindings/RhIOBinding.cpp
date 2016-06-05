@@ -424,8 +424,10 @@ std::string RhIOBinding::cmdStatus(
     os << std::setfill(' ') << std::setw(30) << "name";
     os << std::setfill(' ') << std::setw(20) << "type";
     os << std::setfill(' ') << std::setw(15) << "status";
+    os << std::setfill(' ') << std::setw(10) << "warnings";
+    os << std::setfill(' ') << std::setw(10) << "errors";
     os << std::endl;
-    os << std::setfill('-') << std::setw(4+30+20+15) << "-" << std::endl;
+    os << std::setfill('-') << std::setw(4+30+20+15+10+10) << "-" << std::endl;
     for (const auto& dev : allDevices) {
         os << std::setfill(' ') << std::setw(4) << std::to_string(dev.second->id());
         os << std::setfill(' ') << std::setw(30) << dev.first;
@@ -441,6 +443,8 @@ std::string RhIOBinding::cmdStatus(
         if (dev.second->isError()) {
             os << std::setw(15) << "error";
         }
+        os << std::setw(10) << dev.second->countWarnings();
+        os << std::setw(10) << dev.second->countErrors();
         os << std::endl;
     }
 

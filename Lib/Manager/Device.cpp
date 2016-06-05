@@ -10,7 +10,11 @@ Device::Device(const std::string& name, id_t id) :
     _name(name),
     _id(id),
     _manager(nullptr),
-    _isPresent(false)
+    _isPresent(false),
+    _isWarning(false),
+    _isError(false),
+    _countWarnings(0),
+    _countErrors(0)
 {
     if (id < IdDevBegin || id > IdDevEnd) {
         throw std::logic_error(
@@ -73,6 +77,15 @@ bool Device::isError() const
     return _isError;
 }
 
+unsigned long Device::countWarnings() const
+{
+    return _countWarnings;
+}
+unsigned long Device::countErrors() const
+{
+    return _countErrors;
+}
+
 const RegistersList& Device::registersList() const
 {
     return _registersList;
@@ -99,11 +112,17 @@ void Device::setWarning(bool isWarning)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _isWarning = isWarning;
+    if (isWarning) {
+        _countWarnings++;
+    }
 }
 void Device::setError(bool isError)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _isError = isError;
+    if (isError) {
+        _countErrors++;
+    }
 }
 
 }

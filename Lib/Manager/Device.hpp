@@ -99,6 +99,13 @@ class Device
         bool isError() const;
 
         /**
+         * Return the number of 
+         * warnings and errors
+         */
+        unsigned long countWarnings() const;
+        unsigned long countErrors() const;
+
+        /**
          * Read/Write access to Registers and
          * Parameters list
          */
@@ -192,9 +199,15 @@ class Device
         /**
          * If true, the last read operation
          * with the Device set at leat one
-         * non quiet error flags
+         * non quiet error flags.
          */
         bool _isError;
+
+        /**
+         * Count the number of warnings and errors
+         */
+        unsigned long _countWarnings;
+        unsigned long _countErrors;
 };
 
 }
