@@ -15,6 +15,15 @@ struct Statistics
 {
     //Date at Manager instantiation
     TimePoint managerStart;
+    //Number of register read or write
+    //per flush current accumulator,
+    //mean and max
+    unsigned long regReadPerFlushAccu;
+    unsigned long regReadPerFlushMax;
+    double regReadPerFlushMean;
+    unsigned long regWrittenPerFlushAccu;
+    unsigned long regWrittenPerFlushMax;
+    double regWrittenPerFlushMean;
     //Number of calls to Protocol
     //read/write/syncRead/syncWrite
     unsigned long readCount;

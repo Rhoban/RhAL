@@ -11,6 +11,12 @@ Statistics::Statistics() :
     
 void Statistics::reset()
 {
+    regReadPerFlushAccu = 0;
+    regReadPerFlushMax = 0;
+    regReadPerFlushMean = 0.0;
+    regWrittenPerFlushAccu = 0;
+    regWrittenPerFlushMax = 0;
+    regWrittenPerFlushMean = 0.0;
     readCount = 0;
     writeCount = 0;
     syncReadCount = 0;
@@ -53,6 +59,10 @@ void Statistics::print(std::ostream& os) const
     os << "------------------------" << std::endl;
     os << "Time since Manager creation: " << 
         duration_float(managerStart, now) << "s" << std::endl;
+    os << "Mean registers read per flush: " << regReadPerFlushMean << std::endl;
+    os << "Max registers read per flush: " << regReadPerFlushMax << std::endl;
+    os << "Mean registers written per flush: " << regWrittenPerFlushMean << std::endl;
+    os << "Max registers written per flush: " << regWrittenPerFlushMax << std::endl;
     os << "Flush() calls: " << flushCount << std::endl;
     if (flushCount > 1) {
         os << "Mean Manager flush() period: " << 

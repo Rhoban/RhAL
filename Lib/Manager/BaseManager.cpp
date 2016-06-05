@@ -312,6 +312,28 @@ void BaseManager::flush(bool isForceSwap)
     std::unique_lock<std::mutex> lock(CallManager::_mutex);
     //Statistics
     _stats.flushCount++;
+    if (_stats.regReadPerFlushMax == 0) {
+        _stats.regReadPerFlushMean = _stats.regReadPerFlushAccu;
+    } else {
+        _stats.regReadPerFlushMean = 
+            0.99*_stats.regReadPerFlushMean 
+            + 0.01*_stats.regReadPerFlushAccu;
+    }
+    if (_stats.regReadPerFlushAccu > _stats.regReadPerFlushMax) {
+        _stats.regReadPerFlushMax = _stats.regReadPerFlushAccu;
+    }
+    _stats.regReadPerFlushAccu = 0;
+    if (_stats.regWrittenPerFlushMax == 0) {
+        _stats.regWrittenPerFlushMean = _stats.regWrittenPerFlushAccu;
+    } else {
+        _stats.regWrittenPerFlushMean = 
+            0.99*_stats.regWrittenPerFlushMean 
+            + 0.01*_stats.regWrittenPerFlushAccu;
+    }
+    if (_stats.regWrittenPerFlushAccu > _stats.regWrittenPerFlushMax) {
+        _stats.regWrittenPerFlushMax = _stats.regWrittenPerFlushAccu;
+    }
+    _stats.regWrittenPerFlushAccu = 0;
     TimePoint pStart = getTimePoint();
     if (_stats.lastFlushTimePoint != TimePoint()) {
         TimeDurationMicro d = getTimeDuration<TimeDurationMicro>(
@@ -607,6 +629,7 @@ void BaseManager::forceRegisterRead(
 {
     std::lock_guard<std::mutex> lock(CallManager::_mutex);
     std::lock_guard<std::mutex> lockBus(_mutexBus);
+    _stats.regReadPerFlushAccu++;
     _stats.forceReadCount++;
     //Check for initBus() called
     if (_protocol == nullptr) {
@@ -672,6 +695,7 @@ void BaseManager::forceRegisterWrite(
 {
     std::lock_guard<std::mutex> lock(CallManager::_mutex);
     std::lock_guard<std::mutex> lockBus(_mutexBus);
+    _stats.regWrittenPerFlushAccu++;
     _stats.forceWriteCount++;
     //Check for initBus() called
     if (_protocol == nullptr) {
@@ -980,6 +1004,10 @@ void BaseManager::writeBatch(BatchedRegisters& batch)
         throw std::logic_error(
             "BaseManager protocol not initialized");
     }
+    //Registers stats
+    for (size_t i=0;i<batch.regs.size();i++) {
+        _stats.regWrittenPerFlushAccu += batch.regs[i].size();
+    }
     if (batch.ids.size() == 1) {
         //Write single register
         TimePoint pStart = getTimePoint();
@@ -1073,6 +1101,10 @@ void BaseManager::readBatch(BatchedRegisters& batch)
         for (size_t j=0;j<batch.regs[i].size();j++) {
             batch.regs[i][j]->readyForRead();
         }
+    }
+    //Registers stats
+    for (size_t i=0;i<batch.regs.size();i++) {
+        _stats.regReadPerFlushAccu += batch.regs[i].size();
     }
     if (batch.ids.size() == 1) {
         //Read single register
