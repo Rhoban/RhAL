@@ -36,7 +36,7 @@ unsigned int convDecode_temperature(const data_t* buffer)
 
 void convEncode_voltage(data_t* buffer, float value)
 {
-    //The max is in fact 15V or 16V depending on the motor. 
+    //The max is in fact 15V or 16V depending on the motor.
     //Lazy solution...
     if (value > 16.0) {
         value = 16.0;
@@ -74,11 +74,11 @@ DXL::DXL(const std::string& name, id_t id) :
      * Unfortunately, the XL-320 has different addresses starting from the 'goalTorque' register.
      * This messes up with the genericity of dxl devices and disables the elegant solution.
      * Therefore, we decided to declare here only the Eeprom/flash registers that are common among all the dxl devices.
-     * ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition, 
+     * ReadOnly registers: ModelNumber, FirmwareVersion, PresentPosition,
      * PresentLoad, PresentVoltage, PresentTemperature, Registered, Moving.
      */
     //("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
-    //Our current policy is as follows : if the register has an updateFreq of 0, 
+    //Our current policy is as follows : if the register has an updateFreq of 0,
     //the it should be in forceRead mode. Otherwise, it really shouldn't be in forceRead mode.
     _modelNumber("modelNumber", 0x00, 2, convDecode_2Bytes, 0, true, false, true),
     _firmwareVersion("firmwareVersion", 0x02, 1, convDecode_1Byte, 0, true, false, true),
@@ -180,7 +180,7 @@ bool DXL::getInverted()
     std::lock_guard<std::mutex> lock(_mutex);
     return _inverted.value;
 }
-void DXL::setInverted(bool value) 
+void DXL::setInverted(bool value)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _inverted.value = value;
@@ -196,7 +196,7 @@ void DXL::setZero(float value)
     _zero.value = value;
 }
 
-void DXL::onSwap()                
+void DXL::onSwap()
 {
     TimePoint tp = getTimePoint();
     t = duration_float(tp);
@@ -208,10 +208,12 @@ void DXL::onSwap()
     _lastTp = tp;
 
     if (_isSmoothingActive) {
-        double goal = 
-            ((_smoothingEndGoal - _smoothingStartGoal)/_smoothingEndTime) 
-            * _smoothingCurrentTime
-            + _smoothingStartGoal;
+        if(_smoothingEndTime==0.0) //FIXME: is it necessary?
+            _smoothingEndTime=0.001;
+        double goal =
+                ((_smoothingEndGoal - _smoothingStartGoal)/_smoothingEndTime)
+                * _smoothingCurrentTime
+                + _smoothingStartGoal;
         goalPosition().writeValue(goal);
         _smoothingCurrentTime += step;
         if (_smoothingCurrentTime >= _smoothingEndTime) {
@@ -241,4 +243,3 @@ void DXL::onInit()
 }
 
 }
-
