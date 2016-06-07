@@ -426,25 +426,40 @@ std::string RhIOBinding::cmdStatus(
     os << std::setfill(' ') << std::setw(15) << "status";
     os << std::setfill(' ') << std::setw(10) << "warnings";
     os << std::setfill(' ') << std::setw(10) << "errors";
+    os << std::setfill(' ') << std::setw(20) << "last flags";
     os << std::endl;
-    os << std::setfill('-') << std::setw(4+30+20+15+10+10) << "-" << std::endl;
+    os << std::setfill('-') << std::setw(4+30+20+15+10+10+20) << "-" << std::endl;
     for (const auto& dev : allDevices) {
         os << std::setfill(' ') << std::setw(4) << std::to_string(dev.second->id());
         os << std::setfill(' ') << std::setw(30) << dev.first;
         os << std::setfill(' ') << std::setw(20) << _manager->devTypeNameById(dev.second->id());
         if (dev.second->isPresent()) {
-            os << std::setw(15) << "present";
+            if (dev.second->isError()) {
+                os << std::setw(15) << "error";
+            } else if (dev.second->isWarning()) {
+                os << std::setw(15) << "warning";
+            } else {
+                os << std::setw(15) << "present";
+            }
         } else {
             os << std::setw(15) << "missing";
         }
-        if (dev.second->isWarning()) {
-            os << std::setw(15) << "warning";
-        }
-        if (dev.second->isError()) {
-            os << std::setw(15) << "error";
-        }
         os << std::setw(10) << dev.second->countWarnings();
         os << std::setw(10) << dev.second->countErrors();
+        if (dev.second->countWarnings() > 0 || dev.second->countErrors() > 0) {
+            if (dev.second->lastFlags() & ResponseOverload) os << " Overload";
+            if (dev.second->lastFlags() & ResponseOverheat) os << " Overheat";
+            if (dev.second->lastFlags() & ResponseBadVoltage) os << " BadVoltage";
+            if (dev.second->lastFlags() & ResponseQuiet) os << " Quiet";
+            if (dev.second->lastFlags() & ResponseBadChecksum) os << " BadChecksum";
+            if (dev.second->lastFlags() & ResponseDeviceBadInstruction) os << " DeviceBadInstruction";
+            if (dev.second->lastFlags() & ResponseDeviceBadChecksum) os << " DeviceBadChecksum";
+            if (dev.second->lastFlags() & ResponseBadSize) os << " BadSize";
+            if (dev.second->lastFlags() & ResponseBadProtocol) os << " BadProtocol";
+            if (dev.second->lastFlags() & ResponseBadId) os << " BadId";
+        } else {
+            os << std::setw(20) << " ";
+        }
         os << std::endl;
     }
 

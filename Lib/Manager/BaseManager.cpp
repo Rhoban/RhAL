@@ -1253,6 +1253,9 @@ bool BaseManager::checkResponseState(
         dev->setWarning(isWarning);
         dev->setError(isError);
     }
+    if (isWarning || isError) {
+        dev->setFlags(state);
+    }
 
     if (state & ResponseOK) {
         _stats.deviceOKCount++;

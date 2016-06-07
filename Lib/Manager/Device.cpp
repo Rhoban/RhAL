@@ -12,6 +12,7 @@ Device::Device(const std::string& name, id_t id) :
     _manager(nullptr),
     _isPresent(false),
     _isWarning(false),
+    _lastFlags(ResponseOK),
     _isError(false),
     _countWarnings(0),
     _countErrors(0)
@@ -77,6 +78,12 @@ bool Device::isError() const
     return _isError;
 }
 
+ResponseState Device::lastFlags() const
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _lastFlags;
+}
+
 unsigned long Device::countWarnings() const
 {
     return _countWarnings;
@@ -115,6 +122,11 @@ void Device::setWarning(bool isWarning)
     if (isWarning) {
         _countWarnings++;
     }
+}
+void Device::setFlags(ResponseState state)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    _lastFlags = state;
 }
 void Device::setError(bool isError)
 {
