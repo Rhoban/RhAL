@@ -50,7 +50,7 @@ ResponseState FakeProtocol::readData(
     }
     if (_verbose.value) std::cout << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    return ResponseOK;
+    return (ResponseOK | ResponseOverload | ResponseOverheat);
 }
 
 

@@ -7,6 +7,7 @@
 #include "ConvertionUtils.h"
 #include "ParametersList.hpp"
 #include "RegistersList.hpp"
+#include "Protocol/Protocol.hpp"
 
 namespace RhAL {
 
@@ -92,6 +93,11 @@ class Device
         bool isWarning() const;
 
         /**
+         * Return last warning flags (0 if no warning)
+         */
+        ResponseState lastFlags() const;
+
+        /**
          * If true, the last read operation
          * with the Device set at leat one
          * non quiet error flags
@@ -128,6 +134,11 @@ class Device
         void setPresent(bool isPresent);
         void setWarning(bool isWarning);
         void setError(bool isError);
+        
+        /**
+         * And set last warning and error flags.
+         */
+        void setFlags(ResponseState state);
 
         /**
          * Call during device initialization.
@@ -195,6 +206,11 @@ class Device
          * badvoltage, alert).
          */
         bool _isWarning;
+
+        /**
+         * Last received warning and errors flags
+         */
+        ResponseState _lastFlags;
 
         /**
          * If true, the last read operation
