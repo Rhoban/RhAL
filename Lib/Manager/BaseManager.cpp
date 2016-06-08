@@ -1252,9 +1252,9 @@ bool BaseManager::checkResponseState(
         dev->setPresent(isPresent);
         dev->setWarning(isWarning);
         dev->setError(isError);
-    }
-    if (isWarning || isError) {
-        dev->setFlags(state);
+        if (isWarning || isError) {
+            dev->setFlags(state);
+        }
     }
 
     if (state & ResponseOK) {
