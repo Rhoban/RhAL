@@ -46,35 +46,35 @@ GY85::GY85(const std::string& name, id_t id) :
                     0x26 +offset, 2, accelerometerDecode, 1));
         values[k].accZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_z",
                     0x28 +offset, 2, accelerometerDecode, 1));
-        
+
         ss.str("");
         ss << "gyro_" << k;
         prefix = ss.str();
-        
+
         values[k].gyroX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_x",
                     0x2a +offset, 2, gyroscopeDecode, 1));
         values[k].gyroY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_y",
                     0x2c +offset, 2, gyroscopeDecode, 1));
         values[k].gyroZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_z",
                     0x2e +offset, 2, gyroscopeDecode, 1));
-        
+
         ss.str("");
         ss << "magn_" << k;
         prefix = ss.str();
-        
+
         values[k].magnX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_x",
                     0x30 +offset, 2, convDecode_2Bytes_signed, 1));
         values[k].magnY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_y",
                     0x32 +offset, 2, convDecode_2Bytes_signed, 1));
         values[k].magnZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat(prefix+"_z",
                     0x34 +offset, 2, convDecode_2Bytes_signed, 1));
-        
+
         ss.str("");
         ss << "sequence_" << k;
         values[k].sequence = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt(ss.str(),
                     0x36 +offset, 4, convDecode_4Bytes, 1));
     }
-    
+
     _kp_rollpitch = std::shared_ptr<ParameterNumber>(new ParameterNumber("kp_rollpitch", 0.02));
     _ki_rollpitch = std::shared_ptr<ParameterNumber>(new ParameterNumber("ki_rollpitch", 0.00002));
 
@@ -83,20 +83,22 @@ GY85::GY85(const std::string& name, id_t id) :
     _gyroXOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroXOffset", 0.0));
     _gyroYOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroYOffset", 0.0));
     _gyroZOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroZOffset", 0.0));
-    
+
     _accXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMin", -1.0));
     _accXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accXMax", 1.0));
     _accYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMin", -1.0));
     _accYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accYMax", 1.0));
     _accZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMin", -1.0));
     _accZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("accZMax", 1.0));
-    
+
     _magnXMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMin", -100.0));
     _magnXMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnXMax", 100.0));
     _magnYMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnYMin", -100.0));
     _magnYMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnYMax", 100.0));
     _magnZMin = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnZMin", -100.0));
     _magnZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnZMax", 100.0));
+    _filterDelay = std::shared_ptr<ParameterNumber>(new ParameterNumber("filterDelay", 0.016));
+
 }
 
 void GY85::onInit()
@@ -131,13 +133,15 @@ void GY85::onInit()
     Device::parametersList().add(_magnYMax.get());
     Device::parametersList().add(_magnZMin.get());
     Device::parametersList().add(_magnZMax.get());
+    Device::parametersList().add(_filterDelay.get());
+
 }
-        
+
 void GY85::setCallback(std::function<void()> callback_)
 {
     callback = callback_;
 }
-        
+
 void GY85::setGyroCalibration(float x, float y, float z)
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -242,6 +246,9 @@ float GY85::getMagnZRaw()
     return magnZRaw;
 }
 
+//Filters
+
+
 float GY85::getGyroYaw()
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -288,6 +295,61 @@ float GY85::getMagnHeading()
     std::lock_guard<std::mutex> lock(_mutex);
     return compassFilter.magnHeading;
 }
+
+
+//Timestamped
+
+
+ReadValueFloat GY85::getGyroYawValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,filter.gyroYaw,isError);
+}
+ReadValueFloat GY85::getYawValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,filter.yaw,isError);
+}
+ReadValueFloat GY85::getPitchValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,filter.pitch,isError);
+}
+ReadValueFloat GY85::getRollValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,filter.roll,isError);
+}
+
+ReadValueFloat GY85::getYawCompassValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,compassFilter.yaw,isError);
+}
+ReadValueFloat GY85::getPitchCompassValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,compassFilter.pitch,isError);
+}
+ReadValueFloat GY85::getRollCompassValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,compassFilter.roll,isError);
+}
+ReadValueFloat GY85::getMagnAzimuthValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,compassFilter.magnAzimuth,isError);
+}
+ReadValueFloat GY85::getMagnHeadingValue()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return ReadValueFloat(timestamp,compassFilter.magnHeading,isError);
+}
+
+
+
+
 Eigen::Matrix3d GY85::getMatrix()
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -306,7 +368,7 @@ inline static float compensation(float value, float min, float max)
 
     return (value-offset)/range;
 }
-        
+
 void GY85::onSwap()
 {
     _mutex.lock();
@@ -335,6 +397,11 @@ void GY85::onSwap()
         // We assume thus that the current pos is the older value
         std::cerr << "[GY-85] Missed packets, is the frequency too low?" << std::endl;
     }
+
+    timestamp=values[newer].sequence->readValue().timestamp;
+    timestamp-=TimeDurationMicro(long(_filterDelay->value*1000000)); //take into account the filter delay
+
+    isError=values[newer].sequence->readValue().isError;
 
     bool updated = false;
     while (currentPos != newer) {
@@ -369,7 +436,7 @@ void GY85::onSwap()
         magnX = compensation(magnXRaw, _magnXMin->value, _magnXMax->value);
         magnY = compensation(magnYRaw, _magnYMin->value, _magnYMax->value);
         magnZ = compensation(magnZRaw, _magnZMin->value, _magnZMax->value);
-        
+
         updated = true;
 
         // Updating filters
@@ -385,8 +452,11 @@ void GY85::onSwap()
         compassFilter.Kp_rollPitch = filter.Kp_rollPitch = _kp_rollpitch->value;
         compassFilter.Ki_rollPitch = filter.Ki_rollPitch = _ki_rollpitch->value;
 
-        filter.update();
-        compassFilter.update();
+        if(!isError) //Do not update filter if the last read was an error????? Should not happen...
+        {
+            filter.update();
+            compassFilter.update();
+        }
 
         filter.invert = _invertOrientation->value;
         compassFilter.invert = _invertOrientation->value;
@@ -399,4 +469,3 @@ void GY85::onSwap()
 }
 
 }
-
