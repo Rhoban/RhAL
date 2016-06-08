@@ -6,6 +6,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
+#Deps dependencies
+find_package(Deps)
+deps_add_libraries()
+
 set(LIB_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Lib")
 set(BIN_SOURCES_DIRECTORY
@@ -18,7 +22,6 @@ set(EXAMPLES_SOURCES_DIRECTORY
 # Build option
 option(BUILD_RHAL_TESTS "Build RhAL Tests" OFF)
 option(BUILD_RHAL_EXAMPLES "Build RhAL Examples" OFF)
-option(BUILD_RHAL_BINDING "Build RhAL RhIO Binding" OFF)
 option(BUILD_RHAL_BINARY "Build RhAL Utility Binary" OFF)
 
 # Enable C++11
@@ -71,6 +74,7 @@ set(LIB_SOURCES
     Devices/MX106.cpp
     Devices/GY85.cpp
     Devices/AHRS/Filter.cpp
+    Bindings/RhIOBinding.cpp
 )
 
 # Tests source files
@@ -85,6 +89,7 @@ set(TESTS_SOURCES
     testSync
     #test1
     testDynaban
+    testBinding
 )
 
 # Examples source files
@@ -98,28 +103,9 @@ set(EXAMPLES_SOURCES
 
 # Link Library List
 set (LIBRARIES
-    serial 
     pthread
+    ${DEPS_LIBRARIES}
 )
-
-# Binding with RhIO
-if (BUILD_RHAL_BINDING)
-    set (TESTS_SOURCES
-        ${TESTS_SOURCES}
-        testBinding
-    )
-    set (LIB_SOURCES
-        ${LIB_SOURCES}
-        Bindings/RhIOBinding.cpp
-    )
-    set (LIBRARIES
-        ${LIBRARIES}
-        RhIO
-        zmq
-    )
-    add_definitions(-DBUILD_RHAL_RHIO_BINDING)
-    message("RhAL RhIO Binding Enabled")
-endif (BUILD_RHAL_BINDING)
 
 # Prefix with lib directory path
 foreach(SOURCE ${LIB_SOURCES})

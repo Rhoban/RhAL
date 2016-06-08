@@ -6,6 +6,7 @@
 #include "Manager/Aggregation.h"
 #include "Manager/Statistics.hpp"
 #include "Manager/CallManager.hpp"
+#include "Manager/BaseRegister.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include "Manager/RegistersList.hpp"
@@ -15,6 +16,7 @@
 #include "Manager/BaseManager.hpp"
 #include "Manager/AggregateManager.hpp"
 #include "Manager/Manager.hpp"
+#include "Bindings/RhIOBinding.hpp"
 
 #include "Devices/ExampleDevice1.hpp"
 #include "Devices/ExampleDevice2.hpp"
@@ -26,18 +28,13 @@
 #include "Devices/MX12.hpp"
 #include "Devices/RX64.hpp"
 #include "Devices/RX28.hpp"
+#include "Devices/RX24.hpp"
 #include "Devices/AX18.hpp"
 #include "Devices/AX12.hpp"
 #include "Devices/IMU.hpp"
 #include "Devices/GY85.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
-
-#include "Devices/RX24.hpp"
-
-#ifdef BUILD_RHAL_RHIO_BINDING
-    #include "Bindings/RhIOBinding.hpp"
-#endif
 
 /**
  * Define classic Manager typedef
