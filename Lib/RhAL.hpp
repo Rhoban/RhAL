@@ -6,7 +6,6 @@
 #include "Manager/Aggregation.h"
 #include "Manager/Statistics.hpp"
 #include "Manager/CallManager.hpp"
-#include "Manager/BaseRegister.hpp"
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 #include "Manager/RegistersList.hpp"
