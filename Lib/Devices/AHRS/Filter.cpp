@@ -281,6 +281,8 @@ namespace AHRS
         roll = 0;
         gyroYaw = 0;
         invert = false;
+        magnHeading = 0;
+        magnAzimuth = 0;
     }
 
     void Filter::update()
