@@ -306,7 +306,7 @@ void TypedRegister<T>::writeValue(T val, bool noCallback)
     _needWrite = true;
     //Call user callback
     if (!noCallback) {
-        _callbackOnWrite(val);
+        _callbackOnWrite(_valueWrite);
     }
     //Unlock mutex
     lock.unlock();
