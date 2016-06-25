@@ -442,7 +442,7 @@ std::string RhIOBinding::cmdStatus(
                 os << std::setw(15) << "present";
             }
         } else {
-            os << std::setw(15) << "missing";
+            os << std::setw(15) << "MISSING!";
         }
         os << std::setw(10) << dev.second->countWarnings();
         os << std::setw(10) << dev.second->countErrors();
