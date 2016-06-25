@@ -17,6 +17,7 @@ int main(int argc, char** argv)
     TCLAP::ValueArg<int> speed("s", "speed", "Baudrate", false, 1000000, "speed", cmd);
     TCLAP::ValueArg<std::string> protocol("p", "protocol", "Protocol", false, "DynamixelV1", "protocol", cmd);
     TCLAP::ValueArg<std::string> config("c", "config", "Config path", false, "", "filepath", cmd);
+    TCLAP::SwitchArg emergencySwitch("e","emergency","Broadcast emergency and exit", cmd, false);
     cmd.parse(argc, argv);
 
     // Creating the manager
@@ -33,6 +34,13 @@ int main(int argc, char** argv)
     manager.setThrowOnRead(false);
     // Schedule mode
     manager.setScheduleMode(true);
+    
+    // Send emergency
+    if (emergencySwitch.getValue()) {
+        std::cout << "Broadcast emergency" << std::endl;
+        manager.emergencyStop();
+        return 0;
+    }
 
     // Try to read config file
     if (config.getValue() != "") {
