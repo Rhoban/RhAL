@@ -50,6 +50,7 @@ class MX106 : public MX
         TypedRegisterFloat 	_current;                    //2 44
         TypedRegisterBool	_torqueControlModeEnable;    //1 46
         TypedRegisterFloat 	_goalTorque;                 //2 47
+        TypedRegisterInt 	_driveMode;                 //1 0x0A
 
 };
 
