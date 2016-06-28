@@ -426,9 +426,10 @@ std::string RhIOBinding::cmdStatus(
     os << std::setfill(' ') << std::setw(15) << "status";
     os << std::setfill(' ') << std::setw(10) << "warnings";
     os << std::setfill(' ') << std::setw(10) << "errors";
+    os << std::setfill(' ') << std::setw(10) << "missings";
     os << std::setfill(' ') << std::setw(20) << "last flags";
     os << std::endl;
-    os << std::setfill('-') << std::setw(4+30+20+15+10+10+20) << "-" << std::endl;
+    os << std::setfill('-') << std::setw(4+30+20+15+10+10+10+20) << "-" << std::endl;
     for (const auto& dev : allDevices) {
         os << std::setfill(' ') << std::setw(4) << std::to_string(dev.second->id());
         os << std::setfill(' ') << std::setw(30) << dev.first;
@@ -446,6 +447,7 @@ std::string RhIOBinding::cmdStatus(
         }
         os << std::setw(10) << dev.second->countWarnings();
         os << std::setw(10) << dev.second->countErrors();
+        os << std::setw(10) << dev.second->countMissings();
         if (dev.second->countWarnings() > 0 || dev.second->countErrors() > 0) {
             if (dev.second->lastFlags() & ResponseOverload) os << " Overload";
             if (dev.second->lastFlags() & ResponseOverheat) os << " Overheat";

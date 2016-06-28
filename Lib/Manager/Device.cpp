@@ -15,7 +15,8 @@ Device::Device(const std::string& name, id_t id) :
     _lastFlags(ResponseOK),
     _isError(false),
     _countWarnings(0),
-    _countErrors(0)
+    _countErrors(0),
+    _countMissings(0)
 {
     if (id < IdDevBegin || id > IdDevEnd) {
         throw std::logic_error(
@@ -92,6 +93,10 @@ unsigned long Device::countErrors() const
 {
     return _countErrors;
 }
+unsigned long Device::countMissings() const
+{
+    return _countMissings;
+}
 
 const RegistersList& Device::registersList() const
 {
@@ -114,6 +119,9 @@ void Device::setPresent(bool isPresent)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _isPresent = isPresent;
+    if (!isPresent) {
+        _countMissings++;
+    }
 }
 void Device::setWarning(bool isWarning)
 {

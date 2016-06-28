@@ -106,10 +106,12 @@ class Device
 
         /**
          * Return the number of 
-         * warnings and errors
+         * warnings, errors ans missing 
+         * responses
          */
         unsigned long countWarnings() const;
         unsigned long countErrors() const;
+        unsigned long countMissings() const;
 
         /**
          * Read/Write access to Registers and
@@ -220,10 +222,12 @@ class Device
         bool _isError;
 
         /**
-         * Count the number of warnings and errors
+         * Count the number of warnings, errors
+         * and quiet response
          */
         unsigned long _countWarnings;
         unsigned long _countErrors;
+        unsigned long _countMissings;
 };
 
 }
