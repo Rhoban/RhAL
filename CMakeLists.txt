@@ -6,9 +6,13 @@
 cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
-#Deps dependencies
-find_package(Deps)
-deps_add_libraries()
+find_package(catkin REQUIRED)
+
+catkin_package(
+  INCLUDE_DIRS Lib
+  LIBRARIES rhal
+  DEPENDS RhIO json serial tclap Eigen
+)
 
 set(LIB_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Lib")
