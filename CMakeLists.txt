@@ -108,7 +108,6 @@ set(EXAMPLES_SOURCES
 # Link Library List
 set (LIBRARIES
     pthread
-    ${DEPS_LIBRARIES}
 )
 
 # Prefix with lib directory path
