@@ -6,12 +6,18 @@
 cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  RhIO
+  json
+  serial
+  tclap
+  Eigen
+  )
 
 catkin_package(
   INCLUDE_DIRS Lib
-  LIBRARIES rhal
-  DEPENDS RhIO json serial tclap Eigen
+  LIBRARIES RhAL
+  CATKIN_DEPENDS RhIO json serial tclap Eigen
 )
 
 set(LIB_SOURCES_DIRECTORY
@@ -108,6 +114,7 @@ set(EXAMPLES_SOURCES
 # Link Library List
 set (LIBRARIES
     pthread
+    ${catkin_LIBRARIES}
 )
 
 # Prefix with lib directory path
@@ -126,7 +133,7 @@ target_link_libraries(RhAL ${LIBRARIES})
 if (BUILD_RHAL_TESTS)
     foreach(TEST ${TESTS_SOURCES})
         add_executable(${TEST} "${TESTS_SOURCES_DIRECTORY}/${TEST}.cpp")
-        target_link_libraries(${TEST} RhAL)
+        target_link_libraries(${TEST} RhAL ${LIBRARIES})
     endforeach()
 endif (BUILD_RHAL_TESTS)
 
@@ -134,7 +141,7 @@ endif (BUILD_RHAL_TESTS)
 if (BUILD_RHAL_EXAMPLES)
     foreach(EXAMPLE ${EXAMPLES_SOURCES})
         add_executable(${EXAMPLE} "${EXAMPLES_SOURCES_DIRECTORY}/${EXAMPLE}.cpp")
-        target_link_libraries(${EXAMPLE} RhAL)
+        target_link_libraries(${EXAMPLE} RhAL ${LIBRARIES})
     endforeach()
 endif (BUILD_RHAL_EXAMPLES)
 
@@ -142,6 +149,6 @@ endif (BUILD_RHAL_EXAMPLES)
 if (BUILD_RHAL_BINARY)
     set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-    target_link_libraries(rhal RhAL)
+    target_link_libraries(rhal RhAL ${LIBRARIES})
 endif (BUILD_RHAL_BINARY)
 
