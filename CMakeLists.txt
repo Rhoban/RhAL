@@ -42,7 +42,7 @@ set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -W -Wall")
 
 # Include sources directory
-include_directories(${LIB_SOURCES_DIRECTORY})
+include_directories(${LIB_SOURCES_DIRECTORY} ${catkin_INCLUDE_DIRS})
 
 # Lib source files
 set(LIB_SOURCES
