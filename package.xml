@@ -21,13 +21,13 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>RhIO</build_depend>
+  <build_depend>RhIOServer</build_depend>
   <build_depend>json</build_depend>
   <build_depend>serial</build_depend>
   <build_depend>tclap</build_depend>
   <build_depend>Eigen</build_depend>
 
-  <run_depend>RhIO</run_depend>
+  <run_depend>RhIOServer</run_depend>
   <run_depend>json</run_depend>
   <run_depend>serial</run_depend>
   <run_depend>tclap</run_depend>

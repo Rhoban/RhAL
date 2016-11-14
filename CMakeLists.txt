@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
 find_package(catkin REQUIRED COMPONENTS
-  RhIO
+  RhIOServer
   json
   serial
   tclap
@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS Lib
   LIBRARIES RhAL
-  CATKIN_DEPENDS RhIO json serial tclap Eigen
+  CATKIN_DEPENDS RhIOServer json serial tclap Eigen
 )
 
 set(LIB_SOURCES_DIRECTORY
