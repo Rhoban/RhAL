@@ -147,7 +147,6 @@ endif (BUILD_RHAL_EXAMPLES)
 
 # Build the utility binary
 if (BUILD_RHAL_BINARY)
-    set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
     target_link_libraries(rhal RhAL ${LIBRARIES})
 endif (BUILD_RHAL_BINARY)
