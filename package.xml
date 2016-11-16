@@ -21,11 +21,11 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>RhIOServer</build_depend>
-  <build_depend>json</build_depend>
-  <build_depend>serial</build_depend>
-  <build_depend>tclap</build_depend>
-  <build_depend>Eigen</build_depend>
+  <build_depend>RhIOServer</build_depend> <!-- rhoban/rhio -->
+  <build_depend>json</build_depend> <!-- rhobandeps/json -->
+  <build_depend>serial</build_depend> <!-- rhobandeps/serial -->
+  <build_depend>tclap</build_depend> <!-- rhobandeps/tclap -->
+  <build_depend>Eigen</build_depend> <!-- rhobandeps/eigen -->
 
   <run_depend>RhIOServer</run_depend>
   <run_depend>json</run_depend>
