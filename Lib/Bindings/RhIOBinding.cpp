@@ -579,8 +579,9 @@ std::string RhIOBinding::cmdTare(
     if (sensors.size() == 0) {
         return "No pressure devices found";
     } else {
+        _manager->waitNextFlush();
         std::stringstream ss;
-        int samples = 1000;
+        int samples = 250;
         for (int k=0; k<samples; k++) {
             for (const auto& ps : sensors) {
                 for (int g=0; g<ps->gauges(); g++) {
@@ -590,6 +591,7 @@ std::string RhIOBinding::cmdTare(
             _manager->waitNextFlush();
         }
         for (const auto& ps : sensors) {
+            ss.precision(30);
             for (int g=0; g<ps->gauges(); g++) {
                 ps->setZero(g, zeros[ps][g]/samples);
             }

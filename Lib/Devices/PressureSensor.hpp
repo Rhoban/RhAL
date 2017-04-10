@@ -25,7 +25,7 @@ class PressureSensorBase : public Device
     virtual int gauges()=0;
     virtual float gain(int index)=0;
     virtual TypedRegisterInt& pressure(int index)=0;
-    virtual void setZero(int index, float value)=0;
+    virtual void setZero(int index, double value)=0;
 
     virtual float getX()=0;
     virtual float getY()=0;
@@ -74,7 +74,7 @@ class PressureSensor : public PressureSensorBase
                                      [i, this](const data_t* data) -> int {
                                          std::lock_guard<std::mutex> lock(this->_mutex);
                                          int value = convDecode_3Bytes_signed(data);
-                                         return ((float)this->_gain[i]->value)*(value - (int)this->_zero[i]->value);
+                                         return ((double)this->_gain[i]->value)*(value - (int)this->_zero[i]->value);
                                      },
                                      1)));
 
@@ -154,7 +154,7 @@ class PressureSensor : public PressureSensorBase
         return _zero[index]->value;
     }
 
-    void setZero(int index, float value)
+    void setZero(int index, double value)
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
