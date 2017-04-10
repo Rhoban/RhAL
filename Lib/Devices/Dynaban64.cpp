@@ -409,7 +409,7 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
 
 	_mode("mode", 0xA2, 1, convEncode_1Byte, convDecode_1Byte, 0),
-	_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 1, false),
+	_copyNextBuffer("copyNextBuffer", 0xA3, 1, convEncode_1Byte, convDecode_1Byte, 0, false),
 	_positionTrackerOn("positionTrackerOn", 0xA4, 1, convEncode_Bool, convDecode_Bool, 0),
 	_debugOn("debugOn", 0xA5, 1, convEncode_Bool, convDecode_Bool, 0),
 	_unused("unused", 0xA6, 2, convEncode_2Bytes, convDecode_2Bytes, 0),
@@ -421,7 +421,7 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	_kcoul("kcoul", 0xBC, 4, convEncode_float, convDecode_float, 0),
 	_linearTransition("linearTransition", 0xC0, 4, convEncode_float, convDecode_float, 0),
 	_speedCalculationDelay("speedCalculationDelay", 0xC4, 2, convEncode_speedDelay, convDecode_speedDelay, 0),
-	_outputTorque("ouputTorque", 0xC6, 4, convDecode_float, 1, false), // Read only
+	_outputTorque("ouputTorque", 0xC6, 4, convDecode_float, 0, false), // Read only
 	_electricalTorque("electricalTorque", 0xCA, 4, convDecode_float, 0), // Read Only
 	_frozenRamOn("frozenRamOn", 0xCE, 1, convEncode_Bool, convDecode_Bool, 0),
 	_useValuesNow("useValuesNow", 0xCF, 1, convEncode_Bool, convDecode_Bool, 0),
