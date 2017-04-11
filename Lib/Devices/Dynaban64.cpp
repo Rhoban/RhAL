@@ -57,7 +57,18 @@ float convDecode_positionTraj(const data_t* buffer) {
 	return result;
 }
 
+float convDecode_PWMVoltage(const data_t* buffer)
+{
+    float conversion = 0.001;
+    uint16_t val = read2BytesFromBuffer(buffer);
+    if (val < 32768) {
+        return val * conversion;
+    } else {
+        return -(val - 32768) * conversion;
+    }
+}
 
+  
 Dynaban64::Dynaban64(const std::string& name, id_t id) :
     MX64(name, id),
 	//_register("name", address, size, encodeFunction, decodeFunction, updateFreq, forceRead=true, forceWrite=false, isSlow=false)
@@ -93,7 +104,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj1a2("traj1a2", 0x53, 4,
@@ -110,7 +120,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj1a3("traj1a3", 0x57, 4,
@@ -127,7 +136,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj1a4("traj1a4", 0x5B, 4,
@@ -144,7 +152,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torquePoly1Size("torquePoly1Size", 0x5F, 1, convEncode_1Byte, convDecode_1Byte, 0),
@@ -162,7 +169,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque1a1("torque1a1", 0x64, 4,
@@ -179,7 +185,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque1a2("torque1a2", 0x68, 4,
@@ -196,7 +201,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque1a3("torque1a3", 0x6C, 4,
@@ -213,7 +217,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque1a4("torque1a4", 0x70, 4,
@@ -230,7 +233,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_duration1("duration1", 0x74, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
@@ -266,7 +268,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj2a2("traj2a2", 0x7F, 4,
@@ -283,7 +284,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj2a3("traj2a3", 0x83, 4,
@@ -300,7 +300,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_traj2a4("traj2a4", 0x87, 4,
@@ -317,7 +316,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torquePoly2Size("torquePoly2Size", 0x8B, 1, convEncode_1Byte, convDecode_1Byte, 0),
@@ -335,7 +333,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque2a1("torque2a1", 0x90, 4,
@@ -352,7 +349,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque2a2("torque2a2", 0x94, 4,
@@ -369,7 +365,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque2a3("torque2a3", 0x98, 4,
@@ -386,7 +381,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_torque2a4("torque2a4", 0x9C, 4,
@@ -403,7 +397,6 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
-	            value = value;
 	            return value;
 	        }, 0),
 	_duration2("duration2", 0xA0, 2, convEncode_PolyDuration, convDecode_PolyDuration, 0),
@@ -427,7 +420,16 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	_useValuesNow("useValuesNow", 0xCF, 1, convEncode_Bool, convDecode_Bool, 0),
 	_torqueKp("torqueKp", 0xD0, 1, convEncode_2Bytes, convDecode_2Bytes, 0),
 	_goalTorque("goalTorque", 0xD2, 4, convEncode_float, convDecode_float, 0),
-	_predictiveCommandPeriod("predictiveCommandPeriod", 0xD6, 1, convEncode_float, convDecode_1Byte, 0)
+        _predictiveCommandPeriod("predictiveCommandPeriod", 0xD6, 1, convEncode_float, convDecode_1Byte, 0),
+        _PWMVoltage("PWMVoltage", 0xDA, 2,
+		    [this](const data_t* data) -> float {
+	            std::lock_guard<std::mutex> lock(_mutex);
+	            float value = convDecode_PWMVoltage(data);
+	            if (this->_inverted.value == true) {
+	                value = value * -1.0;
+	            }
+	            return value;
+	        }, 0)
 {
     _duration1.setMinValue(0.0);
     _duration1.setMaxValue(6.5);
@@ -492,6 +494,7 @@ void Dynaban64::onInit()
 	Device::registersList().add(&_torqueKp);
 	Device::registersList().add(&_goalTorque);
 	Device::registersList().add(&_predictiveCommandPeriod);
+	Device::registersList().add(&_PWMVoltage);
 }
 
 void Dynaban64::onSwap()
@@ -922,6 +925,11 @@ TypedRegisterFloat& Dynaban64::goalTorque()
 TypedRegisterInt& Dynaban64::predictiveCommandPeriod()
 {
     return _predictiveCommandPeriod;
+}
+
+TypedRegisterInt& Dynaban64::PWMVoltage()
+{
+    return _PWMVoltage;
 }
 
 

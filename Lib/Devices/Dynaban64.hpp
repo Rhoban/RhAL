@@ -39,6 +39,7 @@ void convEncode_positionTraj(data_t* buffer, float positionInRads);
  */
 float convDecode_positionTraj(const data_t* buffer);
 
+float convDecode_PWMVoltage(const data_t *buffer);
 
 /**
  * Dynaban64
@@ -257,6 +258,11 @@ class Dynaban64 : public MX64
 		TypedRegisterFloat& goalTorque();
 		TypedRegisterInt& predictiveCommandPeriod();
 
+  /**
+   * Pwm voltage in V
+   */
+  		TypedRegisterInt& PWMVoltage();
+
 
     protected :
         /**
@@ -323,6 +329,8 @@ class Dynaban64 : public MX64
 		TypedRegisterInt	_torqueKp;					//2 D0
 		TypedRegisterFloat  _goalTorque;				//4 D2
 		TypedRegisterInt 	_predictiveCommandPeriod;	//1 D6
+  		TypedRegisterInt 	_PWMVoltage;	//1 DA
+  
 };
 
 /**
