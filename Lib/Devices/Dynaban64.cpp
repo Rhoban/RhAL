@@ -57,7 +57,7 @@ float convDecode_positionTraj(const data_t* buffer) {
 	return result;
 }
 
-float convDecode_PWMVoltage(const data_t* buffer)
+float convDecode_voltagePWM(const data_t* buffer)
 {
     float conversion = 0.001;
     uint16_t val = read2BytesFromBuffer(buffer);
@@ -421,10 +421,10 @@ Dynaban64::Dynaban64(const std::string& name, id_t id) :
 	_torqueKp("torqueKp", 0xD0, 1, convEncode_2Bytes, convDecode_2Bytes, 0),
 	_goalTorque("goalTorque", 0xD2, 4, convEncode_float, convDecode_float, 0),
         _predictiveCommandPeriod("predictiveCommandPeriod", 0xD6, 1, convEncode_float, convDecode_1Byte, 0),
-        _PWMVoltage("PWMVoltage", 0xDA, 2,
+        _voltagePWM("voltagePWM", 0xDA, 2,
 		    [this](const data_t* data) -> float {
 	            std::lock_guard<std::mutex> lock(_mutex);
-	            float value = convDecode_PWMVoltage(data);
+	            float value = convDecode_voltagePWM(data);
 	            if (this->_inverted.value == true) {
 	                value = value * -1.0;
 	            }
@@ -494,7 +494,7 @@ void Dynaban64::onInit()
 	Device::registersList().add(&_torqueKp);
 	Device::registersList().add(&_goalTorque);
 	Device::registersList().add(&_predictiveCommandPeriod);
-	Device::registersList().add(&_PWMVoltage);
+	Device::registersList().add(&_voltagePWM);
 }
 
 void Dynaban64::onSwap()
@@ -927,9 +927,9 @@ TypedRegisterInt& Dynaban64::predictiveCommandPeriod()
     return _predictiveCommandPeriod;
 }
 
-TypedRegisterInt& Dynaban64::PWMVoltage()
+TypedRegisterFloat& Dynaban64::voltagePWM()
 {
-    return _PWMVoltage;
+    return _voltagePWM;
 }
 
 
