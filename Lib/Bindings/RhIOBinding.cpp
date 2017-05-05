@@ -623,7 +623,7 @@ std::string RhIOBinding::cmdGyroTare(
     if (!sensors.size()) {
         return "No sensor found";
     } else {
-        int samples = 1000;
+        int samples = 300;
         for (int k=0; k<samples; k++) {
             for (auto &gy85 : sensors) {
                 zeros[gy85]["x"] += gy85->getGyroXRaw()/(float)samples;
