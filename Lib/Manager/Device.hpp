@@ -103,6 +103,11 @@ class Device
          * non quiet error flags
          */
         bool isError() const;
+        
+        /**
+         * Read the dontRead parameter
+         */
+        bool dontRead();
 
         /**
          * Return the number of 
@@ -228,6 +233,11 @@ class Device
         unsigned long _countWarnings;
         unsigned long _countErrors;
         unsigned long _countMissings;
+
+        /**
+         * Parameter to avoid reading from this device
+         */
+        ParameterBool _dontRead;
 };
 
 }

@@ -29,7 +29,7 @@ BaseManager::BaseManager() :
     _paramProtocolName("protocol", "FakeProtocol"),
     _paramEnableSyncRead("enableSyncRead", true),
     _paramEnableSyncWrite("enableSyncWrite", true),
-    _paramWaitWriteCheckResponse("waitWriteCheckResponse", true),
+    _paramWaitWriteCheckResponse("waitWriteCheckResponse", false),
     _paramThrowErrorOnScan("throwErrorOnScan", true),
     _paramThrowErrorOnRead("throwErrorOnRead", true)
 {
@@ -639,6 +639,11 @@ void BaseManager::forceRegisterRead(
     //Retrieve Register pointer
     Register* reg = &(devById(id)
         .registersList().reg(name));
+    // Checking dont read
+    Device *device = _devicesById.at(reg->id);
+    if (device->dontRead()) {
+        return;
+    }
     //Reset read flags
     reg->readyForRead();
     //Read single register
@@ -884,11 +889,15 @@ void BaseManager::initBus()
 
 bool BaseManager::isNeedRead(Register* reg)
 {
+    Device *device = _devicesById.at(reg->id);
+
     return
-        reg->needRead() ||
+        (!device->dontRead()) &&
+        (reg->needRead() ||
         (reg->periodPackedRead > 0 &&
-        (_readCycleCount % reg->periodPackedRead == 0));
+        (_readCycleCount % reg->periodPackedRead == 0)));
 }
+
 bool BaseManager::isNeedWrite(Register* reg)
 {
     bool isNeed = reg->needWrite();

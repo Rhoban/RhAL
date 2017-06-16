@@ -16,7 +16,8 @@ Device::Device(const std::string& name, id_t id) :
     _isError(false),
     _countWarnings(0),
     _countErrors(0),
-    _countMissings(0)
+    _countMissings(0),
+    _dontRead("dontRead", false)
 {
     if (id < IdDevBegin || id > IdDevEnd) {
         throw std::logic_error(
@@ -47,6 +48,10 @@ void Device::init()
             "Device null manager pointer: "
             + _name);
     }
+
+    // Adding dontRead parameter
+    Device::parametersList().add(&_dontRead);
+
     //Call 
     onInit();
 }
@@ -77,6 +82,12 @@ bool Device::isError() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _isError;
+}
+
+bool Device::dontRead()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _dontRead.value;
 }
 
 ResponseState Device::lastFlags() const
