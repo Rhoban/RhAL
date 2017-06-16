@@ -64,8 +64,10 @@ class PressureSensor : public PressureSensorBase
      */
     PressureSensor(const std::string& name, id_t id)
             : PressureSensorBase(name, id),
-	      _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0)
+	      _led("led", 0x19, 1, convEncode_Bool, convDecode_Bool, 0),
+              _id("id", 0x03, 1, convEncode_1Byte, convDecode_1Byte, 0, true, false, true)
     {
+
         for (unsigned int i=0;i<GAUGES;i++) {
             std::stringstream ss;
             ss << "pressure_" << i;
@@ -210,6 +212,7 @@ class PressureSensor : public PressureSensorBase
         std::vector<std::shared_ptr<ParameterNumber>> _x;
         std::vector<std::shared_ptr<ParameterNumber>> _y;
         std::vector<std::shared_ptr<ParameterNumber>> _gain;
+        TypedRegisterInt _id;
 
         // Led
         TypedRegisterBool _led; // At 0x19
@@ -225,6 +228,7 @@ class PressureSensor : public PressureSensorBase
          */
         virtual void onInit() override
         {
+            Device::registersList().add(&_id);
             Device::registersList().add(&_led);
             for (auto &reg : _pressure) {
                 Device::registersList().add(reg.get());
