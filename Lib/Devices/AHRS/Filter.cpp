@@ -308,7 +308,11 @@ namespace AHRS
     void Filter::update()
     {
         // Updating gyro Yaw
-        gyroYaw += gyro[2]*G_Dt;
+        double sign = 1;
+        if (invertX || invertY) {
+            sign = -1;
+        }
+        gyroYaw += sign*gyro[2]*G_Dt;
         while (gyroYaw > M_PI) gyroYaw -= 2*M_PI;
         while (gyroYaw < -M_PI) gyroYaw += 2*M_PI;
 
