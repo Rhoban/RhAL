@@ -79,6 +79,8 @@ GY85::GY85(const std::string& name, id_t id) :
     _ki_rollpitch = std::shared_ptr<ParameterNumber>(new ParameterNumber("ki_rollpitch", 0.00002));
 
     _invertOrientation = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientation", false));
+    _invertOrientationX = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientationX", false));
+    _invertOrientationY = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientationY", false));
 
     _gyroXOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroXOffset", 0.0));
     _gyroYOffset = std::shared_ptr<ParameterNumber>(new ParameterNumber("gyroYOffset", 0.0));
@@ -118,6 +120,8 @@ void GY85::onInit()
     Device::parametersList().add(_kp_rollpitch.get());
     Device::parametersList().add(_ki_rollpitch.get());
     Device::parametersList().add(_invertOrientation.get());
+    Device::parametersList().add(_invertOrientationX.get());
+    Device::parametersList().add(_invertOrientationY.get());
     Device::parametersList().add(_gyroXOffset.get());
     Device::parametersList().add(_gyroYOffset.get());
     Device::parametersList().add(_gyroZOffset.get());
@@ -458,8 +462,12 @@ void GY85::onSwap()
             compassFilter.update();
         }
 
-        filter.invert = _invertOrientation->value;
-        compassFilter.invert = _invertOrientation->value;
+        filter.invertZ = _invertOrientation->value;
+        filter.invertX = _invertOrientationX->value;
+        filter.invertY = _invertOrientationY->value;
+        compassFilter.invertZ = _invertOrientation->value;
+        compassFilter.invertX = _invertOrientationX->value;
+        compassFilter.invertY = _invertOrientationY->value;
     }
 
     _mutex.unlock();

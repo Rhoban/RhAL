@@ -37,7 +37,7 @@ namespace AHRS
             float Ki_rollPitch;
 
             // Invert? (X Axis backward)
-            bool invert;
+            bool invertX, invertY, invertZ;
 
         protected:
             // DCM variables

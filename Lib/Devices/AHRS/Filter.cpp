@@ -231,12 +231,30 @@ namespace AHRS
         Eigen::Matrix3d m;
         for (int r=0; r<3; r++) {
             for (int c=0; c<3; c++) {
-                if (invert && c<2) {
-                    m(r, c) = -DCM_Matrix[r][c];
-                } else {
-                    m(r, c) = DCM_Matrix[r][c];
-                }
+                m(r, c) = DCM_Matrix[r][c];
             }
+        }
+
+        if (invertX) {
+            Eigen::Matrix3d x;
+            x << 1, 0, 0,
+                 0, -1, 0,
+                 0,  0, -1;
+            m = m*x;
+        }
+        if (invertY) {
+            Eigen::Matrix3d x;
+            x << -1, 0, 0,
+                 0, 1, 0,
+                 0,  0, -1;
+            m = m*x;
+        }
+        if (invertZ) {
+            Eigen::Matrix3d x;
+            x << -1, 0, 0,
+                 0, -1, 0,
+                 0,  0, 1;
+            m = m*x;
         }
 
         return m;
@@ -280,7 +298,9 @@ namespace AHRS
         pitch = 0;
         roll = 0;
         gyroYaw = 0;
-        invert = false;
+        invertX = false;
+        invertY = false;
+        invertZ = false;
         magnHeading = 0;
         magnAzimuth = 0;
     }
