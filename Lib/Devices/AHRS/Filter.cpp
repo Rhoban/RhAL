@@ -163,7 +163,7 @@ namespace AHRS
         // Initializing the filter during the 10 first ticks
         double K = Kp_rollPitch;
         if (tick < 10) {
-            K = 1;
+            K = 0.5;
         }
 
         Vector_Scale(&Omega_P[0],&errorRollPitch[0],K*Accel_weight);
