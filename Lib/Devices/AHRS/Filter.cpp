@@ -10,7 +10,7 @@
 
 namespace AHRS
 {
-    float constrain(float a, float m, float M)
+    double constrain(double a, double m, double M)
     {
         if (a < m) return m;
         else if (a > M) return M;
@@ -18,9 +18,9 @@ namespace AHRS
     }
 
     // Computes the dot product of two vectors
-    float Filter::Vector_Dot_Product(const float v1[3], const float v2[3])
+    double Filter::Vector_Dot_Product(const double v1[3], const double v2[3])
     {
-        float result = 0;
+        double result = 0;
 
         for(int c = 0; c < 3; c++)
         {
@@ -32,7 +32,7 @@ namespace AHRS
 
     // Computes the cross product of two vectors
     // out has to different from v1 and v2 (no in-place)!
-    void Filter::Vector_Cross_Product(float out[3], const float v1[3], const float v2[3])
+    void Filter::Vector_Cross_Product(double out[3], const double v1[3], const double v2[3])
     {
         out[0] = (v1[1] * v2[2]) - (v1[2] * v2[1]);
         out[1] = (v1[2] * v2[0]) - (v1[0] * v2[2]);
@@ -40,7 +40,7 @@ namespace AHRS
     }
 
     // Multiply the vector by a scalar
-    void Filter::Vector_Scale(float out[3], const float v[3], float scale)
+    void Filter::Vector_Scale(double out[3], const double v[3], double scale)
     {
         for(int c = 0; c < 3; c++)
         {
@@ -49,7 +49,7 @@ namespace AHRS
     }
 
     // Adds two vectors
-    void Filter::Vector_Add(float out[3], const float v1[3], const float v2[3])
+    void Filter::Vector_Add(double out[3], const double v1[3], const double v2[3])
     {
         for(int c = 0; c < 3; c++)
         {
@@ -59,7 +59,7 @@ namespace AHRS
 
     // Multiply two 3x3 matrices: out = a * b
     // out has to different from a and b (no in-place)!
-    void Filter::Matrix_Multiply(const float a[3][3], const float b[3][3], float out[3][3])
+    void Filter::Matrix_Multiply(const double a[3][3], const double b[3][3], double out[3][3])
     {
         for(int x = 0; x < 3; x++)  // rows
         {
@@ -72,7 +72,7 @@ namespace AHRS
 
     // Multiply 3x3 matrix with vector: out = a * b
     // out has to different from b (no in-place)!
-    void Filter::Matrix_Vector_Multiply(const float a[3][3], const float b[3], float out[3])
+    void Filter::Matrix_Vector_Multiply(const double a[3][3], const double b[3], double out[3])
     {
         for(int x = 0; x < 3; x++)
         {
@@ -81,14 +81,14 @@ namespace AHRS
     }
 
     // Init rotation matrix using euler angles
-    void Filter::init_rotation_matrix(float m[3][3], float yaw, float pitch, float roll)
+    void Filter::init_rotation_matrix(double m[3][3], double yaw, double pitch, double roll)
     {
-        float c1 = cos(roll);
-        float s1 = sin(roll);
-        float c2 = cos(pitch);
-        float s2 = sin(pitch);
-        float c3 = cos(yaw);
-        float s3 = sin(yaw);
+        double c1 = cos(roll);
+        double s1 = sin(roll);
+        double c2 = cos(pitch);
+        double s2 = sin(pitch);
+        double c3 = cos(yaw);
+        double s3 = sin(yaw);
 
         // Euler angles, right-handed, intrinsic, XYZ convention
         // (which means: rotate around body axes Z, Y', X'') 
@@ -111,9 +111,9 @@ namespace AHRS
     /**************************************************/
     void Filter::Normalize(void)
     {
-        float error=0;
-        float temporary[3][3];
-        float renorm=0;
+        double error=0;
+        double temporary[3][3];
+        double renorm=0;
 
         error= -Vector_Dot_Product(&DCM_Matrix[0][0],&DCM_Matrix[1][0])*.5; //eq.19
 
@@ -138,14 +138,15 @@ namespace AHRS
     /**************************************************/
     void Filter::Drift_correction(void)
     {
-        float mag_heading_x;
-        float mag_heading_y;
-        float errorCourse;
+        tick++;
+        double mag_heading_x;
+        double mag_heading_y;
+        double errorCourse;
         //Compensation the Roll, Pitch and Yaw drift. 
-        static float Scaled_Omega_P[3];
-        static float Scaled_Omega_I[3];
-        float Accel_magnitude;
-        float Accel_weight;
+        static double Scaled_Omega_P[3];
+        static double Scaled_Omega_I[3];
+        double Accel_magnitude;
+        double Accel_weight;
 
 
         //*****Roll and Pitch***************
@@ -158,7 +159,14 @@ namespace AHRS
         Accel_weight = constrain(1 - 2*fabs(1 - Accel_magnitude),0,1);  //  
 
         Vector_Cross_Product(&errorRollPitch[0],&Accel_Vector[0],&DCM_Matrix[2][0]); //adjust the ground of reference
-        Vector_Scale(&Omega_P[0],&errorRollPitch[0],Kp_rollPitch*Accel_weight);
+
+        // Initializing the filter during the 10 first ticks
+        double K = Kp_rollPitch;
+        if (tick < 10) {
+            K = 1;
+        }
+
+        Vector_Scale(&Omega_P[0],&errorRollPitch[0],K*Accel_weight);
 
         Vector_Scale(&Scaled_Omega_I[0],&errorRollPitch[0],Ki_rollPitch*Accel_weight);
         Vector_Add(Omega_I,Omega_I,Scaled_Omega_I);     
@@ -271,12 +279,12 @@ namespace AHRS
 
     void Filter::Compass_Heading()
     {
-        float mag_x;
-        float mag_y;
-        float cos_roll;
-        float sin_roll;
-        float cos_pitch;
-        float sin_pitch;
+        double mag_x;
+        double mag_y;
+        double cos_roll;
+        double sin_roll;
+        double cos_pitch;
+        double sin_pitch;
 
         cos_roll = cos(roll);
         sin_roll = sin(roll);
@@ -294,6 +302,7 @@ namespace AHRS
     Filter::Filter(bool useCompass)
         : useCompass(useCompass)
     {
+        tick = 0;
         yaw = 0;
         pitch = 0;
         roll = 0;
