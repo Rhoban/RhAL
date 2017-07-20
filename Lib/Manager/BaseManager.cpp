@@ -16,7 +16,7 @@ BaseManager::BaseManager() :
     _userWaitManager2(),
     _isManagerBarrierOpen1(false),
     _isManagerBarrierOpen2(false),
-    _cooperativeThread(0),
+    _cooperativeThread(),
     _currentThreadWaiting1(0),
     _currentThreadWaiting2(0),
     _currentThreadCooperativeWaiting1(0),

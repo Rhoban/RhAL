@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <map>
 #include <string>
 #include <stdexcept>
 #include <json.hpp>
@@ -27,9 +27,9 @@ class TypedManager
         /**
          * Typedef for device container
          */
-        typedef std::unordered_map<std::string, T*> 
+        typedef std::map<std::string, T*> 
             DevsByName;
-        typedef std::unordered_map<id_t, T*> 
+        typedef std::map<id_t, T*> 
             DevsById;
 
         /**

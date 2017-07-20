@@ -101,7 +101,7 @@ int main()
         const RhAL::ExampleDevice1* pt = it.second;
         std::cout << "ExampleDevice1: " << pt->name() << std::endl;
     }
-    std::unordered_map<std::string, RhAL::BaseExampleDevice1*> container = 
+    std::map<std::string, RhAL::BaseExampleDevice1*> container = 
         manager.devContainer<RhAL::BaseExampleDevice1>();
     //Iterate over all Device BaseExampleDevice1
     for (const auto& it : container) {

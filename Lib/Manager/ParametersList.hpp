@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <map>
 #include <stdexcept>
 #include <json.hpp>
 #include "Parameter.hpp"
@@ -22,11 +22,11 @@ class ParametersList
         /**
          * Typedef for container
          */
-        typedef std::unordered_map<std::string, ParameterBool*> 
+        typedef std::map<std::string, ParameterBool*> 
             ContainerBool;
-        typedef std::unordered_map<std::string, ParameterNumber*> 
+        typedef std::map<std::string, ParameterNumber*> 
             ContainerNumber;
-        typedef std::unordered_map<std::string, ParameterStr*> 
+        typedef std::map<std::string, ParameterStr*> 
             ContainerStr;
 
         /**

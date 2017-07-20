@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <map>
 #include <stdexcept>
 #include "Register.hpp"
 
@@ -23,13 +23,13 @@ class RegistersList
         /**
          * Typedef for typed registers container
          */
-        typedef std::unordered_map<std::string, Register*> 
+        typedef std::map<std::string, Register*> 
             ContainerRegisters;
-        typedef std::unordered_map<std::string, TypedRegisterBool*> 
+        typedef std::map<std::string, TypedRegisterBool*> 
             ContainerRegistersBool;
-        typedef std::unordered_map<std::string, TypedRegisterInt*> 
+        typedef std::map<std::string, TypedRegisterInt*> 
             ContainerRegistersInt;
-        typedef std::unordered_map<std::string, TypedRegisterFloat*> 
+        typedef std::map<std::string, TypedRegisterFloat*> 
             ContainerRegistersFloat;
 
         /**

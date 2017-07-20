@@ -8,8 +8,8 @@
 #include <fstream>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <set>
 #include <string>
 #include <condition_variable>
 #include <exception>
@@ -39,10 +39,10 @@ class BaseManager : public CallManager
          */
         template <typename T>
         using DevicesByName =
-            std::unordered_map<std::string, T*>;
+            std::map<std::string, T*>;
         template <typename T>
         using DevicesById =
-            std::unordered_map<id_t, T*>;
+            std::map<id_t, T*>;
 
         /**
          * Initialization
@@ -362,7 +362,7 @@ class BaseManager : public CallManager
          * declared as cooperative to be waited
          * in flush() by the manager.
          */
-        std::unordered_set<std::thread::id> _cooperativeThread;
+        std::set<std::thread::id> _cooperativeThread;
 
         /**
          * The number of user cooperative
