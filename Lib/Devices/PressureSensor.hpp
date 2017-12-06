@@ -95,7 +95,7 @@ class PressureSensor : public PressureSensorBase
         }
     }
 
-    void onSwap()
+    void onSwap() override
     {
         float total = 0;
         unsigned int n = _zero.size();
@@ -125,7 +125,7 @@ class PressureSensor : public PressureSensorBase
     /**
      * How many gauges are managed?
      */
-    int gauges()
+    int gauges() override
     {
         return GAUGES;
     }
@@ -133,7 +133,7 @@ class PressureSensor : public PressureSensorBase
     /**
      * Gain
      */
-    float gain(int index)
+    float gain(int index) override
     {
         return _gain[index]->value;
     }
@@ -141,7 +141,7 @@ class PressureSensor : public PressureSensorBase
     /**
      * Registers access
      */
-    TypedRegisterInt& pressure(int index)
+    TypedRegisterInt& pressure(int index) override
     {
         return *_pressure[index];
     }
@@ -156,36 +156,36 @@ class PressureSensor : public PressureSensorBase
         return _zero[index]->value;
     }
 
-    void setZero(int index, double value)
+    void setZero(int index, double value) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
         _zero[index]->value = value;
     }
 
-    float getX()
+    float getX() override
     {
         return x;
     }
-    float getY()
+    float getY() override
     {
         return y;
     }
-    float getWeight()
+    float getWeight() override
     {
         return weight;
     }
 
 
-    ReadValueFloat getXValue()
+    ReadValueFloat getXValue() override
     {
         return ReadValueFloat(timestamp,x,isError);
     }
-    ReadValueFloat getYValue()
+    ReadValueFloat getYValue() override
     {
         return ReadValueFloat(timestamp,y,isError);
     }
-    ReadValueFloat getWeightValue()
+    ReadValueFloat getWeightValue() override
     {
         return ReadValueFloat(timestamp,weight,isError);
     }
