@@ -1,4 +1,5 @@
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include "Bindings/RhIOBinding.hpp"
 #include "Manager/BaseManager.hpp"

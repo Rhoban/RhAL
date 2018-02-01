@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <cmath>
+#include <sstream>
 #include <type_traits>
 #include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"

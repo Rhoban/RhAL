@@ -2,7 +2,7 @@
 
 #include <map>
 #include <stdexcept>
-#include <json.hpp>
+#include <json/json.h>
 #include "Parameter.hpp"
 
 namespace RhAL {
@@ -73,13 +73,13 @@ class ParametersList
          * Export and return all contained 
          * parameters into a json object
          */
-        nlohmann::json saveJSON() const;
+        Json::Value saveJSON() const;
 
         /**
          * Import parameters from given json object.
          * Throw std::runtime_error if given json is malformated.
          */
-        void loadJSON(const nlohmann::json& j);
+        void loadJSON(const Json::Value& j);
 
     private:
 

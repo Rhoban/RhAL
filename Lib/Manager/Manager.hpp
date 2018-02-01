@@ -2,7 +2,7 @@
 
 #include <thread>
 #include <functional>
-#include <json.hpp>
+#include <json/json.h>
 #include "AggregateManager.hpp"
 
 namespace RhAL {
@@ -41,10 +41,10 @@ class Manager : public AggregateManager<Types...>
          * Export as json object all Parameters
          * and derived Devices configurations.
          */
-        inline virtual nlohmann::json saveJSON() const override
+        inline virtual Json::Value saveJSON() const override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
-            nlohmann::json j = this->saveAggregatedJSON();
+            Json::Value j = this->saveAggregatedJSON();
             j["Manager"] = this->_parametersList.saveJSON();
             j["Protocol"] = this->protocolParametersList().saveJSON();
             return j;
@@ -56,14 +56,14 @@ class Manager : public AggregateManager<Types...>
          * Throw std::runtime_error if 
          * given json is malformated.
          */
-        inline virtual void loadJSON(const nlohmann::json& j) override
+        inline virtual void loadJSON(const Json::Value& j) override
         {
             std::lock_guard<std::mutex> lock(CallManager::_mutex);
             if (
-                !j.is_object() ||
+                !j.isObject() ||
                 j.size() > sizeof...(Types) + 1 ||
-                j.count("Manager") != 1 ||
-                j.count("Protocol") != 1
+                j["Manager"].isNull() ||
+                j["Protocol"].isNull()
             ) {
                 throw std::runtime_error(
                     "Manager load parameters root json malformed");
@@ -71,11 +71,11 @@ class Manager : public AggregateManager<Types...>
             //Load Devices parameters
             this->loadAggregatedJSON(j);
             //Load Manager parameters (bus/protocol)
-            this->_parametersList.loadJSON(j.at("Manager"));
+            this->_parametersList.loadJSON(j["Manager"]);
             //Reset low level communication (bus/protocol)
             this->initBus();
             //Load specific Protocol parameters
-            this->protocolParametersList().loadJSON(j.at("Protocol"));
+            this->protocolParametersList().loadJSON(j["Protocol"]);
         }
 
         /**
@@ -93,8 +93,9 @@ class Manager : public AggregateManager<Types...>
                     "Manager unable to write file: " 
                     + filename);
             }
-            nlohmann::json j = saveJSON();
-            file << j.dump(4);
+            Json::Value j = saveJSON();
+            Json::StyledWriter writer;
+            file << writer.write(j);
             file.close();
         }
 
@@ -107,21 +108,31 @@ class Manager : public AggregateManager<Types...>
         inline virtual void readConfig(
             const std::string& filename) override
         {
-            std::ifstream file;
-            file.open(filename);
+            std::ifstream file(filename, std::ios::in | std::ios::binary);
             if (!file.is_open()) {
                 throw std::runtime_error(
                     "Manager unable to read file: " 
                     + filename);
             }
-            std::string config;
-            std::string tmp;
-            while(std::getline(file, tmp)) {
-                config += tmp;
-            }
-            nlohmann::json j = nlohmann::json::parse(config); 
-            loadJSON(j);
+            std::string contents;
+            file.seekg(0, std::ios::end);
+            contents.resize(file.tellg());
+            file.seekg(0, std::ios::beg);
+            file.read(&contents[0], contents.size());
             file.close();
+            // Create Json reader
+            // TODO: investigate all the flags
+            auto f=Json::Features::all();
+            f.allowComments_=true;
+            f.strictRoot_=false;
+            f.allowDroppedNullPlaceholders_=true;
+            f.allowNumericKeys_=true;
+            Json::Reader reader(f);
+            // Parse json
+            // TODO: treat errors properly
+            Json::Value j;
+            reader.parse(contents, j);
+            loadJSON(j);
         }
 
         /**

@@ -22,13 +22,13 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>RhIOServer</build_depend> <!-- rhoban/rhio -->
-  <build_depend>json</build_depend> <!-- rhobandeps/json -->
+  <build_depend>jsoncpp</build_depend> <!-- rhobandeps/jsoncpp -->
   <build_depend>serial</build_depend> <!-- rhobandeps/serial -->
   <build_depend>tclap</build_depend> <!-- rhobandeps/tclap -->
   <build_depend>eigen</build_depend> <!-- rhobandeps/eigen -->
 
   <run_depend>RhIOServer</run_depend>
-  <run_depend>json</run_depend>
+  <run_depend>jsoncpp</run_depend>
   <run_depend>serial</run_depend>
   <run_depend>tclap</run_depend>
   <run_depend>eigen</run_depend>

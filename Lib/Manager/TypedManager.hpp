@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include <json.hpp>
+#include <json/json.h>
 #include "types.h"
 #include "timestamp.h"
 #include "CallManager.hpp"
@@ -154,18 +154,18 @@ class TypedManager
          * parameters and all devices parameters
          * into a json object
          */
-        inline nlohmann::json saveJSON() const
+        inline Json::Value saveJSON() const
         {
-            nlohmann::json j;
+            Json::Value j;
             j["parameters"] = _paramsList.saveJSON();        
-            j["devices"] = nlohmann::json::array();
+            j["devices"] = Json::Value();
             for (const auto& it : _devsById) {
-                nlohmann::json obj = nlohmann::json::object();
+                Json::Value obj;
                 obj["id"] = it.second->id();
                 obj["name"] = it.second->name();
                 obj["parameters"] = it.second
                     ->parametersList().saveJSON();
-                j["devices"].push_back(obj);
+                j["devices"].append(obj);
             }
 
             return j;
@@ -178,17 +178,48 @@ class TypedManager
          * All listed Devices are expected to exist.
          * Throw std::runtime_error if given json is malformated.
          */
-        inline void loadJSON(const nlohmann::json& j)
+        inline void loadJSON(const Json::Value& j)
         {
-            _paramsList.loadJSON(j.at("parameters"));
+            const Json::Value& parameters = j["parameters"];
+            if (parameters.isNull()) {
+                throw std::out_of_range(
+                  "RhAL::TypedManager::loadJson: Could not find value 'parameters'");
+            }
+            _paramsList.loadJSON(parameters);
             //Iterate over devices
-            for (size_t i=0;i<j.at("devices").size();i++) {
-                const nlohmann::json& dev = j.at("devices").at(i);
+            const Json::Value& devices = j["devices"];
+            if (devices.isNull()) {
+                throw std::out_of_range(
+                  "RhAL::TypedManager::loadJson: Could not find value 'devices'");
+            }
+            if (!devices.isArray()) {
+                throw std::runtime_error(
+                  "RhAL::TypedManager::loadJson: 'devices' is not an array");
+            }
+            for (Json::Value::ArrayIndex i=0;i<devices.size();i++) {
+                const Json::Value& dev = devices[i];
+                const Json::Value& id_v = dev["id"];
+                if (id_v.isNull()) {
+                  throw std::out_of_range(
+                    "RhAL::TypedManager::loadJson: Could not find 'id' in device '"
+                    + std::to_string(i) + "'");
+                }
+                if (!id_v.isInt()) {
+                  throw std::out_of_range(
+                    "RhAL::TypedManager::loadJson: 'id' in device '"
+                    + std::to_string(i) + "' is not an int");
+                }
                 //Retrieve device id
-                id_t id = dev.at("id");
+                id_t id = id_v.asInt();
                 //Load parameters
+                const Json::Value& dev_parameters = dev["parameters"];
+                if (dev_parameters.isNull()) {
+                  throw std::out_of_range(
+                    "RhAL::TypedManager::loadJson: Could not find 'parameters' in device '"
+                    + std::to_string(i) + "'");
+                }
                 _devsById.at(id)->parametersList()
-                    .loadJSON(dev.at("parameters"));
+                    .loadJSON(dev_parameters);
             }
         }
 

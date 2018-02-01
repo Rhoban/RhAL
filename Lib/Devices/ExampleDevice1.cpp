@@ -1,5 +1,7 @@
 #include "Devices/ExampleDevice1.hpp"
 
+#include <iostream>
+
 namespace RhAL {
 
 void convIn1(RhAL::data_t* buffer, float value)

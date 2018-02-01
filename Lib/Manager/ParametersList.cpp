@@ -123,9 +123,9 @@ const ParametersList::ContainerStr& ParametersList::containerStr() const
     return _paramsStr;
 }
 
-nlohmann::json ParametersList::saveJSON() const
+Json::Value ParametersList::saveJSON() const
 {
-    nlohmann::json j;
+    Json::Value j;
     for (const auto& it : _paramsBool) {
         j[it.first] = it.second->value;
     }
@@ -139,45 +139,47 @@ nlohmann::json ParametersList::saveJSON() const
     return j;
 }
 
-void ParametersList::loadJSON(const nlohmann::json& j)
+void ParametersList::loadJSON(const Json::Value& j)
 {
     //Empty case
-    if (j.is_null()) {
+    if (j.isNull()) {
         return;
     }
     //Check json type
-    if (!j.is_object()) {
+    if (!j.isObject()) {
         throw std::runtime_error(
             "ParametersContainer load parameters json not object");
     }
     //Iterate on json entries
-    for (nlohmann::json::const_iterator it=j.begin();it!=j.end();it++) {
-        if (it.value().is_boolean()) {
+    for (Json::Value::const_iterator it = j.begin(); it != j.end(); it++) {
+        const std::string & key = it.name();
+        const Json::Value & v = it.key();
+        if (v.isBool()) {
             //Boolean
-            if (_paramsBool.count(it.key()) == 0) {
+            if (_paramsBool.count(key) == 0) {
                 throw std::runtime_error(
                     "ParametersContainer load parameters json bool does not exist: " 
-                    + it.key());
+                    + key);
             } else {
-                paramBool(it.key()).value = it.value();
+                paramBool(key).value = v.asBool();
             }
-        } else if (it.value().is_number()) {
+        } else if (v.isDouble()) {
             //Number
-            if (_paramsNumber.count(it.key()) == 0) {
+            if (_paramsNumber.count(key) == 0) {
                 throw std::runtime_error(
                     "ParametersContainer load parameters json number does not exist: " 
-                    + it.key());
+                    + key);
             } else {
-                paramNumber(it.key()).value = it.value();
+                paramNumber(key).value = v.asDouble();
             }
-        } else if (it.value().is_string()) {
+        } else if (v.isString()) {
             //String
-            if (_paramsStr.count(it.key()) == 0) {
+            if (_paramsStr.count(key) == 0) {
                 throw std::runtime_error(
                     "ParametersContainer load parameters json str does not exist: " 
-                    + it.key());
+                    + key);
             } else {
-                paramStr(it.key()).value = it.value();
+                paramStr(key).value = v.asString();
             }
         } else {
             throw std::runtime_error(

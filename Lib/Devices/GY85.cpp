@@ -1,3 +1,4 @@
+#include <iostream>
 #include "Manager/TypedManager.hpp"
 #include "Manager/Device.hpp"
 #include "Manager/Register.hpp"

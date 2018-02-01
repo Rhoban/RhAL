@@ -8,7 +8,7 @@ project(RhAL)
 
 find_package(catkin REQUIRED COMPONENTS
   RhIOServer
-  json
+  jsoncpp
   serial
   tclap
   eigen
@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS Lib
   LIBRARIES RhAL
-  CATKIN_DEPENDS RhIOServer json serial tclap eigen
+  CATKIN_DEPENDS RhIOServer jsoncpp serial tclap eigen
 )
 
 set(LIB_SOURCES_DIRECTORY
