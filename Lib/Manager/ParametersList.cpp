@@ -153,7 +153,7 @@ void ParametersList::loadJSON(const Json::Value& j)
     //Iterate on json entries
     for (Json::Value::const_iterator it = j.begin(); it != j.end(); it++) {
         const std::string & key = it.name();
-        const Json::Value & v = it.key();
+        const Json::Value & v = j[key];
         if (v.isBool()) {
             //Boolean
             if (_paramsBool.count(key) == 0) {
@@ -177,7 +177,7 @@ void ParametersList::loadJSON(const Json::Value& j)
             if (_paramsStr.count(key) == 0) {
                 throw std::runtime_error(
                     "ParametersContainer load parameters json str does not exist: " 
-                    + key);
+                    + key + " with value: " + v.asString());
             } else {
                 paramStr(key).value = v.asString();
             }

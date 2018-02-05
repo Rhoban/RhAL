@@ -1,35 +1,35 @@
 #include <iostream>
-#include "json.hpp"
+#include <json/json.h>
 
-void test(const nlohmann::json& j)
+void test(const Json::Value & j)
 {
-    std::cout << j.dump(4) << std::endl;
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), j);
+    std::cout << json_str << std::endl;
 }
 
 int main()
 {
-    nlohmann::json j;
+    Json::Value j;
     j["test"] = 3.14;
     j["test3"] = "this is a test";
     j["sub1"]["sub2"]["field"] = true;
-    std::cout << j.dump(4) << std::endl;
+    test(j);
     test(j["sub1"]);
-    j["test2"] = nlohmann::json::array();
-    j["test2"].push_back(nlohmann::json::object());
-    j["test2"].push_back(nlohmann::json::object());
-    std::cout << j.dump(4) << std::endl;
+    j["test2"] = Json::Value();
+    j["test2"].append(Json::Value(Json::ValueType::objectValue));
+    j["test2"].append(Json::Value(Json::ValueType::objectValue));
+    test(j);
 
-    if (j.is_object()) {
+    if (j.isObject()) {
         std::cout << "OK!" << std::endl;
     }
-    //for (const auto& it : j) {
-    for (nlohmann::json::iterator it=j.begin();it!=j.end();it++) {
-        std::cout << it.key() << std::endl;
-        std::cout << "??1 " << it.value().is_object() << std::endl;
-        std::cout << "??2 " << it.value().is_array() << std::endl;
-        std::cout << "??3 " << it.value().is_string() << std::endl;
-        std::cout << "??4 " << it.value().is_number() << std::endl;
-        std::cout << ">>> " << it.value() << std::endl;
+    for (Json::Value::const_iterator it = j.begin(); it != j.end(); it++) {
+        std::cout << it.name() << std::endl;
+        std::cout << "??1 " << it.key().isObject() << std::endl;
+        std::cout << "??2 " << it.key().isArray() << std::endl;
+        std::cout << "??3 " << it.key().isString() << std::endl;
+        std::cout << "??4 " << it.key().isDouble() << std::endl;
+        std::cout << ">>> " << it.key() << std::endl;
         /*
         if (it.is_number()) {
             std::cout << "# " << it.get<double>() << std::endl;

@@ -672,9 +672,9 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
                     "AggregateManager load parameters json not object");
             }
             //Load TypedManager parameters
-            if (j["parameters"].isNull()) {
+            if (!j["parameters"].isNull() && !j["parameters"].isObject()) {
                 throw std::runtime_error(
-                    "AggregateManager load parameters no parameters key");
+                    "AggregateManager load parameters: parameters is not null and not an object");
             }
             //Check device exists and type
             const Json::Value& devices = j["devices"];
@@ -706,7 +706,7 @@ class AggregateManager : public BaseManager, public ImplManager<Types>...
                 if (
                     dev["id"].isNull() || 
                     dev["name"].isNull() ||
-                    dev["parameters"].isNull() ||
+                    (!dev["parameters"].isNull() && !dev["parameters"].isObject()) ||
                     !dev["id"].isInt() ||
                     !dev["name"].isString() ||
                     dev.size() != 3

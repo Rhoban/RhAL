@@ -65,9 +65,20 @@ int main()
     assertEquals(params.paramNumber("testNumber").value, 3.0);
     assertEquals(params.paramStr("testStr").value, "simple test");
 
-    std::string str = params.saveJSON().dump(4);
-    std::cout << str << std::endl;
-    params2.loadJSON(nlohmann::json::parse(str));
+
+    Json::Value json_value = params.saveJSON();
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), json_value);
+    std::cout << json_str << std::endl;
+
+    auto f=Json::Features::all();
+    f.allowComments_=true;
+    f.strictRoot_=false;
+    f.allowDroppedNullPlaceholders_=true;
+    f.allowNumericKeys_=true;
+    Json::Reader reader(f);
+    Json::Value params2_val;
+    reader.parse(json_str, params2_val);
+    params2.loadJSON(params2_val);
     
     assertEquals(params2.paramBool("testBool").value, true);
     assertEquals(params2.paramNumber("testNumber").value, 3.0);

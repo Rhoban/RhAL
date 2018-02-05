@@ -181,11 +181,9 @@ class TypedManager
         inline void loadJSON(const Json::Value& j)
         {
             const Json::Value& parameters = j["parameters"];
-            if (parameters.isNull()) {
-                throw std::out_of_range(
-                  "RhAL::TypedManager::loadJson: Could not find value 'parameters'");
+            if (!parameters.isNull()) {
+              _paramsList.loadJSON(parameters);
             }
-            _paramsList.loadJSON(parameters);
             //Iterate over devices
             const Json::Value& devices = j["devices"];
             if (devices.isNull()) {
@@ -213,13 +211,9 @@ class TypedManager
                 id_t id = id_v.asInt();
                 //Load parameters
                 const Json::Value& dev_parameters = dev["parameters"];
-                if (dev_parameters.isNull()) {
-                  throw std::out_of_range(
-                    "RhAL::TypedManager::loadJson: Could not find 'parameters' in device '"
-                    + std::to_string(i) + "'");
+                if (!dev_parameters.isNull()) {
+                  _devsById.at(id)->parametersList().loadJSON(dev_parameters);
                 }
-                _devsById.at(id)->parametersList()
-                    .loadJSON(dev_parameters);
             }
         }
 

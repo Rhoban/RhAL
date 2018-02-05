@@ -112,7 +112,9 @@ int main()
     printDevice(dev2);
 
     //Print Manager config
-    std::cout << manager.saveJSON().dump(4) << std::endl;
+    Json::Value json_value = manager.saveJSON();
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), json_value);
+    std::cout << json_str << std::endl;
 
     return 0;
 }

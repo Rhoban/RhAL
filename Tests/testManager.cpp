@@ -70,8 +70,9 @@ int main()
     manager.writeConfig("/tmp/a");
     manager.readConfig("/tmp/a");
 
-    nlohmann::json j = manager.saveJSON();
-    std::cout << j.dump(4) << std::endl;
+    Json::Value j = manager.saveJSON();
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), j);
+    std::cout << json_str << std::endl;
     /*
     manager.loadJSON(j);
     

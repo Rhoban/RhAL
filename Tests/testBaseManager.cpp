@@ -27,7 +27,9 @@ int main()
     assertEquals(baseManager->devById(2).id(), (RhAL::id_t)2);
     assertEquals(baseManager->devByName("test2").id(), (RhAL::id_t)2);
 
-    std::cout << baseManager->saveJSON().dump(4) << std::endl;
+    Json::Value json_value = baseManager->saveJSON();
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), json_value);
+    std::cout << json_str << std::endl;
 
     return 0;
 }

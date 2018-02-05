@@ -12,8 +12,10 @@ void testDynaban() {
 	//Import configuration in file
 	manager.readConfig("../Tests/testDynaban.json");
 
+  Json::Value json_value = manager.saveJSON();
+  std::string json_str = Json::writeString(Json::StreamWriterBuilder(), json_value);
+  std::cout << json_str << std::endl;
 
-	std::cout << manager.saveJSON().dump(4) << std::endl;
 	int nbDevices = 0;
 	if (manager.checkDevices()) {
 		std::cout << "All the devices are fine :)" << std::endl;

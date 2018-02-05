@@ -198,7 +198,9 @@ void ReadWriteTest(const std::string dev="/dev/ttyACM0", int bauds=1000000) {
 
     //Scan the bus
     manager.scan();
-    std::cout << manager.saveJSON().dump(4) << std::endl;
+    Json::Value json_value = manager.saveJSON();
+    std::string json_str = Json::writeString(Json::StreamWriterBuilder(), json_value);
+    std::cout << json_str << std::endl;
 
 
     //Iterate over Manager Devices with types
