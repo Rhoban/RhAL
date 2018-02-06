@@ -121,7 +121,6 @@ class Manager : public AggregateManager<Types...>
             file.read(&contents[0], contents.size());
             file.close();
             // Create Json reader
-            // TODO: investigate all the flags
             auto f=Json::Features::all();
             f.allowComments_=true;
             f.strictRoot_=false;
@@ -129,10 +128,13 @@ class Manager : public AggregateManager<Types...>
             f.allowNumericKeys_=true;
             Json::Reader reader(f);
             // Parse json
-            // TODO: treat errors properly
             Json::Value j;
-            reader.parse(contents, j);
-            loadJSON(j);
+            if (reader.parse(contents, j)) {
+              loadJSON(j);
+            } else {
+              throw std::runtime_error("Rhal::Manager:readConfig: Error while reading file '"
+                                       + filename + "' : " + reader.getFormattedErrorMessages());
+            }
         }
 
         /**

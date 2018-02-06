@@ -77,9 +77,11 @@ int main()
     f.allowNumericKeys_=true;
     Json::Reader reader(f);
     Json::Value params2_val;
-    reader.parse(json_str, params2_val);
-    params2.loadJSON(params2_val);
-    
+    if (reader.parse(json_str, params2_val)) {
+      params2.loadJSON(params2_val);
+    } else {
+      throw std::runtime_error(reader.getFormattedErrorMessages());
+    }
     assertEquals(params2.paramBool("testBool").value, true);
     assertEquals(params2.paramNumber("testNumber").value, 3.0);
     assertEquals(params2.paramStr("testStr").value, "simple test");
