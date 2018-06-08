@@ -1,6 +1,7 @@
 #include <functional>
 #include <iomanip>
 #include <sstream>
+#include <rhoban_utils/stats/stats.h>
 #include "Bindings/RhIOBinding.hpp"
 #include "Manager/BaseManager.hpp"
 #include "Manager/Device.hpp"
@@ -562,17 +563,17 @@ std::string RhIOBinding::cmdTare(
 {
     (void)argv;
     std::vector<PressureSensorBase*> sensors;
-    std::map<PressureSensorBase*, std::vector<double>> zeros;
+    std::map<PressureSensorBase*, std::vector<std::vector<double>>> zeros;
     const auto& allDevices = _manager->devContainer();
     for (const auto& dev : allDevices) {
         PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
         if (ps != nullptr) {
             sensors.push_back(ps);
-            zeros[ps] = std::vector<double>();
+            zeros[ps] = std::vector<std::vector<double>>();
             for (int g=0; g<ps->gauges(); g++) {
                 // Reseting the zeros
                 ps->setZero(g, 0);
-                zeros[ps].push_back(0);
+                zeros[ps].push_back(std::vector<double>());
             }
         }
     }
@@ -586,16 +587,32 @@ std::string RhIOBinding::cmdTare(
         for (int k=0; k<samples; k++) {
             for (const auto& ps : sensors) {
                 for (int g=0; g<ps->gauges(); g++) {
-                    zeros[ps][g] += ps->gain(g)*ps->pressure(g);
+                    zeros[ps][g].push_back(ps->gain(g)*ps->pressure(g));
                 }
             }
             _manager->waitNextFlush();
         }
+        std::vector<std::string> errors;
         for (const auto& ps : sensors) {
             ss.precision(30);
             for (int g=0; g<ps->gauges(); g++) {
-                ps->setZero(g, zeros[ps][g]/samples);
+                double avg;
+                double dev = rhoban_utils::standardDeviation(zeros[ps][g], &avg);
+                if (dev > ps->getMaxStdDev()) {
+                    std::stringstream tmp;
+                    tmp << "Too high deviation for " << ps->name() << " #" << g;
+                    errors.push_back(tmp.str());
+                }
+                if (dev < ps->getMinStdDev()) {
+                    std::stringstream tmp;
+                    tmp << "Too low deviation  for " << ps->name() << " #" << g;
+                    errors.push_back(tmp.str());
+                }
+                ps->setZero(g, avg);
             }
+        }
+        for (auto &err : errors) {
+            ss << "Error: " << err << std::endl;
         }
         ss << "Tare on " << sensors.size() << " devices.";
         return ss.str();
@@ -607,36 +624,55 @@ std::string RhIOBinding::cmdGyroTare(
 {
     (void)argv;
     std::vector<GY85*> sensors;
-    std::map<GY85*, std::map<std::string, double>> zeros;
+    std::map<GY85*, std::map<std::string, std::vector<double>>> zeros;
 
     auto allDevices = _manager->devContainer();
     for (auto& dev : allDevices) {
         GY85 *gy85 = dynamic_cast<GY85*>(dev.second);
         if (gy85 != nullptr) {
             sensors.push_back(gy85);
-            zeros[gy85] = std::map<std::string, double>();
-            zeros[gy85]["x"] = 0;
-            zeros[gy85]["y"] = 0;
-            zeros[gy85]["z"] = 0;
+            zeros[gy85] = std::map<std::string, std::vector<double>>();
+            zeros[gy85]["x"] = std::vector<double>();
+            zeros[gy85]["y"] = std::vector<double>();
+            zeros[gy85]["z"] = std::vector<double>();
         }
     }
 
     if (!sensors.size()) {
         return "No sensor found";
     } else {
+        std::stringstream ss;
         int samples = 300;
         for (int k=0; k<samples; k++) {
             for (auto &gy85 : sensors) {
-                zeros[gy85]["x"] += gy85->getGyroXRaw()/(float)samples;
-                zeros[gy85]["y"] += gy85->getGyroYRaw()/(float)samples;
-                zeros[gy85]["z"] += gy85->getGyroZRaw()/(float)samples;
+                zeros[gy85]["x"].push_back(gy85->getGyroXRaw()/(float)samples);
+                zeros[gy85]["y"].push_back(gy85->getGyroYRaw()/(float)samples);
+                zeros[gy85]["z"].push_back(gy85->getGyroZRaw()/(float)samples);
             }
             _manager->waitNextFlush();
         }
         for (auto &gy85 : sensors) {
-            gy85->setGyroCalibration(zeros[gy85]["x"], zeros[gy85]["y"], zeros[gy85]["z"]);
+            double xAvg, xDev;
+            xDev = rhoban_utils::standardDeviation(zeros[gy85]["x"], &xAvg);
+            double yAvg, yDev;
+            yDev = rhoban_utils::standardDeviation(zeros[gy85]["y"], &yAvg);
+            double zAvg, zDev;
+            zDev = rhoban_utils::standardDeviation(zeros[gy85]["z"], &zAvg);
+            
+            if (xDev > gy85->getMaxStdDev()) {
+                ss << "Error: too high deviation for X" << std::endl;
+            }
+            if (yDev > gy85->getMaxStdDev()) {
+                ss << "Error: too high deviation for X" << std::endl;
+            }
+            if (zDev > gy85->getMaxStdDev()) {
+                ss << "Error: too high deviation for X" << std::endl;
+            }
+            
+            gy85->setGyroCalibration(xAvg, yAvg, zAvg);
         }
-        return "Done.";
+        ss << "Done.";
+        return ss.str();
     }
 }
 

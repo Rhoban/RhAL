@@ -12,12 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   tclap
   eigen
+  rhoban_utils
   )
 
 catkin_package(
   INCLUDE_DIRS Lib
   LIBRARIES RhAL
-  CATKIN_DEPENDS RhIOServer jsoncpp serial tclap eigen
+  CATKIN_DEPENDS RhIOServer jsoncpp serial tclap eigen rhoban_utils
 )
 
 set(LIB_SOURCES_DIRECTORY

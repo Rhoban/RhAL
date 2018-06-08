@@ -36,7 +36,8 @@ class PressureSensorBase : public Device
     virtual ReadValueFloat getXValue()=0;
     virtual ReadValueFloat getYValue()=0;
     virtual ReadValueFloat getWeightValue()=0;
-
+    virtual double getMinStdDev()=0;
+    virtual double getMaxStdDev()=0;
 
     void setCallback(std::function<void()> callback_)
     {
@@ -93,7 +94,20 @@ class PressureSensor : public PressureSensorBase
             ss.str("");
             ss << "gain_" << i;
             _gain.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 1.0)));
+            
+            _maxStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("maxStdDev", 1250.0));
+            _minStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("minStdDev", 5.0));
         }
+    }
+    
+    double getMinStdDev() override
+    {
+        return _minStdDev->value;    
+    }
+    
+    double getMaxStdDev() override
+    {
+        return _maxStdDev->value;    
     }
 
     void onSwap() override
@@ -214,6 +228,8 @@ class PressureSensor : public PressureSensorBase
         std::vector<std::shared_ptr<ParameterNumber>> _y;
         std::vector<std::shared_ptr<ParameterNumber>> _gain;
         TypedRegisterInt _id;
+        std::shared_ptr<ParameterNumber> _maxStdDev;
+        std::shared_ptr<ParameterNumber> _minStdDev;
 
         // Led
         TypedRegisterBool _led; // At 0x19
@@ -234,6 +250,7 @@ class PressureSensor : public PressureSensorBase
             for (auto &reg : _pressure) {
                 Device::registersList().add(reg.get());
             }
+            Device::parametersList().add(_maxStdDev.get());
             for (unsigned int k=0; k<_zero.size(); k++) {
                 Device::parametersList().add(_zero[k].get());
                 Device::parametersList().add(_x[k].get());

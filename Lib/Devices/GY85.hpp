@@ -104,6 +104,8 @@ class GY85 : public Device
     ReadValueFloat getRollCompassValue();
     ReadValueFloat getMagnAzimuthValue();
     ReadValueFloat getMagnHeadingValue();
+    
+    double getMaxStdDev();
 
     /**
      * Calibration
@@ -142,6 +144,8 @@ class GY85 : public Device
     // filter delay
     std::shared_ptr<ParameterNumber> _filterDelay;
 
+    // Max std dev
+    std::shared_ptr<ParameterNumber> _maxStdDev;
 
     /**
      * Last sensor values

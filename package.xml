@@ -26,11 +26,14 @@
   <build_depend>serial</build_depend> <!-- rhobandeps/serial -->
   <build_depend>tclap</build_depend> <!-- rhobandeps/tclap -->
   <build_depend>eigen</build_depend> <!-- rhobandeps/eigen -->
-
+  <build_depend>eigen</build_depend> <!-- rhoban/utils -->
+  <build_depend>rhoban_utils</build_depend> <!-- rhoban/utils -->
+  
   <run_depend>RhIOServer</run_depend>
   <run_depend>jsoncpp</run_depend>
   <run_depend>serial</run_depend>
   <run_depend>tclap</run_depend>
   <run_depend>eigen</run_depend>
+  <run_depend>rhoban_utils</run_depend>
 
 </package>
