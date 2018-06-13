@@ -663,10 +663,10 @@ std::string RhIOBinding::cmdGyroTare(
                 ss << "Error: too high deviation for X" << std::endl;
             }
             if (yDev > gy85->getMaxStdDev()) {
-                ss << "Error: too high deviation for X" << std::endl;
+                ss << "Error: too high deviation for Y" << std::endl;
             }
             if (zDev > gy85->getMaxStdDev()) {
-                ss << "Error: too high deviation for X" << std::endl;
+                ss << "Error: too high deviation for Z" << std::endl;
             }
             
             gy85->setGyroCalibration(xAvg, yAvg, zAvg);
