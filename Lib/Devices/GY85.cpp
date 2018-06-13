@@ -102,7 +102,7 @@ GY85::GY85(const std::string& name, id_t id) :
     _magnZMax = std::shared_ptr<ParameterNumber>(new ParameterNumber("magnZMax", 100.0));
     _filterDelay = std::shared_ptr<ParameterNumber>(new ParameterNumber("filterDelay", 0.016));
 
-    _maxStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("maxStdDev", 1.2e-5));
+    _maxStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("maxStdDev", 0.0025));
 }
 
 void GY85::onInit()

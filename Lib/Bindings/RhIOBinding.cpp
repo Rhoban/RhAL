@@ -645,9 +645,9 @@ std::string RhIOBinding::cmdGyroTare(
         int samples = 300;
         for (int k=0; k<samples; k++) {
             for (auto &gy85 : sensors) {
-                zeros[gy85]["x"].push_back(gy85->getGyroXRaw()/(float)samples);
-                zeros[gy85]["y"].push_back(gy85->getGyroYRaw()/(float)samples);
-                zeros[gy85]["z"].push_back(gy85->getGyroZRaw()/(float)samples);
+                zeros[gy85]["x"].push_back(gy85->getGyroXRaw());
+                zeros[gy85]["y"].push_back(gy85->getGyroYRaw());
+                zeros[gy85]["z"].push_back(gy85->getGyroZRaw());
             }
             _manager->waitNextFlush();
         }
@@ -660,13 +660,13 @@ std::string RhIOBinding::cmdGyroTare(
             zDev = rhoban_utils::standardDeviation(zeros[gy85]["z"], &zAvg);
             
             if (xDev > gy85->getMaxStdDev()) {
-                ss << "Error: too high deviation for X" << std::endl;
+                ss << "Error: too high deviation for X (" << xDev << ")" << std::endl;
             }
             if (yDev > gy85->getMaxStdDev()) {
-                ss << "Error: too high deviation for Y" << std::endl;
+                ss << "Error: too high deviation for Y (" << yDev << ")" << std::endl;
             }
             if (zDev > gy85->getMaxStdDev()) {
-                ss << "Error: too high deviation for Z" << std::endl;
+                ss << "Error: too high deviation for Z (" << zDev << ")" << std::endl;
             }
             
             gy85->setGyroCalibration(xAvg, yAvg, zAvg);
