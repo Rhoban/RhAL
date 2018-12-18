@@ -600,7 +600,7 @@ std::string RhIOBinding::cmdTare(
                 double dev = rhoban_utils::standardDeviation(zeros[ps][g], &avg);
                 if (dev > ps->getMaxStdDev()) {
                     std::stringstream tmp;
-                    tmp << "Too high deviation for " << ps->name() << " #" << g;
+                    tmp << "Too high deviation for " << ps->name() << " #" << g << " (" << dev << " > " << ps->getMaxStdDev() << ")";
                     errors.push_back(tmp.str());
                 }
                 if (dev < ps->getMinStdDev()) {

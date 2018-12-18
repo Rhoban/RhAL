@@ -95,7 +95,7 @@ class PressureSensor : public PressureSensorBase
             ss << "gain_" << i;
             _gain.push_back(std::shared_ptr<ParameterNumber>(new ParameterNumber(ss.str(), 1.0)));
             
-            _maxStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("maxStdDev", 1250.0));
+            _maxStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("maxStdDev", 1750.0));
             _minStdDev = std::shared_ptr<ParameterNumber>(new ParameterNumber("minStdDev", 5.0));
         }
     }
