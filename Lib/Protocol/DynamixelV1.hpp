@@ -5,148 +5,139 @@
 
 namespace RhAL
 {
-    class DynamixelV1 : public Protocol
-    {
-        enum DynamixelV1Command {
-            CommandPing = 0x01,
-            CommandRead = 0x02,
-            CommandWrite = 0x03,
-            CommandSyncWrite = 0x83,
-            CommandSyncRead = 0x84,
-            CommandSyncWriteAndCheck = 0x85,
-        };
+class DynamixelV1 : public Protocol
+{
+  enum DynamixelV1Command
+  {
+    CommandPing = 0x01,
+    CommandRead = 0x02,
+    CommandWrite = 0x03,
+    CommandSyncWrite = 0x83,
+    CommandSyncRead = 0x84,
+    CommandSyncWriteAndCheck = 0x85,
+  };
 
-        enum DynamixelV1Error {
-            ErrorVoltage = 1,
-            ErrorAngleLimit = 2,
-            ErrorOverheat = 4,
-            ErrorRange = 8,
-            ErrorChecksum = 16,
-            ErrorOverload = 32,
-            ErrorInstruction = 64
-        };
+  enum DynamixelV1Error
+  {
+    ErrorVoltage = 1,
+    ErrorAngleLimit = 2,
+    ErrorOverheat = 4,
+    ErrorRange = 8,
+    ErrorChecksum = 16,
+    ErrorOverload = 32,
+    ErrorInstruction = 64
+  };
 
-        class Packet {
-          public:
-            Packet(id_t id, DynamixelV1Command instruction, size_t parameters);
-            Packet(id_t id, size_t parameters);
-            virtual ~Packet();
+  class Packet
+  {
+  public:
+    Packet(id_t id, DynamixelV1Command instruction, size_t parameters);
+    Packet(id_t id, size_t parameters);
+    virtual ~Packet();
 
-            /**
-             * Append data to the buffer
-             */
-            void append(uint8_t byte);
-            void append(const uint8_t *data, size_t size);
+    /**
+     * Append data to the buffer
+     */
+    void append(uint8_t byte);
+    void append(const uint8_t* data, size_t size);
 
-            /**
-             * Sets the status packet error
-             */
-            void setError(uint8_t error);
+    /**
+     * Sets the status packet error
+     */
+    void setError(uint8_t error);
 
-            /**
-             * Gets the status packet error
-             */
-            uint8_t getError();
+    /**
+     * Gets the status packet error
+     */
+    uint8_t getError();
 
-            /**
-             * Compute the checksum
-             */
-            uint8_t computeChecksum();
+    /**
+     * Compute the checksum
+     */
+    uint8_t computeChecksum();
 
-            /**
-             * Prepare the packet for the network (adds headers and checksum in
-             * the buffer)
-             */
-            void prepare();
+    /**
+     * Prepare the packet for the network (adds headers and checksum in
+     * the buffer)
+     */
+    void prepare();
 
-            /**
-             * Gets the total size of the packet (including header and checksum)
-             */
-            size_t getSize();
+    /**
+     * Gets the total size of the packet (including header and checksum)
+     */
+    size_t getSize();
 
-            /**
-             * Gets a pointer to the parameters
-             */
-            uint8_t *getParameters();
+    /**
+     * Gets a pointer to the parameters
+     */
+    uint8_t* getParameters();
 
-            /**
-             * Buffer and number of parameters
-             */
-            uint8_t *buffer;
-            size_t parameters;
+    /**
+     * Buffer and number of parameters
+     */
+    uint8_t* buffer;
+    size_t parameters;
 
-          protected:
-            size_t position;
-        };
+  protected:
+    size_t position;
+  };
 
-      public:
-        DynamixelV1(Bus &bus);
+public:
+  DynamixelV1(Bus& bus);
 
-        /**
-         * Implementations from Protocol
-         */
-        void writeData(id_t id, addr_t address,
-                const uint8_t *data, size_t size);
-        ResponseState writeAndCheckData(id_t id, addr_t address,
-                const uint8_t *data, size_t size);
-        ResponseState readData(id_t id, addr_t address,
-                uint8_t *data, size_t size);
-        bool ping(id_t id);
-        std::vector<ResponseState> syncRead(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<uint8_t*>& datas, size_t size);
-        void syncWrite(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<const uint8_t*>& datas, size_t size);
-        std::vector<ResponseState> syncWriteAndCheck(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<const uint8_t*>& datas, size_t size);
-        /**
-         * Broadcasts a "disable torque" command
-         */
-        void emergencyStop();
+  /**
+   * Implementations from Protocol
+   */
+  void writeData(id_t id, addr_t address, const uint8_t* data, size_t size);
+  ResponseState writeAndCheckData(id_t id, addr_t address, const uint8_t* data, size_t size);
+  ResponseState readData(id_t id, addr_t address, uint8_t* data, size_t size);
+  bool ping(id_t id);
+  std::vector<ResponseState> syncRead(const std::vector<id_t>& ids, addr_t address, const std::vector<uint8_t*>& datas,
+                                      size_t size);
+  void syncWrite(const std::vector<id_t>& ids, addr_t address, const std::vector<const uint8_t*>& datas, size_t size);
+  std::vector<ResponseState> syncWriteAndCheck(const std::vector<id_t>& ids, addr_t address,
+                                               const std::vector<const uint8_t*>& datas, size_t size);
+  /**
+   * Broadcasts a "disable torque" command
+   */
+  void emergencyStop();
 
-        /**
-         * Broadcasts an "enable torque" command
-         */
-        void exitEmergencyState();
+  /**
+   * Broadcasts an "enable torque" command
+   */
+  void exitEmergencyState();
 
-      protected:
-        /**
-         * This sends a packet over the bus
-         */
-        void sendPacket(Packet &packet);
+protected:
+  /**
+   * This sends a packet over the bus
+   */
+  void sendPacket(Packet& packet);
 
-        /**
-         * Waits to receive a packet over the bus
-         */
-        ResponseState receivePacket(Packet* &response, id_t id);
+  /**
+   * Waits to receive a packet over the bus
+   */
+  ResponseState receivePacket(Packet*& response, id_t id);
 
-        /**
-	 * Uses sendPacket and receivePacket to exchange data with the 
-	 * device
-         */
-        ResponseState sendAndReceiveData(
-                DynamixelV1Command instruction, id_t id, addr_t address,
-		uint8_t *data, size_t size);
-        /**
-	 * Uses sendPacket and receivePacket to exchange data with several
-         * devices at once
-        */
-        std::vector<ResponseState> syncSendAndReceiveData(
-	        DynamixelV1Command instruction, 
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<uint8_t*>& datas, size_t size);
+  /**
+   * Uses sendPacket and receivePacket to exchange data with the
+   * device
+   */
+  ResponseState sendAndReceiveData(DynamixelV1Command instruction, id_t id, addr_t address, uint8_t* data, size_t size);
+  /**
+   * Uses sendPacket and receivePacket to exchange data with several
+   * devices at once
+   */
+  std::vector<ResponseState> syncSendAndReceiveData(DynamixelV1Command instruction, const std::vector<id_t>& ids,
+                                                    addr_t address, const std::vector<uint8_t*>& datas, size_t size);
 
-      private:
-
-        /**
-         * Parameters
-         * timeout: wait for receive packet in secondes
-         * waitAfterWrite: a delay in seconds to wait
-         * after each write
-         */
-        ParameterNumber _timeout;
-        ParameterNumber _waitAfterWrite;
-    };
-}
+private:
+  /**
+   * Parameters
+   * timeout: wait for receive packet in secondes
+   * waitAfterWrite: a delay in seconds to wait
+   * after each write
+   */
+  ParameterNumber _timeout;
+  ParameterNumber _waitAfterWrite;
+};
+}  // namespace RhAL

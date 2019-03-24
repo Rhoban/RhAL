@@ -8,8 +8,8 @@
 #include "Manager/Parameter.hpp"
 #include "Devices/MX.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * MX12
  *
@@ -18,12 +18,11 @@ namespace RhAL {
  */
 class MX12 : public MX
 {
-    public:
-
-        /**
-         * Initialization with name and id
-         */
-        MX12(const std::string& name, id_t id);
+public:
+  /**
+   * Initialization with name and id
+   */
+  MX12(const std::string& name, id_t id);
 };
 
 /**
@@ -32,18 +31,16 @@ class MX12 : public MX
 template <>
 class ImplManager<MX12> : public TypedManager<MX12>
 {
-    public:
+public:
+  inline static type_t typeNumber()
+  {
+    return 0x168;
+  }
 
-        inline static type_t typeNumber()
-        {
-            return 0x168;
-        }
-
-        inline static std::string typeName()
-        {
-            return "MX12";
-        }
+  inline static std::string typeName()
+  {
+    return "MX12";
+  }
 };
 
-}
-
+}  // namespace RhAL

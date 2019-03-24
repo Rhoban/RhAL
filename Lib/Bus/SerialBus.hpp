@@ -7,20 +7,20 @@
 
 namespace RhAL
 {
-    class SerialBus : public Bus
-    {
-        public:
-            SerialBus(std::string port, unsigned int baudrate);
-            
-            bool sendData(uint8_t *data, size_t size);
-            bool waitForData(double timeout);
-            size_t available();
-            size_t readData(uint8_t *data, size_t size);
-            void flush();
-            void clearInputBuffer();
+class SerialBus : public Bus
+{
+public:
+  SerialBus(std::string port, unsigned int baudrate);
 
-        protected:
-            serial::Serial serial;
-            std::mutex mutex;
-    };
-}
+  bool sendData(uint8_t* data, size_t size);
+  bool waitForData(double timeout);
+  size_t available();
+  size_t readData(uint8_t* data, size_t size);
+  void flush();
+  void clearInputBuffer();
+
+protected:
+  serial::Serial serial;
+  std::mutex mutex;
+};
+}  // namespace RhAL

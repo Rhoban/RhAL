@@ -2,8 +2,8 @@
 
 #include "types.h"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Write to given data buffer
  */
@@ -89,5 +89,4 @@ int32_t convDecode_4Bytes_signed(const data_t* buffer);
  */
 float convDecode_float(const data_t* buffer);
 
-}
-
+}  // namespace RhAL

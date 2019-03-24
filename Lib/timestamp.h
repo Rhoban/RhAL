@@ -2,8 +2,8 @@
 
 #include "types.h"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Return the current date as TimePoint
  */
@@ -17,9 +17,9 @@ TimePoint getTimePoint();
 template <typename T>
 inline T getTimeDuration(const TimePoint& p1, const TimePoint& p2)
 {
-    return std::chrono::duration_cast<T>(p2 - p1);
+  return std::chrono::duration_cast<T>(p2 - p1);
 }
-//Explicit template instantiation
+// Explicit template instantiation
 extern template TimeDurationMilli getTimeDuration<TimeDurationMilli>(const TimePoint&, const TimePoint&);
 extern template TimeDurationMicro getTimeDuration<TimeDurationMicro>(const TimePoint&, const TimePoint&);
 extern template TimeDurationSec getTimeDuration<TimeDurationSec>(const TimePoint&, const TimePoint&);
@@ -32,9 +32,9 @@ extern template TimeDurationFloat getTimeDuration<TimeDurationFloat>(const TimeP
 template <typename T>
 inline T getTimeDuration(const TimePoint& p1)
 {
-    return std::chrono::duration_cast<T>(p1.time_since_epoch());
+  return std::chrono::duration_cast<T>(p1.time_since_epoch());
 }
-//Explicit template instantiation
+// Explicit template instantiation
 extern template TimeDurationMilli getTimeDuration<TimeDurationMilli>(const TimePoint& p1);
 extern template TimeDurationMicro getTimeDuration<TimeDurationMicro>(const TimePoint& p1);
 extern template TimeDurationSec getTimeDuration<TimeDurationSec>(const TimePoint& p1);
@@ -61,25 +61,25 @@ TimeDurationFloat::rep duration_float(const TimePoint& p1, const TimePoint& p2);
 template <typename T>
 inline TimeDurationMicro::rep duration_us(const T& d)
 {
-    return std::chrono::duration_cast<TimeDurationMicro>(d).count();
+  return std::chrono::duration_cast<TimeDurationMicro>(d).count();
 }
 template <typename T>
 inline TimeDurationMilli::rep duration_ms(const T& d)
 {
-    return std::chrono::duration_cast<TimeDurationMilli>(d).count();
+  return std::chrono::duration_cast<TimeDurationMilli>(d).count();
 }
 template <typename T>
 inline TimeDurationSec::rep duration_s(const T& d)
 {
-    return std::chrono::duration_cast<TimeDurationSec>(d).count();
+  return std::chrono::duration_cast<TimeDurationSec>(d).count();
 }
 template <typename T>
 inline TimeDurationFloat::rep duration_float(const T& d)
 {
-    return std::chrono::duration_cast<TimeDurationFloat>(d).count();
+  return std::chrono::duration_cast<TimeDurationFloat>(d).count();
 }
 
-//Explicit template instantiation
+// Explicit template instantiation
 extern template TimeDurationMicro::rep duration_us<TimeDurationMilli>(const TimeDurationMilli& d);
 extern template TimeDurationMicro::rep duration_us<TimeDurationMicro>(const TimeDurationMicro& d);
 extern template TimeDurationMicro::rep duration_us<TimeDurationSec>(const TimeDurationSec& d);
@@ -97,5 +97,4 @@ extern template TimeDurationFloat::rep duration_float<TimeDurationMicro>(const T
 extern template TimeDurationFloat::rep duration_float<TimeDurationSec>(const TimeDurationSec& d);
 extern template TimeDurationFloat::rep duration_float<TimeDurationFloat>(const TimeDurationFloat& d);
 
-}
-
+}  // namespace RhAL

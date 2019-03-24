@@ -10,331 +10,339 @@
 
 namespace AHRS
 {
-    double constrain(double a, double m, double M)
+double constrain(double a, double m, double M)
+{
+  if (a < m)
+    return m;
+  else if (a > M)
+    return M;
+  else
+    return a;
+}
+
+// Computes the dot product of two vectors
+double Filter::Vector_Dot_Product(const double v1[3], const double v2[3])
+{
+  double result = 0;
+
+  for (int c = 0; c < 3; c++)
+  {
+    result += v1[c] * v2[c];
+  }
+
+  return result;
+}
+
+// Computes the cross product of two vectors
+// out has to different from v1 and v2 (no in-place)!
+void Filter::Vector_Cross_Product(double out[3], const double v1[3], const double v2[3])
+{
+  out[0] = (v1[1] * v2[2]) - (v1[2] * v2[1]);
+  out[1] = (v1[2] * v2[0]) - (v1[0] * v2[2]);
+  out[2] = (v1[0] * v2[1]) - (v1[1] * v2[0]);
+}
+
+// Multiply the vector by a scalar
+void Filter::Vector_Scale(double out[3], const double v[3], double scale)
+{
+  for (int c = 0; c < 3; c++)
+  {
+    out[c] = v[c] * scale;
+  }
+}
+
+// Adds two vectors
+void Filter::Vector_Add(double out[3], const double v1[3], const double v2[3])
+{
+  for (int c = 0; c < 3; c++)
+  {
+    out[c] = v1[c] + v2[c];
+  }
+}
+
+// Multiply two 3x3 matrices: out = a * b
+// out has to different from a and b (no in-place)!
+void Filter::Matrix_Multiply(const double a[3][3], const double b[3][3], double out[3][3])
+{
+  for (int x = 0; x < 3; x++)  // rows
+  {
+    for (int y = 0; y < 3; y++)  // columns
     {
-        if (a < m) return m;
-        else if (a > M) return M;
-        else return a;
+      out[x][y] = a[x][0] * b[0][y] + a[x][1] * b[1][y] + a[x][2] * b[2][y];
     }
+  }
+}
 
-    // Computes the dot product of two vectors
-    double Filter::Vector_Dot_Product(const double v1[3], const double v2[3])
-    {
-        double result = 0;
+// Multiply 3x3 matrix with vector: out = a * b
+// out has to different from b (no in-place)!
+void Filter::Matrix_Vector_Multiply(const double a[3][3], const double b[3], double out[3])
+{
+  for (int x = 0; x < 3; x++)
+  {
+    out[x] = a[x][0] * b[0] + a[x][1] * b[1] + a[x][2] * b[2];
+  }
+}
 
-        for(int c = 0; c < 3; c++)
-        {
-            result += v1[c] * v2[c];
-        }
+// Init rotation matrix using euler angles
+void Filter::init_rotation_matrix(double m[3][3], double yaw, double pitch, double roll)
+{
+  double c1 = cos(roll);
+  double s1 = sin(roll);
+  double c2 = cos(pitch);
+  double s2 = sin(pitch);
+  double c3 = cos(yaw);
+  double s3 = sin(yaw);
 
-        return result; 
-    }
+  // Euler angles, right-handed, intrinsic, XYZ convention
+  // (which means: rotate around body axes Z, Y', X'')
+  m[0][0] = c2 * c3;
+  m[0][1] = c3 * s1 * s2 - c1 * s3;
+  m[0][2] = s1 * s3 + c1 * c3 * s2;
 
-    // Computes the cross product of two vectors
-    // out has to different from v1 and v2 (no in-place)!
-    void Filter::Vector_Cross_Product(double out[3], const double v1[3], const double v2[3])
-    {
-        out[0] = (v1[1] * v2[2]) - (v1[2] * v2[1]);
-        out[1] = (v1[2] * v2[0]) - (v1[0] * v2[2]);
-        out[2] = (v1[0] * v2[1]) - (v1[1] * v2[0]);
-    }
+  m[1][0] = c2 * s3;
+  m[1][1] = c1 * c3 + s1 * s2 * s3;
+  m[1][2] = c1 * s2 * s3 - c3 * s1;
 
-    // Multiply the vector by a scalar
-    void Filter::Vector_Scale(double out[3], const double v[3], double scale)
-    {
-        for(int c = 0; c < 3; c++)
-        {
-            out[c] = v[c] * scale; 
-        }
-    }
+  m[2][0] = -s2;
+  m[2][1] = c2 * s1;
+  m[2][2] = c1 * c2;
+}
+/* This file is part of the Razor AHRS Firmware */
 
-    // Adds two vectors
-    void Filter::Vector_Add(double out[3], const double v1[3], const double v2[3])
-    {
-        for(int c = 0; c < 3; c++)
-        {
-            out[c] = v1[c] + v2[c];
-        }
-    }
+// DCM algorithm
 
-    // Multiply two 3x3 matrices: out = a * b
-    // out has to different from a and b (no in-place)!
-    void Filter::Matrix_Multiply(const double a[3][3], const double b[3][3], double out[3][3])
-    {
-        for(int x = 0; x < 3; x++)  // rows
-        {
-            for(int y = 0; y < 3; y++)  // columns
-            {
-                out[x][y] = a[x][0] * b[0][y] + a[x][1] * b[1][y] + a[x][2] * b[2][y];
-            }
-        }
-    }
+/**************************************************/
+void Filter::Normalize(void)
+{
+  double error = 0;
+  double temporary[3][3];
+  double renorm = 0;
 
-    // Multiply 3x3 matrix with vector: out = a * b
-    // out has to different from b (no in-place)!
-    void Filter::Matrix_Vector_Multiply(const double a[3][3], const double b[3], double out[3])
-    {
-        for(int x = 0; x < 3; x++)
-        {
-            out[x] = a[x][0] * b[0] + a[x][1] * b[1] + a[x][2] * b[2];
-        }
-    }
+  error = -Vector_Dot_Product(&DCM_Matrix[0][0], &DCM_Matrix[1][0]) * .5;  // eq.19
 
-    // Init rotation matrix using euler angles
-    void Filter::init_rotation_matrix(double m[3][3], double yaw, double pitch, double roll)
-    {
-        double c1 = cos(roll);
-        double s1 = sin(roll);
-        double c2 = cos(pitch);
-        double s2 = sin(pitch);
-        double c3 = cos(yaw);
-        double s3 = sin(yaw);
+  Vector_Scale(&temporary[0][0], &DCM_Matrix[1][0], error);  // eq.19
+  Vector_Scale(&temporary[1][0], &DCM_Matrix[0][0], error);  // eq.19
 
-        // Euler angles, right-handed, intrinsic, XYZ convention
-        // (which means: rotate around body axes Z, Y', X'') 
-        m[0][0] = c2 * c3;
-        m[0][1] = c3 * s1 * s2 - c1 * s3;
-        m[0][2] = s1 * s3 + c1 * c3 * s2;
+  Vector_Add(&temporary[0][0], &temporary[0][0], &DCM_Matrix[0][0]);  // eq.19
+  Vector_Add(&temporary[1][0], &temporary[1][0], &DCM_Matrix[1][0]);  // eq.19
 
-        m[1][0] = c2 * s3;
-        m[1][1] = c1 * c3 + s1 * s2 * s3;
-        m[1][2] = c1 * s2 * s3 - c3 * s1;
+  Vector_Cross_Product(&temporary[2][0], &temporary[0][0], &temporary[1][0]);  // c= a x b //eq.20
 
-        m[2][0] = -s2;
-        m[2][1] = c2 * s1;
-        m[2][2] = c1 * c2;
-    }
-    /* This file is part of the Razor AHRS Firmware */
+  renorm = .5 * (3 - Vector_Dot_Product(&temporary[0][0], &temporary[0][0]));  // eq.21
+  Vector_Scale(&DCM_Matrix[0][0], &temporary[0][0], renorm);
 
-    // DCM algorithm
+  renorm = .5 * (3 - Vector_Dot_Product(&temporary[1][0], &temporary[1][0]));  // eq.21
+  Vector_Scale(&DCM_Matrix[1][0], &temporary[1][0], renorm);
 
-    /**************************************************/
-    void Filter::Normalize(void)
-    {
-        double error=0;
-        double temporary[3][3];
-        double renorm=0;
+  renorm = .5 * (3 - Vector_Dot_Product(&temporary[2][0], &temporary[2][0]));  // eq.21
+  Vector_Scale(&DCM_Matrix[2][0], &temporary[2][0], renorm);
+}
 
-        error= -Vector_Dot_Product(&DCM_Matrix[0][0],&DCM_Matrix[1][0])*.5; //eq.19
+/**************************************************/
+void Filter::Drift_correction(void)
+{
+  tick++;
+  double mag_heading_x;
+  double mag_heading_y;
+  double errorCourse;
+  // Compensation the Roll, Pitch and Yaw drift.
+  static double Scaled_Omega_P[3];
+  static double Scaled_Omega_I[3];
+  double Accel_magnitude;
+  double Accel_weight;
 
-        Vector_Scale(&temporary[0][0], &DCM_Matrix[1][0], error); //eq.19
-        Vector_Scale(&temporary[1][0], &DCM_Matrix[0][0], error); //eq.19
+  //*****Roll and Pitch***************
 
-        Vector_Add(&temporary[0][0], &temporary[0][0], &DCM_Matrix[0][0]);//eq.19
-        Vector_Add(&temporary[1][0], &temporary[1][0], &DCM_Matrix[1][0]);//eq.19
+  // Calculate the magnitude of the accelerometer vector
+  Accel_magnitude =
+      sqrt(Accel_Vector[0] * Accel_Vector[0] + Accel_Vector[1] * Accel_Vector[1] + Accel_Vector[2] * Accel_Vector[2]);
+  Accel_magnitude = Accel_magnitude / GRAVITY;  // Scale to gravity.
+  // Dynamic weighting of accelerometer info (reliability filter)
+  // Weight for accelerometer info (<0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0)
+  Accel_weight = constrain(1 - 2 * fabs(1 - Accel_magnitude), 0, 1);  //
 
-        Vector_Cross_Product(&temporary[2][0],&temporary[0][0],&temporary[1][0]); // c= a x b //eq.20
+  Vector_Cross_Product(&errorRollPitch[0], &Accel_Vector[0], &DCM_Matrix[2][0]);  // adjust the ground of reference
 
-        renorm= .5 *(3 - Vector_Dot_Product(&temporary[0][0],&temporary[0][0])); //eq.21
-        Vector_Scale(&DCM_Matrix[0][0], &temporary[0][0], renorm);
+  // Initializing the filter during the 10 first ticks
+  double K = Kp_rollPitch;
+  if (tick < 10)
+  {
+    K = 0.5;
+  }
 
-        renorm= .5 *(3 - Vector_Dot_Product(&temporary[1][0],&temporary[1][0])); //eq.21
-        Vector_Scale(&DCM_Matrix[1][0], &temporary[1][0], renorm);
+  Vector_Scale(&Omega_P[0], &errorRollPitch[0], K * Accel_weight);
 
-        renorm= .5 *(3 - Vector_Dot_Product(&temporary[2][0],&temporary[2][0])); //eq.21
-        Vector_Scale(&DCM_Matrix[2][0], &temporary[2][0], renorm);
-    }
+  Vector_Scale(&Scaled_Omega_I[0], &errorRollPitch[0], Ki_rollPitch * Accel_weight);
+  Vector_Add(Omega_I, Omega_I, Scaled_Omega_I);
 
-    /**************************************************/
-    void Filter::Drift_correction(void)
-    {
-        tick++;
-        double mag_heading_x;
-        double mag_heading_y;
-        double errorCourse;
-        //Compensation the Roll, Pitch and Yaw drift. 
-        static double Scaled_Omega_P[3];
-        static double Scaled_Omega_I[3];
-        double Accel_magnitude;
-        double Accel_weight;
+  //*****YAW***************
+  // We make the gyro YAW drift correction based on compass magnetic heading
 
+  if (useCompass)
+  {
+    mag_heading_x = cos(magnHeading);
+    mag_heading_y = sin(magnHeading);
+    errorCourse = (DCM_Matrix[0][0] * mag_heading_y) - (DCM_Matrix[1][0] * mag_heading_x);  // Calculating YAW error
+    Vector_Scale(errorYaw, &DCM_Matrix[2][0],
+                 errorCourse);  // Applys the yaw correction to the XYZ rotation of the aircraft, depeding the position.
 
-        //*****Roll and Pitch***************
+    Vector_Scale(&Scaled_Omega_P[0], &errorYaw[0], Kp_YAW);  //.01proportional of YAW.
+    Vector_Add(Omega_P, Omega_P, Scaled_Omega_P);            // Adding  Proportional.
 
-        // Calculate the magnitude of the accelerometer vector
-        Accel_magnitude = sqrt(Accel_Vector[0]*Accel_Vector[0] + Accel_Vector[1]*Accel_Vector[1] + Accel_Vector[2]*Accel_Vector[2]);
-        Accel_magnitude = Accel_magnitude/GRAVITY; // Scale to gravity.
-        // Dynamic weighting of accelerometer info (reliability filter)
-        // Weight for accelerometer info (<0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0)
-        Accel_weight = constrain(1 - 2*fabs(1 - Accel_magnitude),0,1);  //  
+    Vector_Scale(&Scaled_Omega_I[0], &errorYaw[0], Ki_YAW);  //.00001Integrator
+    Vector_Add(Omega_I, Omega_I, Scaled_Omega_I);            // adding integrator to the Omega_I
+  }
+}
 
-        Vector_Cross_Product(&errorRollPitch[0],&Accel_Vector[0],&DCM_Matrix[2][0]); //adjust the ground of reference
+void Filter::Matrix_update(void)
+{
+  Gyro_Vector[0] = gyro[0];  // gyro x roll
+  Gyro_Vector[1] = gyro[1];  // gyro y pitch
+  Gyro_Vector[2] = gyro[2];  // gyro z yaw
 
-        // Initializing the filter during the 10 first ticks
-        double K = Kp_rollPitch;
-        if (tick < 10) {
-            K = 0.5;
-        }
+  Accel_Vector[0] = accel[0] * GRAVITY;
+  Accel_Vector[1] = accel[1] * GRAVITY;
+  Accel_Vector[2] = accel[2] * GRAVITY;
 
-        Vector_Scale(&Omega_P[0],&errorRollPitch[0],K*Accel_weight);
+  Vector_Add(&Omega[0], &Gyro_Vector[0], &Omega_I[0]);   // adding proportional term
+  Vector_Add(&Omega_Vector[0], &Omega[0], &Omega_P[0]);  // adding Integrator term
 
-        Vector_Scale(&Scaled_Omega_I[0],&errorRollPitch[0],Ki_rollPitch*Accel_weight);
-        Vector_Add(Omega_I,Omega_I,Scaled_Omega_I);     
-
-        //*****YAW***************
-        // We make the gyro YAW drift correction based on compass magnetic heading
-
-        if (useCompass) {
-            mag_heading_x = cos(magnHeading);
-            mag_heading_y = sin(magnHeading);
-            errorCourse=(DCM_Matrix[0][0]*mag_heading_y) - (DCM_Matrix[1][0]*mag_heading_x);  //Calculating YAW error
-            Vector_Scale(errorYaw,&DCM_Matrix[2][0],errorCourse); //Applys the yaw correction to the XYZ rotation of the aircraft, depeding the position.
-
-            Vector_Scale(&Scaled_Omega_P[0],&errorYaw[0],Kp_YAW);//.01proportional of YAW.
-            Vector_Add(Omega_P,Omega_P,Scaled_Omega_P);//Adding  Proportional.
-
-            Vector_Scale(&Scaled_Omega_I[0],&errorYaw[0],Ki_YAW);//.00001Integrator
-            Vector_Add(Omega_I,Omega_I,Scaled_Omega_I);//adding integrator to the Omega_I
-        }
-    }
-
-    void Filter::Matrix_update(void)
-    {
-        Gyro_Vector[0]=gyro[0]; //gyro x roll
-        Gyro_Vector[1]=gyro[1]; //gyro y pitch
-        Gyro_Vector[2]=gyro[2]; //gyro z yaw
-
-        Accel_Vector[0]=accel[0]*GRAVITY;
-        Accel_Vector[1]=accel[1]*GRAVITY;
-        Accel_Vector[2]=accel[2]*GRAVITY;
-
-        Vector_Add(&Omega[0], &Gyro_Vector[0], &Omega_I[0]);  //adding proportional term
-        Vector_Add(&Omega_Vector[0], &Omega[0], &Omega_P[0]); //adding Integrator term
-
-#if DEBUG__NO_DRIFT_CORRECTION == true // Do not use drift correction
-        Update_Matrix[0][0]=0;
-        Update_Matrix[0][1]=-G_Dt*Gyro_Vector[2];//-z
-        Update_Matrix[0][2]=G_Dt*Gyro_Vector[1];//y
-        Update_Matrix[1][0]=G_Dt*Gyro_Vector[2];//z
-        Update_Matrix[1][1]=0;
-        Update_Matrix[1][2]=-G_Dt*Gyro_Vector[0];
-        Update_Matrix[2][0]=-G_Dt*Gyro_Vector[1];
-        Update_Matrix[2][1]=G_Dt*Gyro_Vector[0];
-        Update_Matrix[2][2]=0;
-#else // Use drift correction
-        Update_Matrix[0][0]=0;
-        Update_Matrix[0][1]=-G_Dt*Omega_Vector[2];//-z
-        Update_Matrix[0][2]=G_Dt*Omega_Vector[1];//y
-        Update_Matrix[1][0]=G_Dt*Omega_Vector[2];//z
-        Update_Matrix[1][1]=0;
-        Update_Matrix[1][2]=-G_Dt*Omega_Vector[0];//-x
-        Update_Matrix[2][0]=-G_Dt*Omega_Vector[1];//-y
-        Update_Matrix[2][1]=G_Dt*Omega_Vector[0];//x
-        Update_Matrix[2][2]=0;
+#if DEBUG__NO_DRIFT_CORRECTION == true  // Do not use drift correction
+  Update_Matrix[0][0] = 0;
+  Update_Matrix[0][1] = -G_Dt * Gyro_Vector[2];  //-z
+  Update_Matrix[0][2] = G_Dt * Gyro_Vector[1];   // y
+  Update_Matrix[1][0] = G_Dt * Gyro_Vector[2];   // z
+  Update_Matrix[1][1] = 0;
+  Update_Matrix[1][2] = -G_Dt * Gyro_Vector[0];
+  Update_Matrix[2][0] = -G_Dt * Gyro_Vector[1];
+  Update_Matrix[2][1] = G_Dt * Gyro_Vector[0];
+  Update_Matrix[2][2] = 0;
+#else  // Use drift correction
+  Update_Matrix[0][0] = 0;
+  Update_Matrix[0][1] = -G_Dt * Omega_Vector[2];  //-z
+  Update_Matrix[0][2] = G_Dt * Omega_Vector[1];   // y
+  Update_Matrix[1][0] = G_Dt * Omega_Vector[2];   // z
+  Update_Matrix[1][1] = 0;
+  Update_Matrix[1][2] = -G_Dt * Omega_Vector[0];  //-x
+  Update_Matrix[2][0] = -G_Dt * Omega_Vector[1];  //-y
+  Update_Matrix[2][1] = G_Dt * Omega_Vector[0];   // x
+  Update_Matrix[2][2] = 0;
 #endif
 
-        Matrix_Multiply(DCM_Matrix,Update_Matrix,Temporary_Matrix); //a*b=c
+  Matrix_Multiply(DCM_Matrix, Update_Matrix, Temporary_Matrix);  // a*b=c
 
-        for(int x=0; x<3; x++) //Matrix Addition (update)
-        {
-            for(int y=0; y<3; y++)
-            {
-                DCM_Matrix[x][y]+=Temporary_Matrix[x][y];
-            } 
-        }
-    }
-
-    Eigen::Matrix3d Filter::getMatrix()
+  for (int x = 0; x < 3; x++)  // Matrix Addition (update)
+  {
+    for (int y = 0; y < 3; y++)
     {
-        Eigen::Matrix3d m;
-        for (int r=0; r<3; r++) {
-            for (int c=0; c<3; c++) {
-                m(r, c) = DCM_Matrix[r][c];
-            }
-        }
-
-        if (invertX) {
-            Eigen::Matrix3d x;
-            x << 1, 0, 0,
-                 0, -1, 0,
-                 0,  0, -1;
-            m = m*x;
-        }
-        if (invertY) {
-            Eigen::Matrix3d x;
-            x << -1, 0, 0,
-                 0, 1, 0,
-                 0,  0, -1;
-            m = m*x;
-        }
-        if (invertZ) {
-            Eigen::Matrix3d x;
-            x << -1, 0, 0,
-                 0, -1, 0,
-                 0,  0, 1;
-            m = m*x;
-        }
-
-        return m;
+      DCM_Matrix[x][y] += Temporary_Matrix[x][y];
     }
-
-    void Filter::Euler_angles(void)
-    {
-        auto m = getMatrix();
-
-        pitch = -asin(m(2,0));
-        roll = atan2(m(2,1),m(2,2));
-        yaw = atan2(m(1,0),m(0,0));
-    }
-
-    void Filter::Compass_Heading()
-    {
-        double mag_x;
-        double mag_y;
-        double cos_roll;
-        double sin_roll;
-        double cos_pitch;
-        double sin_pitch;
-
-        cos_roll = cos(roll);
-        sin_roll = sin(roll);
-        cos_pitch = cos(pitch);
-        sin_pitch = sin(pitch);
-
-        // Tilt compensated magnetic field X
-        mag_x = magnetom[0] * cos_pitch + magnetom[1] * sin_roll * sin_pitch + magnetom[2] * cos_roll * sin_pitch;
-        // Tilt compensated magnetic field Y
-        mag_y = magnetom[1] * cos_roll - magnetom[2] * sin_roll;
-        // Magnetic Heading
-        magnHeading = atan2(-mag_y, mag_x);
-    }
-
-    Filter::Filter(bool useCompass)
-        : useCompass(useCompass)
-    {
-        tick = 0;
-        yaw = 0;
-        pitch = 0;
-        roll = 0;
-        gyroYaw = 0;
-        invertX = false;
-        invertY = false;
-        invertZ = false;
-        magnHeading = 0;
-        magnAzimuth = 0;
-    }
-
-    void Filter::update()
-    {
-        // Updating gyro Yaw
-        double sign = 1;
-        if (invertX || invertY) {
-            sign = -1;
-        }
-        gyroYaw += sign*gyro[2]*G_Dt;
-        while (gyroYaw > M_PI) gyroYaw -= 2*M_PI;
-        while (gyroYaw < -M_PI) gyroYaw += 2*M_PI;
-
-        // Updating magn azimuth
-        magnAzimuth = atan2(magnetom[2], magnetom[0]);
-
-        if (useCompass) {
-            Compass_Heading();
-        }
-        Matrix_update();
-        Normalize();
-        Drift_correction();
-        Euler_angles();
-    }
-
+  }
 }
+
+Eigen::Matrix3d Filter::getMatrix()
+{
+  Eigen::Matrix3d m;
+  for (int r = 0; r < 3; r++)
+  {
+    for (int c = 0; c < 3; c++)
+    {
+      m(r, c) = DCM_Matrix[r][c];
+    }
+  }
+
+  if (invertX)
+  {
+    Eigen::Matrix3d x;
+    x << 1, 0, 0, 0, -1, 0, 0, 0, -1;
+    m = m * x;
+  }
+  if (invertY)
+  {
+    Eigen::Matrix3d x;
+    x << -1, 0, 0, 0, 1, 0, 0, 0, -1;
+    m = m * x;
+  }
+  if (invertZ)
+  {
+    Eigen::Matrix3d x;
+    x << -1, 0, 0, 0, -1, 0, 0, 0, 1;
+    m = m * x;
+  }
+
+  return m;
+}
+
+void Filter::Euler_angles(void)
+{
+  auto m = getMatrix();
+
+  pitch = -asin(m(2, 0));
+  roll = atan2(m(2, 1), m(2, 2));
+  yaw = atan2(m(1, 0), m(0, 0));
+}
+
+void Filter::Compass_Heading()
+{
+  double mag_x;
+  double mag_y;
+  double cos_roll;
+  double sin_roll;
+  double cos_pitch;
+  double sin_pitch;
+
+  cos_roll = cos(roll);
+  sin_roll = sin(roll);
+  cos_pitch = cos(pitch);
+  sin_pitch = sin(pitch);
+
+  // Tilt compensated magnetic field X
+  mag_x = magnetom[0] * cos_pitch + magnetom[1] * sin_roll * sin_pitch + magnetom[2] * cos_roll * sin_pitch;
+  // Tilt compensated magnetic field Y
+  mag_y = magnetom[1] * cos_roll - magnetom[2] * sin_roll;
+  // Magnetic Heading
+  magnHeading = atan2(-mag_y, mag_x);
+}
+
+Filter::Filter(bool useCompass) : useCompass(useCompass)
+{
+  tick = 0;
+  yaw = 0;
+  pitch = 0;
+  roll = 0;
+  gyroYaw = 0;
+  invertX = false;
+  invertY = false;
+  invertZ = false;
+  magnHeading = 0;
+  magnAzimuth = 0;
+}
+
+void Filter::update()
+{
+  // Updating gyro Yaw
+  double sign = 1;
+  if (invertX || invertY)
+  {
+    sign = -1;
+  }
+  gyroYaw += sign * gyro[2] * G_Dt;
+  while (gyroYaw > M_PI)
+    gyroYaw -= 2 * M_PI;
+  while (gyroYaw < -M_PI)
+    gyroYaw += 2 * M_PI;
+
+  // Updating magn azimuth
+  magnAzimuth = atan2(magnetom[2], magnetom[0]);
+
+  if (useCompass)
+  {
+    Compass_Heading();
+  }
+  Matrix_update();
+  Normalize();
+  Drift_correction();
+  Euler_angles();
+}
+
+}  // namespace AHRS

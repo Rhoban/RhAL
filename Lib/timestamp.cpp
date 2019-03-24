@@ -1,43 +1,43 @@
 #include "timestamp.h"
 
-namespace RhAL {
-
+namespace RhAL
+{
 TimePoint getTimePoint()
 {
-    return std::chrono::steady_clock::now();
+  return std::chrono::steady_clock::now();
 }
 
 TimeDurationMicro::rep duration_us(const TimePoint& p)
 {
-    return getTimeDuration<TimeDurationMicro>(p).count();
+  return getTimeDuration<TimeDurationMicro>(p).count();
 }
 TimeDurationMicro::rep duration_us(const TimePoint& p1, const TimePoint& p2)
 {
-    return getTimeDuration<TimeDurationMicro>(p1, p2).count();
+  return getTimeDuration<TimeDurationMicro>(p1, p2).count();
 }
 TimeDurationMilli::rep duration_ms(const TimePoint& p)
 {
-    return getTimeDuration<TimeDurationMilli>(p).count();
+  return getTimeDuration<TimeDurationMilli>(p).count();
 }
 TimeDurationMilli::rep duration_ms(const TimePoint& p1, const TimePoint& p2)
 {
-    return getTimeDuration<TimeDurationMilli>(p1, p2).count();
+  return getTimeDuration<TimeDurationMilli>(p1, p2).count();
 }
 TimeDurationSec::rep duration_s(const TimePoint& p)
 {
-    return getTimeDuration<TimeDurationSec>(p).count();
+  return getTimeDuration<TimeDurationSec>(p).count();
 }
 TimeDurationSec::rep duration_s(const TimePoint& p1, const TimePoint& p2)
 {
-    return getTimeDuration<TimeDurationSec>(p1, p2).count();
+  return getTimeDuration<TimeDurationSec>(p1, p2).count();
 }
 TimeDurationFloat::rep duration_float(const TimePoint& p)
 {
-    return getTimeDuration<TimeDurationFloat>(p).count();
+  return getTimeDuration<TimeDurationFloat>(p).count();
 }
 TimeDurationFloat::rep duration_float(const TimePoint& p1, const TimePoint& p2)
 {
-    return getTimeDuration<TimeDurationFloat>(p1, p2).count();
+  return getTimeDuration<TimeDurationFloat>(p1, p2).count();
 }
 
 template TimeDurationMilli getTimeDuration<TimeDurationMilli>(const TimePoint&, const TimePoint&);
@@ -67,5 +67,4 @@ template TimeDurationFloat::rep duration_float<TimeDurationMicro>(const TimeDura
 template TimeDurationFloat::rep duration_float<TimeDurationSec>(const TimeDurationSec& d);
 template TimeDurationFloat::rep duration_float<TimeDurationFloat>(const TimeDurationFloat& d);
 
-}
-
+}  // namespace RhAL

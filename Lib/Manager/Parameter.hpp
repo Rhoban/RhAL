@@ -2,8 +2,8 @@
 
 #include <string>
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Parameter
  *
@@ -14,15 +14,15 @@ namespace RhAL {
 template <typename T>
 struct Parameter
 {
-    const std::string name;
-    const T defaultValue;
-    T value;
+  const std::string name;
+  const T defaultValue;
+  T value;
 
-    /**
-     * Initialization with parameter 
-     * name and default value
-     */
-    Parameter(const std::string& name, const T& value);
+  /**
+   * Initialization with parameter
+   * name and default value
+   */
+  Parameter(const std::string& name, const T& value);
 };
 
 /**
@@ -32,5 +32,4 @@ typedef Parameter<bool> ParameterBool;
 typedef Parameter<double> ParameterNumber;
 typedef Parameter<std::string> ParameterStr;
 
-}
-
+}  // namespace RhAL

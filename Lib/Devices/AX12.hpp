@@ -8,8 +8,8 @@
 #include "Manager/Parameter.hpp"
 #include "Devices/RX.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * AX12
  *
@@ -18,12 +18,11 @@ namespace RhAL {
  */
 class AX12 : public RX
 {
-    public:
-
-        /**
-         * Initialization with name and id
-         */
-        AX12(const std::string& name, id_t id);
+public:
+  /**
+   * Initialization with name and id
+   */
+  AX12(const std::string& name, id_t id);
 };
 
 /**
@@ -32,18 +31,16 @@ class AX12 : public RX
 template <>
 class ImplManager<AX12> : public TypedManager<AX12>
 {
-    public:
+public:
+  inline static type_t typeNumber()
+  {
+    return 0x000C;
+  }
 
-        inline static type_t typeNumber()
-        {
-            return 0x000C;
-        }
-
-        inline static std::string typeName()
-        {
-            return "AX12";
-        }
+  inline static std::string typeName()
+  {
+    return "AX12";
+  }
 };
 
-}
-
+}  // namespace RhAL

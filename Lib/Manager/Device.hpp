@@ -9,9 +9,9 @@
 #include "RegistersList.hpp"
 #include "Protocol/Protocol.hpp"
 
-namespace RhAL {
-
-//Forward declaration
+namespace RhAL
+{
+// Forward declaration
 class CallManager;
 
 /**
@@ -27,218 +27,214 @@ class CallManager;
  */
 class Device
 {
-    public:
+public:
+  /**
+   * Initialization with
+   * device name and id
+   */
+  Device(const std::string& name, id_t id);
 
-        /**
-         * Initialization with 
-         * device name and id
-         */
-        Device(const std::string& name, id_t id);
+  /**
+   * Virtual destructor
+   */
+  virtual ~Device();
 
-        /**
-         * Virtual destructor
-         */
-        virtual ~Device();
+  /**
+   * Copy constructor and
+   * assignement are forbidden
+   */
+  Device(const Device&) = delete;
+  Device& operator=(const Device&) = delete;
 
-        /**
-         * Copy constructor and 
-         * assignement are forbidden
-         */
-        Device(const Device&) = delete;
-        Device& operator=(const Device&) = delete;
+  /**
+   * Set the Manager pointer
+   */
+  void setManager(CallManager* manager);
 
-        /**
-         * Set the Manager pointer
-         */
-        void setManager(CallManager* manager);
+  /**
+   * Run derived class registers and
+   * parameters initialization
+   */
+  void init();
 
-        /**
-         * Run derived class registers and
-         * parameters initialization
-         */
-        void init();
+  /**
+   * Return the device name
+   */
+  const std::string& name() const;
 
-        /**
-         * Return the device name
-         */
-        const std::string& name() const;
+  /**
+   * Return the device id
+   */
+  id_t id() const;
 
-        /**
-         * Return the device id
-         */
-        id_t id() const;
+  /**
+   * Trigger specific implementation
+   * to enforce specific Device configuration
+   */
+  virtual inline void setConfig()
+  {
+    // Empty default
+  }
 
-        /**
-         * Trigger specific implementation 
-         * to enforce specific Device configuration
-         */
-        virtual inline void setConfig()
-        {
-            //Empty default
-        }
+  /**
+   * Return true if the device has
+   * been see and is supposed
+   * enabled currently on the bus
+   */
+  bool isPresent() const;
 
-        /**
-         * Return true if the device has 
-         * been see and is supposed 
-         * enabled currently on the bus
-         */
-        bool isPresent() const;
+  /**
+   * If true, the last read operations
+   * with the Device set at least one
+   * warning flags (overload, overheat,
+   * badvoltage, alert).
+   */
+  bool isWarning() const;
 
-        /**
-         * If true, the last read operations
-         * with the Device set at least one 
-         * warning flags (overload, overheat,
-         * badvoltage, alert).
-         */
-        bool isWarning() const;
+  /**
+   * Return last warning flags (0 if no warning)
+   */
+  ResponseState lastFlags() const;
 
-        /**
-         * Return last warning flags (0 if no warning)
-         */
-        ResponseState lastFlags() const;
+  /**
+   * If true, the last read operation
+   * with the Device set at leat one
+   * non quiet error flags
+   */
+  bool isError() const;
 
-        /**
-         * If true, the last read operation
-         * with the Device set at leat one
-         * non quiet error flags
-         */
-        bool isError() const;
-        
-        /**
-         * Read the dontRead parameter
-         */
-        bool dontRead();
+  /**
+   * Read the dontRead parameter
+   */
+  bool dontRead();
 
-        /**
-         * Return the number of 
-         * warnings, errors ans missing 
-         * responses
-         */
-        unsigned long countWarnings() const;
-        unsigned long countErrors() const;
-        unsigned long countMissings() const;
+  /**
+   * Return the number of
+   * warnings, errors ans missing
+   * responses
+   */
+  unsigned long countWarnings() const;
+  unsigned long countErrors() const;
+  unsigned long countMissings() const;
 
-        /**
-         * Read/Write access to Registers and
-         * Parameters list
-         */
-        const RegistersList& registersList() const;
-        RegistersList& registersList();
-        const ParametersList& parametersList() const;
-        ParametersList& parametersList();
-        
-    protected:
+  /**
+   * Read/Write access to Registers and
+   * Parameters list
+   */
+  const RegistersList& registersList() const;
+  RegistersList& registersList();
+  const ParametersList& parametersList() const;
+  ParametersList& parametersList();
 
-        /**
-         * Mutex protecting Device state access
-         */
-        mutable std::mutex _mutex;
+protected:
+  /**
+   * Mutex protecting Device state access
+   */
+  mutable std::mutex _mutex;
 
-        /**
-         * Set Device isPresent and warning/error status.
-         * (Used for friend Manager access)
-         */
-        void setPresent(bool isPresent);
-        void setWarning(bool isWarning);
-        void setError(bool isError);
-        
-        /**
-         * And set last warning and error flags.
-         */
-        void setFlags(ResponseState state);
+  /**
+   * Set Device isPresent and warning/error status.
+   * (Used for friend Manager access)
+   */
+  void setPresent(bool isPresent);
+  void setWarning(bool isWarning);
+  void setError(bool isError);
 
-        /**
-         * Call during device initialization.
-         * Registers and Parameters are supposed
-         * to be declared here
-         */
-        virtual void onInit() = 0;
+  /**
+   * And set last warning and error flags.
+   */
+  void setFlags(ResponseState state);
 
-        /**
-         * Callback to be override
-         * called at the begin of each
-         * flush() after swapRead()
-         */
-        virtual void onSwap()
-        {
-            //Empty default
-        }
+  /**
+   * Call during device initialization.
+   * Registers and Parameters are supposed
+   * to be declared here
+   */
+  virtual void onInit() = 0;
 
-        /**
-         * Manager have access to listed 
-         * Parameters and Registers
-         */
-        friend class BaseManager;
+  /**
+   * Callback to be override
+   * called at the begin of each
+   * flush() after swapRead()
+   */
+  virtual void onSwap()
+  {
+    // Empty default
+  }
 
-    private:
-        
-        /**
-         * Register pointers container
-         */
-        RegistersList _registersList;
+  /**
+   * Manager have access to listed
+   * Parameters and Registers
+   */
+  friend class BaseManager;
 
-        /**
-         * Container of bool, number and 
-         * string device parameters
-         */
-        ParametersList _parametersList;
-        
-        /**
-         * Device unique name
-         */
-        const std::string _name;
+private:
+  /**
+   * Register pointers container
+   */
+  RegistersList _registersList;
 
-        /**
-         * Device unique id on the bus
-         */
-        const id_t _id;
+  /**
+   * Container of bool, number and
+   * string device parameters
+   */
+  ParametersList _parametersList;
 
-        /**
-         * Pointer to the base class Manager
-         * that will be provided to RegistersList
-         */
-        CallManager* _manager;
+  /**
+   * Device unique name
+   */
+  const std::string _name;
 
-        /**
-         * If true, the device has been see
-         * and is supposed enabled currently
-         * on the bus.
-         */
-        bool _isPresent;
+  /**
+   * Device unique id on the bus
+   */
+  const id_t _id;
 
-        /**
-         * If true, the last read operations
-         * with the Device set at least one 
-         * warning flags (overload, overheat,
-         * badvoltage, alert).
-         */
-        bool _isWarning;
+  /**
+   * Pointer to the base class Manager
+   * that will be provided to RegistersList
+   */
+  CallManager* _manager;
 
-        /**
-         * Last received warning and errors flags
-         */
-        ResponseState _lastFlags;
+  /**
+   * If true, the device has been see
+   * and is supposed enabled currently
+   * on the bus.
+   */
+  bool _isPresent;
 
-        /**
-         * If true, the last read operation
-         * with the Device set at leat one
-         * non quiet error flags.
-         */
-        bool _isError;
+  /**
+   * If true, the last read operations
+   * with the Device set at least one
+   * warning flags (overload, overheat,
+   * badvoltage, alert).
+   */
+  bool _isWarning;
 
-        /**
-         * Count the number of warnings, errors
-         * and quiet response
-         */
-        unsigned long _countWarnings;
-        unsigned long _countErrors;
-        unsigned long _countMissings;
+  /**
+   * Last received warning and errors flags
+   */
+  ResponseState _lastFlags;
 
-        /**
-         * Parameter to avoid reading from this device
-         */
-        ParameterBool _dontRead;
+  /**
+   * If true, the last read operation
+   * with the Device set at leat one
+   * non quiet error flags.
+   */
+  bool _isError;
+
+  /**
+   * Count the number of warnings, errors
+   * and quiet response
+   */
+  unsigned long _countWarnings;
+  unsigned long _countErrors;
+  unsigned long _countMissings;
+
+  /**
+   * Parameter to avoid reading from this device
+   */
+  ParameterBool _dontRead;
 };
 
-}
-
+}  // namespace RhAL

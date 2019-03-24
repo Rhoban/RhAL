@@ -7,8 +7,8 @@
 #include "Manager/Register.hpp"
 #include "Manager/Parameter.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Convertion functions
  */
@@ -22,89 +22,84 @@ float convOut1(const RhAL::data_t* buffer);
  */
 class BaseExampleDevice1 : public Device
 {
-    public:
+public:
+  /**
+   * Initialization
+   */
+  BaseExampleDevice1(const std::string& name, id_t id);
 
-        /**
-         * Initialization
-         */
-        BaseExampleDevice1(const std::string& name, id_t id);
+  /**
+   * Register access
+   */
+  TypedRegisterFloat& voltage();
 
-        /**
-         * Register access
-         */
-        TypedRegisterFloat& voltage();
+protected:
+  /**
+   * Registers
+   */
+  TypedRegisterFloat _voltage;
 
-    protected:
-
-        /**
-         * Registers
-         */
-        TypedRegisterFloat _voltage;
-
-        /**
-         * Test Inherit
-         */
-        virtual void onSwap() override;
+  /**
+   * Test Inherit
+   */
+  virtual void onSwap() override;
 };
 
 /**
  * ExampleDevice1
  *
- * Simple example device 
+ * Simple example device
  * type implemetation
  */
 class ExampleDevice1 : public BaseExampleDevice1
 {
-    public:
+public:
+  /**
+   * Initialization with name and id
+   */
+  ExampleDevice1(const std::string& name, id_t id);
 
-        /**
-         * Initialization with name and id
-         */
-        ExampleDevice1(const std::string& name, id_t id);
+  /**
+   * Register access
+   */
+  TypedRegisterFloat& goal();
+  TypedRegisterFloat& position();
+  TypedRegisterFloat& temperature();
 
-        /**
-         * Register access
-         */
-        TypedRegisterFloat& goal();
-        TypedRegisterFloat& position();
-        TypedRegisterFloat& temperature();
+  /**
+   * Parameters getter/setter
+   * (thread safe)
+   */
+  float getInverted() const;
+  void setInverted(float val);
+  float getZero() const;
+  void setZero(float val);
 
-        /**
-         * Parameters getter/setter
-         * (thread safe)
-         */
-        float getInverted() const;
-        void setInverted(float val);
-        float getZero() const;
-        void setZero(float val);
+protected:
+  /**
+   * Inherit.
+   * Declare Registers and parameters
+   */
+  virtual void onInit() override;
 
-    protected:
+private:
+  /**
+   * Registers
+   */
+  TypedRegisterFloat _goal;
+  TypedRegisterFloat _position;
+  TypedRegisterFloat _temperature;
 
-        /**
-         * Inherit.
-         * Declare Registers and parameters
-         */
-        virtual void onInit() override;
-        
-    private:
+  /**
+   * Parameters
+   */
+  ParameterBool _inverted;
+  ParameterNumber _zero;
 
-        /**
-         * Registers
-         */
-        TypedRegisterFloat _goal;
-        TypedRegisterFloat _position;
-        TypedRegisterFloat _temperature;
-
-        /**
-         * Parameters
-         */
-        ParameterBool _inverted;
-        ParameterNumber _zero;
-
-        /**
-         * Mutex protecting parameters access
-         */
-        mutable std::mutex _mutex;
+  /**
+   * Mutex protecting parameters access
+   */
+  mutable std::mutex _mutex;
 };
 
 /**
@@ -113,18 +108,16 @@ class ExampleDevice1 : public BaseExampleDevice1
 template <>
 class ImplManager<ExampleDevice1> : public TypedManager<ExampleDevice1>
 {
-    public:
+public:
+  inline static type_t typeNumber()
+  {
+    return 1;
+  }
 
-        inline static type_t typeNumber() 
-        {
-            return 1;
-        }
-
-        inline static std::string typeName()
-        {
-            return "ExampleDevice1";
-        }
+  inline static std::string typeName()
+  {
+    return "ExampleDevice1";
+  }
 };
 
-}
-
+}  // namespace RhAL

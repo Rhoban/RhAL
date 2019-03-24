@@ -8,8 +8,8 @@
 #include "Manager/Parameter.hpp"
 #include "Devices/RX.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * RX64
  *
@@ -18,12 +18,11 @@ namespace RhAL {
  */
 class RX64 : public RX
 {
-    public:
-
-        /**
-         * Initialization with name and id
-         */
-        RX64(const std::string& name, id_t id);
+public:
+  /**
+   * Initialization with name and id
+   */
+  RX64(const std::string& name, id_t id);
 };
 
 /**
@@ -32,18 +31,16 @@ class RX64 : public RX
 template <>
 class ImplManager<RX64> : public TypedManager<RX64>
 {
-    public:
+public:
+  inline static type_t typeNumber()
+  {
+    return 0x0040;
+  }
 
-        inline static type_t typeNumber()
-        {
-            return 0x0040;
-        }
-
-        inline static std::string typeName()
-        {
-            return "RX64";
-        }
+  inline static std::string typeName()
+  {
+    return "RX64";
+  }
 };
 
-}
-
+}  // namespace RhAL

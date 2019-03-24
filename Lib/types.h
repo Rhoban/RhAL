@@ -2,8 +2,8 @@
 
 #include <chrono>
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Device unique id
  */
@@ -76,21 +76,19 @@ typedef std::chrono::duration<double, std::ratio<1>> TimeDurationFloat;
  * a timestamp and an error flag
  */
 template <typename T>
-struct ReadValue {
-    //Last valid read
-    const TimePoint timestamp;
-    //Current read value
-    const T value;
-    //Is last read operation has failed
-    const bool isError;
+struct ReadValue
+{
+  // Last valid read
+  const TimePoint timestamp;
+  // Current read value
+  const T value;
+  // Is last read operation has failed
+  const bool isError;
 
-    //Simple initialization constructor
-    ReadValue(const TimePoint& time, const T& val, bool flag) :
-        timestamp(time),
-        value(val),
-        isError(flag)
-    {
-    }
+  // Simple initialization constructor
+  ReadValue(const TimePoint& time, const T& val, bool flag) : timestamp(time), value(val), isError(flag)
+  {
+  }
 };
 
 /**
@@ -100,5 +98,4 @@ typedef ReadValue<bool> ReadValueBool;
 typedef ReadValue<int> ReadValueInt;
 typedef ReadValue<float> ReadValueFloat;
 
-}
-
+}  // namespace RhAL

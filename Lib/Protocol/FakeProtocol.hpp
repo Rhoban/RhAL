@@ -3,8 +3,8 @@
 #include "Protocol.hpp"
 #include "Manager/Parameter.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * FakeProtocol
  *
@@ -12,40 +12,30 @@ namespace RhAL {
  */
 class FakeProtocol : public Protocol
 {
-    public:
+public:
+  FakeProtocol(Bus& bus);
 
-        FakeProtocol(Bus& bus);
+  /**
+   * Inherit from Protocol
+   */
+  void writeData(id_t id, addr_t address, const uint8_t* data, size_t size);
+  ResponseState writeAndCheckData(id_t id, addr_t address, const uint8_t* data, size_t size);
+  ResponseState readData(id_t id, addr_t address, uint8_t* data, size_t size);
+  bool ping(id_t id);
+  std::vector<ResponseState> syncRead(const std::vector<id_t>& ids, addr_t address, const std::vector<uint8_t*>& datas,
+                                      size_t size);
+  void syncWrite(const std::vector<id_t>& ids, addr_t address, const std::vector<const uint8_t*>& datas, size_t size);
+  std::vector<ResponseState> syncWriteAndCheck(const std::vector<id_t>& ids, addr_t address,
+                                               const std::vector<const uint8_t*>& datas, size_t size);
+  virtual void emergencyStop() override;
+  virtual void exitEmergencyState() override;
 
-        /**
-         * Inherit from Protocol
-         */
-        void writeData(id_t id, addr_t address,
-                       const uint8_t *data, size_t size);
-        ResponseState writeAndCheckData(id_t id, addr_t address,
-	               const uint8_t *data, size_t size);
-        ResponseState readData(id_t id, addr_t address,
-                    uint8_t *data, size_t size);
-        bool ping(id_t id);
-        std::vector<ResponseState> syncRead(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<uint8_t*>& datas, size_t size);
-        void syncWrite(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<const uint8_t*>& datas, size_t size);
-        std::vector<ResponseState> syncWriteAndCheck(
-                const std::vector<id_t>& ids, addr_t address,
-                const std::vector<const uint8_t*>& datas, size_t size);
-        virtual void emergencyStop() override;
-        virtual void exitEmergencyState() override;
-
-    private:
-
-        /**
-         * Parameters
-         * verbose: enable FakeProtocol display message
-         */
-        ParameterBool _verbose;
+private:
+  /**
+   * Parameters
+   * verbose: enable FakeProtocol display message
+   */
+  ParameterBool _verbose;
 };
 
-}
-
+}  // namespace RhAL

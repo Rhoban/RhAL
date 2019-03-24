@@ -39,23 +39,10 @@
  * Define classic Manager typedef
  * with all implemented Devices
  */
-namespace RhAL {
-
-#define RHAL_STANDARD_MANAGER_TYPES \
-    AX12,                           \
-    AX18,                           \
-    RX24,                           \
-    RX28,                           \
-    RX64,                           \
-    MX12,                           \
-    MX28,                           \
-    Dynaban64,                      \
-    MX106,                          \
-    IMU,                            \
-    PressureSensor4,                \
-    PressureSensor8,                \
-    Pins,                           \
-    GY85
+namespace RhAL
+{
+#define RHAL_STANDARD_MANAGER_TYPES                                                                                    \
+  AX12, AX18, RX24, RX28, RX64, MX12, MX28, Dynaban64, MX106, IMU, PressureSensor4, PressureSensor8, Pins, GY85
 
 /**
  * StandardManager typedef
@@ -67,5 +54,4 @@ typedef Manager<RHAL_STANDARD_MANAGER_TYPES> StandardManager;
  */
 extern template class Manager<RHAL_STANDARD_MANAGER_TYPES>;
 
-}
-
+}  // namespace RhAL

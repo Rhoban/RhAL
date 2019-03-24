@@ -4,8 +4,8 @@
 #include "Bus/Bus.hpp"
 #include "Protocol/Protocol.hpp"
 
-namespace RhAL {
-
+namespace RhAL
+{
 /**
  * Allocate and return a derived
  * Protocol instance from given textual
@@ -14,9 +14,6 @@ namespace RhAL {
  * does not match any implementation.
  * Returned instance have to be deallocated.
  */
-Protocol* ProtocolFactory(
-    const std::string& name,
-    Bus& bus);
+Protocol* ProtocolFactory(const std::string& name, Bus& bus);
 
-}
-
+}  // namespace RhAL
