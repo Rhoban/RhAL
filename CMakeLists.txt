@@ -35,9 +35,9 @@ option(BUILD_RHAL_TESTS "Build RhAL Tests" OFF)
 option(BUILD_RHAL_EXAMPLES "Build RhAL Examples" OFF)
 option(BUILD_RHAL_BINARY "Build RhAL Utility Binary" OFF)
 
-# Enable C++11
+# Enable C++17
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -std=c++11")
+    "${CMAKE_CXX_FLAGS} -std=c++17")
 # Enable compiler Warning
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -W -Wall")
