@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <fenv.h>
 #include "RhAL.hpp"
+#include <RhIO.hpp>
 
 int main(int argc, char** argv)
 {
@@ -58,6 +59,13 @@ int main(int argc, char** argv)
   // Running the binding
   std::cout << "Starting RhIO binding" << std::endl;
   RhAL::RhIOBinding binding(manager);
+
+  if (!RhIO::started())
+  {
+    std::cout << "Starting RhIO server" << std::endl;
+    RhIO::start(RhIO::ServersPortBase);
+  }
+
   while (true)
   {
     sleep(1);
