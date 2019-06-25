@@ -6,6 +6,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
+find_package(OpenCV 3.2.0 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   RhIOServer
   jsoncpp
@@ -149,6 +151,6 @@ endif (BUILD_RHAL_EXAMPLES)
 # Build the utility binary
 if (BUILD_RHAL_BINARY)
     add_executable(rhal ${BIN_SOURCES_DIRECTORY}/rhal.cpp)
-    target_link_libraries(rhal RhAL ${LIBRARIES})
+    target_link_libraries(rhal RhAL ${LIBRARIES} ${OpenCV_LIBS})
 endif (BUILD_RHAL_BINARY)
 
