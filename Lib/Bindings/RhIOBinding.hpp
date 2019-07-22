@@ -66,7 +66,14 @@ public:
   std::string cmdChangeId(std::vector<std::string> argv);
   std::string cmdTare(std::vector<std::string> argv);
   std::string cmdGyroTare(std::vector<std::string> argv);
+  /**
+   * Init motors smoothly toward a 0 value
+   */
   std::string cmdInit(std::vector<std::string> argv);
+  /**
+   * Init motors and give them as goal their current position
+   */
+  std::string cmdInitFrozen(std::vector<std::string> argv);
 
 private:
   /**

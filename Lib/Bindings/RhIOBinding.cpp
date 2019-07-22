@@ -44,6 +44,8 @@ RhIOBinding::RhIOBinding(BaseManager& manager, const std::string& nodeName, bool
                     std::bind(&RhIOBinding::cmdEmergencyExit, this, std::placeholders::_1));
   _node->newCommand("rhalInit", "Enable all servos in zero position",
                     std::bind(&RhIOBinding::cmdInit, this, std::placeholders::_1));
+  _node->newCommand("rhalInitFrozen", "Enable all servos in current position",
+                    std::bind(&RhIOBinding::cmdInitFrozen, this, std::placeholders::_1));
   _node->newCommand("rhalChangeId", "Chaneg the Device id of given id to given id",
                     std::bind(&RhIOBinding::cmdChangeId, this, std::placeholders::_1));
   _node->newCommand("rhalTare", "Tare all pressure devices",
@@ -581,6 +583,24 @@ std::string RhIOBinding::cmdInit(std::vector<std::string> argv)
   _manager->exitEmergencyState();
 
   return "Init all servos";
+}
+
+std::string RhIOBinding::cmdInitFrozen(std::vector<std::string> argv)
+{
+  (void)argv;
+  const auto& allDevices = _manager->devContainer();
+  // Iterate over all DXL Devices
+  for (const auto& dev : allDevices)
+  {
+    DXL* pt = dynamic_cast<DXL*>(dev.second);
+    if (pt != nullptr)
+    {
+      pt->goalPosition().writeValue(pt->position().readValue().value);
+    }
+  }
+  _manager->exitEmergencyState();
+
+  return "Init all servos in frozen mode";
 }
 
 std::string RhIOBinding::cmdChangeId(std::vector<std::string> argv)
