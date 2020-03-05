@@ -7,6 +7,7 @@
 #include "Manager/Device.hpp"
 #include "Devices/DXL.hpp"
 #include "Devices/GY85.hpp"
+#include "Devices/BNO055.hpp"
 #include "Devices/PressureSensor.hpp"
 
 namespace RhAL
@@ -263,6 +264,21 @@ void RhIOBinding::specificUpdate(RhIO::IONode* deviceNode, RhAL::Device* device)
       update();
       gy85->setCallback(update);
     }
+  }
+  // BNO055
+  if (RhAL::BNO055* bno055 = dynamic_cast<RhAL::BNO055*>(device))
+  {
+    deviceNode->newFloat("yaw");
+    deviceNode->newFloat("pitch");
+    deviceNode->newFloat("roll");
+
+    std::function<void()> update = [deviceNode, bno055] {
+      deviceNode->setFloat("yaw", Rad2Deg(bno055->getYaw()));
+      deviceNode->setFloat("pitch", Rad2Deg(bno055->getPitch()));
+      deviceNode->setFloat("roll", Rad2Deg(bno055->getRoll()));
+    };
+    update();
+    bno055->setCallback(update);
   }
   // Pressure sensors
   if (RhAL::PressureSensorBase* ps = dynamic_cast<RhAL::PressureSensorBase*>(device))

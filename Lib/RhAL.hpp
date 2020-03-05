@@ -32,6 +32,7 @@
 #include "Devices/AX12.hpp"
 #include "Devices/IMU.hpp"
 #include "Devices/GY85.hpp"
+#include "Devices/BNO055.hpp"
 #include "Devices/PressureSensor.hpp"
 #include "Devices/Pins.hpp"
 
@@ -42,7 +43,7 @@
 namespace RhAL
 {
 #define RHAL_STANDARD_MANAGER_TYPES                                                                                    \
-  AX12, AX18, RX24, RX28, RX64, MX12, MX28, Dynaban64, MX106, IMU, PressureSensor4, PressureSensor8, Pins, GY85
+  AX12, AX18, RX24, RX28, RX64, MX12, MX28, Dynaban64, MX106, IMU, PressureSensor4, PressureSensor8, Pins, GY85, BNO055
 
 /**
  * StandardManager typedef

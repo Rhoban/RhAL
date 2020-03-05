@@ -86,6 +86,7 @@ set(LIB_SOURCES
     Devices/MX64.cpp
     Devices/MX106.cpp
     Devices/GY85.cpp
+    Devices/BNO055.cpp
     Devices/AHRS/Filter.cpp
     Bindings/RhIOBinding.cpp
 )
