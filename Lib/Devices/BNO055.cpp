@@ -19,10 +19,18 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   quatX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatX", 0x26, 2, quaternionDecode, 1));
   quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x28, 2, quaternionDecode, 1));
   quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x2a, 2, quaternionDecode, 1));
+  gyroCalibrated = std::shared_ptr<TypedRegisterBool>(
+      new TypedRegisterBool("gyroCalibrated", 0x2c, 1, convEncode_Bool, convDecode_Bool, 1));
 
-  _invertOrientation = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientation", false));
-  _invertOrientationX = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientationX", false));
-  _invertOrientationY = std::shared_ptr<ParameterBool>(new ParameterBool("invertOrientationY", false));
+  robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
+  robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
+  robotToImuX_z = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_z", 0.0));
+  robotToImuY_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuY_x", 0.0));
+  robotToImuY_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuY_y", 1.0));
+  robotToImuY_z = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuY_z", 0.0));
+  robotToImuZ_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuZ_x", 0.0));
+  robotToImuZ_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuZ_y", 0.0));
+  robotToImuZ_z = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuZ_z", 1.0));
 }
 
 void BNO055::onInit()
@@ -31,10 +39,17 @@ void BNO055::onInit()
   Device::registersList().add(quatX.get());
   Device::registersList().add(quatY.get());
   Device::registersList().add(quatZ.get());
+  Device::registersList().add(gyroCalibrated.get());
 
-  Device::parametersList().add(_invertOrientation.get());
-  Device::parametersList().add(_invertOrientationX.get());
-  Device::parametersList().add(_invertOrientationY.get());
+  Device::parametersList().add(robotToImuX_x.get());
+  Device::parametersList().add(robotToImuX_y.get());
+  Device::parametersList().add(robotToImuX_z.get());
+  Device::parametersList().add(robotToImuY_x.get());
+  Device::parametersList().add(robotToImuY_y.get());
+  Device::parametersList().add(robotToImuY_z.get());
+  Device::parametersList().add(robotToImuZ_x.get());
+  Device::parametersList().add(robotToImuZ_y.get());
+  Device::parametersList().add(robotToImuZ_z.get());
 }
 
 // Filters
@@ -79,6 +94,12 @@ void BNO055::onSwap()
 
   // We obtain roll, pitch and yaw
   Eigen::Matrix3d rotation = quaternions.toRotationMatrix();
+
+  // Robot to IMU matrix
+  Eigen::Matrix3d robotToImu;
+  robotToImu << robotToImuX_x->value, robotToImuY_x->value, robotToImuZ_x->value, robotToImuX_y->value,
+      robotToImuY_y->value, robotToImuZ_y->value, robotToImuX_z->value, robotToImuY_z->value, robotToImuZ_z->value;
+  rotation = rotation * robotToImu;
 
   pitch = -asin(rotation(2, 0));
   roll = atan2(rotation(2, 1), rotation(2, 2));

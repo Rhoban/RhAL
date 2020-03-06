@@ -52,9 +52,15 @@ protected:
   double yaw, pitch, roll;
 
   // Invert the orientation of the robot (if the IMU X axis is backward)
-  std::shared_ptr<ParameterBool> _invertOrientation;
-  std::shared_ptr<ParameterBool> _invertOrientationX;
-  std::shared_ptr<ParameterBool> _invertOrientationY;
+  std::shared_ptr<ParameterNumber> robotToImuX_x;
+  std::shared_ptr<ParameterNumber> robotToImuX_y;
+  std::shared_ptr<ParameterNumber> robotToImuX_z;
+  std::shared_ptr<ParameterNumber> robotToImuY_x;
+  std::shared_ptr<ParameterNumber> robotToImuY_y;
+  std::shared_ptr<ParameterNumber> robotToImuY_z;
+  std::shared_ptr<ParameterNumber> robotToImuZ_x;
+  std::shared_ptr<ParameterNumber> robotToImuZ_y;
+  std::shared_ptr<ParameterNumber> robotToImuZ_z;
 
   // the read timestamp (of the most recent)
   TimePoint timestamp;
@@ -69,6 +75,7 @@ protected:
   std::shared_ptr<TypedRegisterFloat> quatX;
   std::shared_ptr<TypedRegisterFloat> quatY;
   std::shared_ptr<TypedRegisterFloat> quatZ;
+  std::shared_ptr<TypedRegisterBool> gyroCalibrated;
 
   /**
    * Inherit.
