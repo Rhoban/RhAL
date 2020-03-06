@@ -19,8 +19,8 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   quatX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatX", 0x26, 2, quaternionDecode, 1));
   quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x28, 2, quaternionDecode, 1));
   quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x2a, 2, quaternionDecode, 1));
-  gyroCalibrated = std::shared_ptr<TypedRegisterBool>(
-      new TypedRegisterBool("gyroCalibrated", 0x2c, 1, convEncode_Bool, convDecode_Bool, 1));
+  gyroCalibrated =
+      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("gyroCalibrated", 0x2c, 1, convDecode_Bool, 1));
 
   robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
   robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
@@ -85,29 +85,37 @@ void BNO055::onSwap()
 {
   _mutex.lock();
 
-  double qW = quatW.get()->readValue().value;
-  double qX = quatX.get()->readValue().value;
-  double qY = quatY.get()->readValue().value;
-  double qZ = quatZ.get()->readValue().value;
+  if (!quatW.get()->readValue().isError && !quatX.get()->readValue().isError && !quatY.get()->readValue().isError &&
+      !quatZ.get()->readValue().isError)
+  {
+    double qW = quatW.get()->readValue().value;
+    double qX = quatX.get()->readValue().value;
+    double qY = quatY.get()->readValue().value;
+    double qZ = quatZ.get()->readValue().value;
 
-  Eigen::Quaterniond quaternions(qW, qX, qY, qZ);
+    Eigen::Quaterniond quaternions(qW, qX, qY, qZ);
 
-  // We obtain roll, pitch and yaw
-  Eigen::Matrix3d rotation = quaternions.toRotationMatrix();
+    // We obtain roll, pitch and yaw
+    Eigen::Matrix3d rotation = quaternions.toRotationMatrix();
 
-  // Robot to IMU matrix
-  Eigen::Matrix3d robotToImu;
-  robotToImu << robotToImuX_x->value, robotToImuY_x->value, robotToImuZ_x->value, robotToImuX_y->value,
-      robotToImuY_y->value, robotToImuZ_y->value, robotToImuX_z->value, robotToImuY_z->value, robotToImuZ_z->value;
-  rotation = rotation * robotToImu;
+    // Robot to IMU matrix
+    Eigen::Matrix3d robotToImu;
+    robotToImu << robotToImuX_x->value, robotToImuY_x->value, robotToImuZ_x->value, robotToImuX_y->value,
+        robotToImuY_y->value, robotToImuZ_y->value, robotToImuX_z->value, robotToImuY_z->value, robotToImuZ_z->value;
+    rotation = rotation * robotToImu;
 
-  pitch = -asin(rotation(2, 0));
-  roll = atan2(rotation(2, 1), rotation(2, 2));
-  yaw = atan2(rotation(1, 0), rotation(0, 0));
+    // Sanity check for asin() call
+    if (rotation(2, 0) >= -1 && rotation(2, 0) <= 1)
+    {
+      pitch = -asin(rotation(2, 0));
+      roll = atan2(rotation(2, 1), rotation(2, 2));
+      yaw = atan2(rotation(1, 0), rotation(0, 0));
+    }
 
-  // Note, IMU to world without yaw can be computed as follow:
-  // Eigen::Matrix3d imuToWorld = Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()).toRotationMatrix() *
-  //                       Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()).toRotationMatrix();
+    // Note, IMU to world without yaw can be computed as follow:
+    // Eigen::Matrix3d imuToWorld = Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()).toRotationMatrix() *
+    //                       Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()).toRotationMatrix();
+  }
 
   _mutex.unlock();
 
