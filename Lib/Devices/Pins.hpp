@@ -46,6 +46,7 @@ protected:
    */
   // The following comments specify the register size and address in the hardware.
   TypedRegisterInt _pins;  // 1 0x24
+  TypedRegisterFloat _voltage;
 
   /**
    * Inherit.

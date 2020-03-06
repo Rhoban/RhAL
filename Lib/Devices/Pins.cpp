@@ -2,12 +2,18 @@
 
 namespace RhAL
 {
+static float voltageDecode(const data_t* data)
+{
+  return ((float)convDecode_2Bytes(data)) / 1000.0;
+}
+
 Pins::Pins(const std::string& name, id_t id)
   : Device(name, id)
   ,
   // Read only registers
   //(name, address, size, decodeFunction, updateFreq, forceRead=false, forceWrite=false, isSlow=false)
-  _pins("pins", 0x24, 1, convDecode_1Byte, 10)
+  _pins("pins", 0x24, 2, convDecode_2Bytes, 10)
+  , _voltage("voltage", 0x26, 2, voltageDecode, 10)
 {
 }
 
@@ -41,6 +47,7 @@ void Pins::getPins(bool pins[7])
 void Pins::onInit()
 {
   Device::registersList().add(&_pins);
+  Device::registersList().add(&_voltage);
 }
 
 }  // namespace RhAL
