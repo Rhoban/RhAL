@@ -54,7 +54,9 @@ int main(int argc, char** argv)
 
   // Start Manager
   std::cout << "Starting Manager Thread" << std::endl;
+  manager.setScheduleMode(true);
   manager.startManagerThread();
+  manager.enableCooperativeThread();
 
   // Running the binding
   std::cout << "Starting RhIO binding" << std::endl;
@@ -68,7 +70,10 @@ int main(int argc, char** argv)
 
   while (true)
   {
-    sleep(1);
+    manager.waitNextFlush();
+
+    // We limit the throughtput to 200hz
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
   return 0;
