@@ -71,9 +71,6 @@ int main(int argc, char** argv)
   while (true)
   {
     manager.waitNextFlush();
-
-    // We limit the throughtput to 200hz
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
   return 0;
