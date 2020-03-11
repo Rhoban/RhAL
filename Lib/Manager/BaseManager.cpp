@@ -1,3 +1,4 @@
+#include <chrono>
 #include "BaseManager.hpp"
 
 namespace RhAL
@@ -664,6 +665,10 @@ void BaseManager::forceRegisterRead(id_t id, const std::string& name)
   reg->readyForRead();
   // Read single register
   unsigned int nbFails = 0;
+
+  // Retrieve the read timestamp
+  TimePoint timestamp;
+
   while (true)
   {
     TimePoint pStart = getTimePoint();
@@ -680,6 +685,8 @@ void BaseManager::forceRegisterRead(id_t id, const std::string& name)
     // Check response
     if (checkResponseState(state, _devicesById.at(id)))
     {
+      // Timestamp is the average between pStart and pStop
+      timestamp = averageTimePoints(pStart, pStop);
       // Valid case
       break;
     }
@@ -704,8 +711,6 @@ void BaseManager::forceRegisterRead(id_t id, const std::string& name)
       }
     }
   }
-  // Retrieve the read timestamp
-  TimePoint timestamp = getTimePoint();
   // Set swapping flags and set timestamp
   reg->finishRead(timestamp);
   // Do swapping
@@ -1126,10 +1131,15 @@ void BaseManager::readBatch(BatchedRegisters& batch)
   {
     _stats.regReadPerFlushAccu += batch.regs[i].size();
   }
+
+  // Retrieve the read timestamp
+  TimePoint timestamp;
+
   if (batch.ids.size() == 1)
   {
     // Read single register
     TimePoint pStart = getTimePoint();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
     ResponseState state =
         _protocol->readData(batch.ids.front(), batch.addr, batch.regs.front().front()->_dataBufferRead, batch.length);
     TimePoint pStop = getTimePoint();
@@ -1153,9 +1163,8 @@ void BaseManager::readBatch(BatchedRegisters& batch)
     }
     else
     {
+      timestamp = averageTimePoints(pStart, pStop);
       // Valid case
-      // Retrieve the read timestamp
-      TimePoint timestamp = getTimePoint();
       // Assign timestamp on Manager side and
       // mark for swapping
       for (size_t j = 0; j < batch.regs.front().size(); j++)
@@ -1184,7 +1193,8 @@ void BaseManager::readBatch(BatchedRegisters& batch)
       _stats.maxSyncReadDuration = duration;
     }
     // Retrieve the read timestamp
-    TimePoint timestamp = getTimePoint();
+    TimePoint timestamp = averageTimePoints(pStart, pStop);
+
     for (size_t i = 0; i < states.size(); i++)
     {
       // Check for communication error

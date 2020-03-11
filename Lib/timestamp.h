@@ -10,6 +10,11 @@ namespace RhAL
 TimePoint getTimePoint();
 
 /**
+ * Average of two timepoints
+ */
+TimePoint averageTimePoints(const TimePoint& t1, const TimePoint& t2);
+
+/**
  * Return the duration between two given
  * TimePoint from p1 to p2 in given template
  * Duration type

@@ -7,6 +7,15 @@ TimePoint getTimePoint()
   return std::chrono::steady_clock::now();
 }
 
+TimePoint averageTimePoints(const TimePoint& t1, const TimePoint& t2)
+{
+  TimePoint t = t1;
+  auto delta = getTimeDuration<TimeDurationFloat>(t1, t2) / 2.0;
+  t += std::chrono::duration_cast<std::chrono::nanoseconds>(delta);
+
+  return t;
+}
+
 TimeDurationMicro::rep duration_us(const TimePoint& p)
 {
   return getTimeDuration<TimeDurationMicro>(p).count();
