@@ -15,12 +15,16 @@ static float quaternionDecode(const data_t* data)
 
 BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([] {})
 {
-  quatW = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatW", 0x24, 2, quaternionDecode, 1));
-  quatX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatX", 0x26, 2, quaternionDecode, 1));
-  quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x28, 2, quaternionDecode, 1));
-  quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x2a, 2, quaternionDecode, 1));
+  quatW = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatW", 0x20, 2, quaternionDecode, 1));
+  quatX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatX", 0x22, 2, quaternionDecode, 1));
+  quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x24, 2, quaternionDecode, 1));
+  quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x26, 2, quaternionDecode, 1));
   gyroCalibrated =
-      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("gyroCalibrated", 0x2c, 1, convDecode_Bool, 1));
+      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("gyroCalibrated", 0x28, 1, convDecode_Bool, 1));
+
+  samples = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("samples", 0x29, 1, convDecode_1Byte, 1));
+  inits = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("inits", 0x2a, 1, convDecode_1Byte, 1));
+  imu_errors = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("imu_errors", 0x2b, 1, convDecode_1Byte, 1));
 
   robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
   robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
@@ -40,6 +44,10 @@ void BNO055::onInit()
   Device::registersList().add(quatY.get());
   Device::registersList().add(quatZ.get());
   Device::registersList().add(gyroCalibrated.get());
+
+  Device::registersList().add(samples.get());
+  Device::registersList().add(inits.get());
+  Device::registersList().add(imu_errors.get());
 
   Device::parametersList().add(robotToImuX_x.get());
   Device::parametersList().add(robotToImuX_y.get());
