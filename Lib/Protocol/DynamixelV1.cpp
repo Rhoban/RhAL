@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <stdexcept>
 #include <cstdio>
 #include <string.h>
@@ -141,7 +142,7 @@ ResponseState DynamixelV1::sendAndReceiveData(DynamixelV1Command instruction, id
   else
   {
     std::cout << "Receiving packet : ";
-    for (int i = 0; i < sizeof(response->buffer) / sizeof(*(response->buffer)); i++)
+    for (int i = 0; i < response->getSize(); i++)
     {
       std::cout << (int)response->buffer[i] << " ";
     }
@@ -149,6 +150,7 @@ ResponseState DynamixelV1::sendAndReceiveData(DynamixelV1Command instruction, id
     std::cout << std::endl;
   }
 #endif
+
   if (code & ResponseOK)
   {
     memcpy(data, response->getParameters(), size);
@@ -202,7 +204,7 @@ std::vector<ResponseState> DynamixelV1::syncSendAndReceiveData(DynamixelV1Comman
   else
   {
     std::cout << "Sync Receiving packet : ";
-    for (int i = 0; i < sizeof(response->buffer) / sizeof(*(response->buffer)); i++)
+    for (int i = 0; i < response->getSize(); i++)
     {
       std::cout << (int)response->buffer[i] << " ";
     }
@@ -345,7 +347,7 @@ void DynamixelV1::sendPacket(Packet& packet)
   packet.prepare();
 #if DEBUG
   std::cout << "Sending packet : ";
-  for (int i = 0; i < sizeof(packet.buffer) / sizeof(*packet.buffer); i++)
+  for (int i = 0; i < packet.getSize(); i++)
   {
     std::cout << (int)packet.buffer[i] << " ";
   }
