@@ -1139,7 +1139,7 @@ void BaseManager::readBatch(BatchedRegisters& batch)
   {
     // Read single register
     TimePoint pStart = getTimePoint();
-    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
     ResponseState state =
         _protocol->readData(batch.ids.front(), batch.addr, batch.regs.front().front()->_dataBufferRead, batch.length);
     TimePoint pStop = getTimePoint();
