@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(RhAL)
 
-find_package(OpenCV 3.2.0 REQUIRED)
+find_package(OpenCV 4.2.0 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   RhIOServer
@@ -45,7 +45,7 @@ set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -W -Wall")
 
 # Include sources directory
-include_directories(${LIB_SOURCES_DIRECTORY} ${catkin_INCLUDE_DIRS})
+include_directories(${LIB_SOURCES_DIRECTORY} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 # Lib source files
 set(LIB_SOURCES
