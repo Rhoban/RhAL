@@ -3,25 +3,10 @@
 ### Rhoban 2015
 ###
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16.3)
 project(RhAL)
 
 find_package(OpenCV 4.2.0 REQUIRED)
-
-find_package(catkin REQUIRED COMPONENTS
-  RhIOServer
-  jsoncpp
-  serial
-  tclap
-  eigen
-  rhoban_utils
-  )
-
-catkin_package(
-  INCLUDE_DIRS Lib
-  LIBRARIES RhAL
-  CATKIN_DEPENDS RhIOServer jsoncpp serial tclap eigen rhoban_utils
-)
 
 set(LIB_SOURCES_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/Lib")
@@ -44,8 +29,6 @@ set(CMAKE_CXX_FLAGS
 set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} -W -Wall")
 
-# Include sources directory
-include_directories(${LIB_SOURCES_DIRECTORY} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 # Lib source files
 set(LIB_SOURCES
@@ -131,7 +114,20 @@ endforeach()
 
 # Build the RhAL Library
 add_library(RhAL SHARED ${PREFIXED_LIB_SOURCES})
-target_link_libraries(RhAL ${LIBRARIES})
+target_link_libraries(RhAL PUBLIC
+  RhIO
+  jsoncpp
+  serial
+  tclap
+  eigen
+  rhoban_utils
+)
+target_include_directories(RhAL PUBLIC
+  ${OpenCV_INCLUDE_DIRS}
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Lib>
+)
+
+
 
 # Build all Tests binary
 if (BUILD_RHAL_TESTS)

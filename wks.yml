@@ -1,0 +1,8 @@
+deps:
+  - rhoban/rhio#wks
+  - rhoban/utils
+  - rhobandeps/jsoncpp
+  - rhobandeps/serial
+  - rhobandeps/tclap
+  - rhobandeps/eigen
+
