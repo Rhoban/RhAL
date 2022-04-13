@@ -1,8 +1,8 @@
 deps:
-  - rhoban/rhio#wks
-  - rhoban/utils#wks
+  - rhoban/rhio
+  - rhoban/utils
   - rhobandeps/jsoncpp#cmake_only
-  - rhobandeps/serial#wks
-  - rhobandeps/tclap#wks
-  - rhobandeps/eigen#wks
+  - rhobandeps/serial
+  - rhobandeps/tclap
+  - rhobandeps/eigen
 
