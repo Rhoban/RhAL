@@ -35,6 +35,9 @@ public:
   float getPitch();
   float getRoll();
 
+  bool isGyroCalibrated();
+  bool isAccCalibrated();
+
   /**
    * A callback that is invoked after a filtering
    */

@@ -85,6 +85,16 @@ float BNO055::getRoll()
   return roll;
 }
 
+bool BNO055::isGyroCalibrated()
+{
+  return gyroCalibrated.get()->readValue().value == 3;
+}
+
+bool BNO055::isAccCalibrated()
+{
+  return accCalibrated.get()->readValue().value == 3;
+}
+
 Eigen::Matrix3d BNO055::getMatrix()
 {
   std::lock_guard<std::mutex> lock(_mutex);

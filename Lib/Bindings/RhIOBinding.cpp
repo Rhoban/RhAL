@@ -53,6 +53,8 @@ RhIOBinding::RhIOBinding(BaseManager& manager, const std::string& nodeName, bool
                     std::bind(&RhIOBinding::cmdTare, this, std::placeholders::_1));
   _node->newCommand("rhalGyroTare", "Tare all gyro devices",
                     std::bind(&RhIOBinding::cmdGyroTare, this, std::placeholders::_1));
+  _node->newCommand("rhalImuCalib", "Check for IMU calibration",
+                    std::bind(&RhIOBinding::cmdImuCalibration, this, std::placeholders::_1));
 
   // First RhIO/RhAL synchronisation
   update();
@@ -773,4 +775,34 @@ std::string RhIOBinding::cmdGyroTare(std::vector<std::string> argv)
   }
 }
 
+std::string RhIOBinding::cmdImuCalibration(std::vector<std::string> argv)
+{
+  std::ostringstream oss;
+  (void)argv;
+
+  auto allDevices = _manager->devContainer();
+  for (auto& dev : allDevices)
+  {
+    BNO055* bno055 = dynamic_cast<BNO055*>(dev.second);
+    if (bno055 != nullptr)
+    {
+      if (bno055->isGyroCalibrated() == 3)
+      {
+        oss << "Gyro calibrated." << std::endl;
+      }
+      else
+      {
+        oss << "! Gyro not calibrated." << std::endl;
+      }
+      if (bno055->isAccCalibrated() == 3)
+      {
+        oss << "Accelerometer calibrated." << std::endl;
+      }
+      else
+      {
+        oss << "! Accelerometer not calibrated." << std::endl;
+      }
+    }
+  }
+}
 }  // namespace RhAL
