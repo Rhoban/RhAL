@@ -786,7 +786,7 @@ std::string RhIOBinding::cmdImuCalibration(std::vector<std::string> argv)
     BNO055* bno055 = dynamic_cast<BNO055*>(dev.second);
     if (bno055 != nullptr)
     {
-      if (bno055->isGyroCalibrated() == 3)
+      if (bno055->isGyroCalibrated())
       {
         oss << "Gyro calibrated." << std::endl;
       }
@@ -794,7 +794,7 @@ std::string RhIOBinding::cmdImuCalibration(std::vector<std::string> argv)
       {
         oss << "! Gyro not calibrated." << std::endl;
       }
-      if (bno055->isAccCalibrated() == 3)
+      if (bno055->isAccCalibrated())
       {
         oss << "Accelerometer calibrated." << std::endl;
       }
