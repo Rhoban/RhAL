@@ -20,9 +20,9 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x24, 2, quaternionDecode, 1));
   quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x26, 2, quaternionDecode, 1));
   gyroCalibrated =
-      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("gyroCalibrated", 0x28, 1, convDecode_Bool, 1));
+      std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("gyroCalibrated", 0x28, 1, convDecode_1Byte, 1));
   accCalibrated =
-      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("accCalibrated", 0x29, 1, convDecode_Bool, 1));
+      std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("accCalibrated", 0x29, 1, convDecode_1Byte, 1));
 
   samples = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("samples", 0x2a, 1, convDecode_1Byte, 1));
   inits = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("inits", 0x2b, 1, convDecode_1Byte, 1));

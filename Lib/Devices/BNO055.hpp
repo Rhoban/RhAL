@@ -75,8 +75,8 @@ protected:
   std::shared_ptr<TypedRegisterFloat> quatX;
   std::shared_ptr<TypedRegisterFloat> quatY;
   std::shared_ptr<TypedRegisterFloat> quatZ;
-  std::shared_ptr<TypedRegisterBool> gyroCalibrated;
-  std::shared_ptr<TypedRegisterBool> accCalibrated;
+  std::shared_ptr<TypedRegisterInt> gyroCalibrated;
+  std::shared_ptr<TypedRegisterInt> accCalibrated;
   std::shared_ptr<TypedRegisterInt> samples;
   std::shared_ptr<TypedRegisterInt> inits;
   std::shared_ptr<TypedRegisterInt> imu_errors;
