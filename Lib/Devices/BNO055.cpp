@@ -21,10 +21,12 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   quatZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatZ", 0x26, 2, quaternionDecode, 1));
   gyroCalibrated =
       std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("gyroCalibrated", 0x28, 1, convDecode_Bool, 1));
+  accCalibrated =
+      std::shared_ptr<TypedRegisterBool>(new TypedRegisterBool("accCalibrated", 0x29, 1, convDecode_Bool, 1));
 
-  samples = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("samples", 0x29, 1, convDecode_1Byte, 1));
-  inits = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("inits", 0x2a, 1, convDecode_1Byte, 1));
-  imu_errors = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("imu_errors", 0x2b, 1, convDecode_1Byte, 1));
+  samples = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("samples", 0x2a, 1, convDecode_1Byte, 1));
+  inits = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("inits", 0x2b, 1, convDecode_1Byte, 1));
+  imu_errors = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("imu_errors", 0x2c, 1, convDecode_1Byte, 1));
 
   robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
   robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
@@ -44,6 +46,7 @@ void BNO055::onInit()
   Device::registersList().add(quatY.get());
   Device::registersList().add(quatZ.get());
   Device::registersList().add(gyroCalibrated.get());
+  Device::registersList().add(accCalibrated.get());
 
   Device::registersList().add(samples.get());
   Device::registersList().add(inits.get());
