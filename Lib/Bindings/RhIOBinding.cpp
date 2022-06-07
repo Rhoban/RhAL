@@ -804,5 +804,7 @@ std::string RhIOBinding::cmdImuCalibration(std::vector<std::string> argv)
       }
     }
   }
+
+  return oss.str();
 }
 }  // namespace RhAL
