@@ -83,6 +83,7 @@ protected:
   std::shared_ptr<TypedRegisterInt> samples;
   std::shared_ptr<TypedRegisterInt> inits;
   std::shared_ptr<TypedRegisterInt> imu_errors;
+  std::shared_ptr<TypedRegisterInt> store_calibration;
   /**
    * Inherit.
    * Declare Registers and parameters

@@ -28,6 +28,9 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   inits = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("inits", 0x2b, 1, convDecode_1Byte, 1));
   imu_errors = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("imu_errors", 0x2c, 1, convDecode_1Byte, 1));
 
+  store_calibration = std::shared_ptr<TypedRegisterInt>(
+      new TypedRegisterInt("store_calibration", 0x2d, 1, convEncode_1Byte, convDecode_1Byte, 0));
+
   robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
   robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
   robotToImuX_z = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_z", 0.0));
@@ -51,6 +54,7 @@ void BNO055::onInit()
   Device::registersList().add(samples.get());
   Device::registersList().add(inits.get());
   Device::registersList().add(imu_errors.get());
+  Device::registersList().add(store_calibration.get());
 
   Device::parametersList().add(robotToImuX_x.get());
   Device::parametersList().add(robotToImuX_y.get());
