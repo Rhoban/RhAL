@@ -1,7 +1,7 @@
 #include <functional>
 #include <iomanip>
 #include <sstream>
-#include <rhoban_utils/stats/stats.h>
+#include <rhoban_utils/stats/stats.hpp>
 #include "Bindings/RhIOBinding.hpp"
 #include "Manager/BaseManager.hpp"
 #include "Manager/Device.hpp"
