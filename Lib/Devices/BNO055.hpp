@@ -24,7 +24,7 @@ public:
   BNO055(const std::string& name, id_t id);
 
   /**
-   * Filter matrix
+   * Filter matrix (R_world_robot)
    */
   Eigen::Matrix3d getMatrix();
 
@@ -34,6 +34,11 @@ public:
   float getYaw();
   float getPitch();
   float getRoll();
+
+  /**
+   * The angular velocity in robot frame
+   */
+  Eigen::Vector3d getGyro();
 
   bool isGyroCalibrated();
   bool isAccCalibrated();
@@ -53,6 +58,16 @@ protected:
    *  Euler angles values
    */
   double yaw, pitch, roll;
+
+  /**
+   * Gyro speed
+   */
+  Eigen::Vector3d gyro;
+
+  /**
+   * IMU in the world
+   */
+  Eigen::Matrix3d R_world_robot;
 
   // Invert the orientation of the robot (if the IMU X axis is backward)
   std::shared_ptr<ParameterNumber> robotToImuX_x;
@@ -84,6 +99,9 @@ protected:
   std::shared_ptr<TypedRegisterInt> inits;
   std::shared_ptr<TypedRegisterInt> imu_errors;
   std::shared_ptr<TypedRegisterInt> store_calibration;
+  std::shared_ptr<TypedRegisterFloat> gyroX;
+  std::shared_ptr<TypedRegisterFloat> gyroY;
+  std::shared_ptr<TypedRegisterFloat> gyroZ;
   /**
    * Inherit.
    * Declare Registers and parameters

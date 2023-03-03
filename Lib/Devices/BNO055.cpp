@@ -13,6 +13,11 @@ static float quaternionDecode(const data_t* data)
   return convDecode_2Bytes_signed(data) / 16384.0;
 }
 
+static float gyroDecode(const data_t* data)
+{
+  return convDecode_2Bytes_signed(data) * M_PI / (180.0 * 16.0);
+}
+
 BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([] {})
 {
   quatW = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatW", 0x20, 2, quaternionDecode, 1));
@@ -29,7 +34,11 @@ BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([]
   imu_errors = std::shared_ptr<TypedRegisterInt>(new TypedRegisterInt("imu_errors", 0x2c, 1, convDecode_1Byte, 1));
 
   store_calibration = std::shared_ptr<TypedRegisterInt>(
-      new TypedRegisterInt("store_calibration", 0x2d, 1, convEncode_1Byte, convDecode_1Byte, 0));
+      new TypedRegisterInt("store_calibration", 0x2d, 1, convEncode_1Byte, convDecode_1Byte, 1));
+
+  gyroX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("gyroX", 0x2e, 2, gyroDecode, 1));
+  gyroY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("gyroY", 0x30, 2, gyroDecode, 1));
+  gyroZ = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("gyroZ", 0x32, 2, gyroDecode, 1));
 
   robotToImuX_x = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_x", 1.0));
   robotToImuX_y = std::shared_ptr<ParameterNumber>(new ParameterNumber("robotToImuX_y", 0.0));
@@ -55,6 +64,10 @@ void BNO055::onInit()
   Device::registersList().add(inits.get());
   Device::registersList().add(imu_errors.get());
   Device::registersList().add(store_calibration.get());
+
+  Device::registersList().add(gyroX.get());
+  Device::registersList().add(gyroY.get());
+  Device::registersList().add(gyroZ.get());
 
   Device::parametersList().add(robotToImuX_x.get());
   Device::parametersList().add(robotToImuX_y.get());
@@ -88,6 +101,11 @@ float BNO055::getRoll()
   std::lock_guard<std::mutex> lock(_mutex);
   return roll;
 }
+Eigen::Vector3d BNO055::getGyro()
+{
+  std::lock_guard<std::mutex> lock(_mutex);
+  return gyro;
+}
 
 bool BNO055::isGyroCalibrated()
 {
@@ -102,8 +120,7 @@ bool BNO055::isAccCalibrated()
 Eigen::Matrix3d BNO055::getMatrix()
 {
   std::lock_guard<std::mutex> lock(_mutex);
-  // XXX: TODO
-  return Eigen::Matrix3d::Identity();
+  return R_world_robot;
 }
 
 void BNO055::onSwap()
@@ -121,21 +138,28 @@ void BNO055::onSwap()
     Eigen::Quaterniond quaternions(qW, qX, qY, qZ);
 
     // We obtain roll, pitch and yaw
-    Eigen::Matrix3d rotation = quaternions.toRotationMatrix();
+    Eigen::Matrix3d R_world_imu = quaternions.toRotationMatrix();
 
     // Robot to IMU matrix
-    Eigen::Matrix3d robotToImu;
-    robotToImu << robotToImuX_x->value, robotToImuY_x->value, robotToImuZ_x->value, robotToImuX_y->value,
+    Eigen::Matrix3d R_imu_robot;
+    R_imu_robot << robotToImuX_x->value, robotToImuY_x->value, robotToImuZ_x->value, robotToImuX_y->value,
         robotToImuY_y->value, robotToImuZ_y->value, robotToImuX_z->value, robotToImuY_z->value, robotToImuZ_z->value;
-    rotation = rotation * robotToImu;
+
+    R_world_robot = R_world_imu * R_imu_robot;
 
     // Sanity check for asin() call
-    if (rotation(2, 0) >= -1 && rotation(2, 0) <= 1)
+    if (R_world_robot(2, 0) >= -1 && R_world_robot(2, 0) <= 1)
     {
-      pitch = -asin(rotation(2, 0));
-      roll = atan2(rotation(2, 1), rotation(2, 2));
-      yaw = atan2(rotation(1, 0), rotation(0, 0));
+      pitch = -asin(R_world_robot(2, 0));
+      roll = atan2(R_world_robot(2, 1), R_world_robot(2, 2));
+      yaw = atan2(R_world_robot(1, 0), R_world_robot(0, 0));
     }
+
+    gyro.x() = gyroX.get()->readValue().value;
+    gyro.y() = gyroY.get()->readValue().value;
+    gyro.z() = gyroZ.get()->readValue().value;
+
+    gyro = R_imu_robot * gyro;
 
     // Note, IMU to world without yaw can be computed as follow:
     // Eigen::Matrix3d imuToWorld = Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()).toRotationMatrix() *
