@@ -103,73 +103,77 @@ MX::MX(const std::string& name, id_t id)
   , _DGain("DGain", 0x1A, 1, convEncode_1Byte, convDecode_1Byte, 0, true)
   , _IGain("IGain", 0x1B, 1, convEncode_1Byte, convDecode_1Byte, 0, true)
   , _PGain("PGain", 0x1C, 1, convEncode_1Byte, convDecode_1Byte, 0, true)
-  , _goalPosition("goalPosition", 0x1E, 2,
-                  [this](data_t* data, float value) {
-                    std::lock_guard<std::mutex> lock(this->_mutex);
-                    value = value + this->_zero.value;
-                    if (this->_inverted.value == true)
-                    {
-                      value = value * -1.0;
-                    }
-                    convEncode_PositionMx(data, value);
-                  },
-                  [this](const data_t* data) -> float {
-                    std::lock_guard<std::mutex> lock(_mutex);
-                    float value = convDecode_PositionMx(data);
-                    if (this->_inverted.value == true)
-                    {
-                      value = value * -1.0;
-                    }
-                    value = value - this->_zero.value;
-                    return value;
-                  },
-                  0, true)
-  , _goalSpeed("goalSpeed", 0x20, 2,
-               [this](data_t* data, float value) {
-                 std::lock_guard<std::mutex> lock(this->_mutex);
-                 int direction = 1;
-                 if (this->_inverted.value == true)
-                 {
-                   direction = -1;
-                 }
-                 convEncode_SpeedMx(data, value * direction);
-               },
-               [this](const data_t* data) -> float {
-                 std::lock_guard<std::mutex> lock(this->_mutex);
-                 float value = convDecode_SpeedMx(data);
-                 int direction = 1;
-                 if (this->_inverted.value == true)
-                 {
-                   direction = -1;
-                 }
-                 return value * direction;
-               },
-               0, true)
+  , _goalPosition(
+        "goalPosition", 0x1E, 2,
+        [this](data_t* data, float value) {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          value = value + this->_zero.value;
+          if (this->_inverted.value == true)
+          {
+            value = value * -1.0;
+          }
+          convEncode_PositionMx(data, value);
+        },
+        [this](const data_t* data) -> float {
+          std::lock_guard<std::mutex> lock(_mutex);
+          float value = convDecode_PositionMx(data);
+          if (this->_inverted.value == true)
+          {
+            value = value * -1.0;
+          }
+          value = value - this->_zero.value;
+          return value;
+        },
+        0, true)
+  , _goalSpeed(
+        "goalSpeed", 0x20, 2,
+        [this](data_t* data, float value) {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          int direction = 1;
+          if (this->_inverted.value == true)
+          {
+            direction = -1;
+          }
+          convEncode_SpeedMx(data, value * direction);
+        },
+        [this](const data_t* data) -> float {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          float value = convDecode_SpeedMx(data);
+          int direction = 1;
+          if (this->_inverted.value == true)
+          {
+            direction = -1;
+          }
+          return value * direction;
+        },
+        0, true)
   , _torqueLimit("torqueLimit", 0x22, 2, convEncode_torque, convDecode_torque, 0, true)
-  , _position("position", 0x24, 2,
-              [this](const data_t* data) -> float {
-                std::lock_guard<std::mutex> lock(this->_mutex);
-                float value = convDecode_PositionMx(data);
-                if (this->_inverted.value == true)
-                {
-                  value = value * -1.0;
-                }
-                value = value - this->_zero.value;
-                return value;
-              },
-              1)
-  , _speed("speed", 0x26, 2,
-           [this](const data_t* data) -> float {
-             std::lock_guard<std::mutex> lock(this->_mutex);
-             float value = convDecode_SpeedMx(data);
-             int direction = 1;
-             if (this->_inverted.value == true)
-             {
-               direction = -1;
-             }
-             return value * direction;
-           },
-           0, true)
+  , _position(
+        "position", 0x24, 2,
+        [this](const data_t* data) -> float {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          float value = convDecode_PositionMx(data);
+          if (this->_inverted.value == true)
+          {
+            value = value * -1.0;
+          }
+          value = value - this->_zero.value;
+          return value;
+        },
+        1)
+  , _speed(
+        "speed", 0x26, 2,
+        [this](const data_t* data) -> float {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          float value = convDecode_SpeedMx(data);
+          int direction = 1;
+          if (this->_inverted.value == true)
+          {
+            direction = -1;
+          }
+          return value * direction;
+        },
+        1)
   , _load("load", 0x28, 2, convDecode_torque, 0, true)
   , _voltage("voltage", 0x2A, 1, convDecode_voltage, 100)
   , _temperature("temperature", 0x2B, 1, convDecode_temperature, 100)
@@ -177,27 +181,28 @@ MX::MX(const std::string& name, id_t id)
   , _moving("moving", 0x2E, 1, convDecode_Bool, 0, true)
   , _lockEeprom("lockEeprom", 0x2F, 1, convEncode_Bool, convDecode_Bool, 0, true)
   , _punch("punch", 0x30, 2, convEncode_2Bytes, convDecode_2Bytes, 0, true)
-  , _goalAcceleration("goalAcceleration", 0x49, 1,
-                      [this](data_t* data, float value) {
-                        std::lock_guard<std::mutex> lock(this->_mutex);
-                        int direction = 1;
-                        if (this->_inverted.value == true)
-                        {
-                          direction = -1;
-                        }
-                        convEncode_AccelerationMx(data, value * direction);
-                      },
-                      [this](const data_t* data) -> float {
-                        std::lock_guard<std::mutex> lock(this->_mutex);
-                        float value = convDecode_AccelerationMx(data);
-                        int direction = 1;
-                        if (this->_inverted.value == true)
-                        {
-                          direction = -1;
-                        }
-                        return value * direction;
-                      },
-                      0, true)
+  , _goalAcceleration(
+        "goalAcceleration", 0x49, 1,
+        [this](data_t* data, float value) {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          int direction = 1;
+          if (this->_inverted.value == true)
+          {
+            direction = -1;
+          }
+          convEncode_AccelerationMx(data, value * direction);
+        },
+        [this](const data_t* data) -> float {
+          std::lock_guard<std::mutex> lock(this->_mutex);
+          float value = convDecode_AccelerationMx(data);
+          int direction = 1;
+          if (this->_inverted.value == true)
+          {
+            direction = -1;
+          }
+          return value * direction;
+        },
+        0, true)
 {
   _angleLimitCW.setMinValue(-180.0);
   _angleLimitCW.setMaxValue(180.0 - 0.087890625);
