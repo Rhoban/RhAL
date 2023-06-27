@@ -18,6 +18,7 @@ public:
   size_t readData(uint8_t* data, size_t size);
   void flush();
   void clearInputBuffer();
+  void retryOpening();
 
 protected:
   serial::Serial serial;

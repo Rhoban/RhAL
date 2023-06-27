@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include "SerialBus.hpp"
 
@@ -8,6 +9,48 @@ SerialBus::SerialBus(std::string port, unsigned int baudrate)
 {
 }
 
+#define SERIAL_CATCH(method)                                                                                           \
+                                                                                                                       \
+  catch (serial::IOException e)                                                                                        \
+  {                                                                                                                    \
+    std::cerr << "WARNING: SerialBus::" #method "(): IOException " << e.what() << std::endl;                           \
+    retryOpening();                                                                                                    \
+  }                                                                                                                    \
+  catch (serial::SerialException e)                                                                                    \
+  {                                                                                                                    \
+    std::cerr << "WARNING: SerialBus::" #method "(): SerialException " << e.what() << std::endl;                       \
+    retryOpening();                                                                                                    \
+  }                                                                                                                    \
+  catch (serial::PortNotOpenedException e)                                                                             \
+  {                                                                                                                    \
+    std::cerr << "WARNING: SerialBus::" #method "(): PortNotOpenedException " << e.what() << std::endl;                \
+    retryOpening();                                                                                                    \
+  }
+
+void SerialBus::retryOpening()
+{
+  while (true)
+  {
+    serial.close();
+
+    try
+    {
+      serial.open();
+      break;
+    }
+    catch (serial::IOException e)
+    {
+      std::cerr << "WARNING: SerialBus::reopen(): IOException " << e.what() << std::endl;
+    }
+    catch (serial::SerialException e)
+    {
+      std::cerr << "WARNING: SerialBus::reopen(): SerialException " << e.what() << std::endl;
+    }
+
+    usleep(5000);
+  }
+};
+
 bool SerialBus::sendData(uint8_t* data, size_t size)
 {
   std::lock_guard<std::mutex> lock(mutex);
@@ -15,11 +58,9 @@ bool SerialBus::sendData(uint8_t* data, size_t size)
   {
     return serial.write(data, size) == size;
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::sendData(): IOException " << e.what() << std::endl;
-    return false;
-  }
+  SERIAL_CATCH(sendData)
+
+  return false;
 }
 
 bool SerialBus::waitForData(double timeout)
@@ -29,11 +70,9 @@ bool SerialBus::waitForData(double timeout)
   {
     return serial.waitReadable(timeout);
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::waitForData(): IOException " << e.what() << std::endl;
-    return false;
-  }
+  SERIAL_CATCH(waitForData)
+
+  return false;
 }
 
 size_t SerialBus::available()
@@ -43,11 +82,9 @@ size_t SerialBus::available()
   {
     return serial.available();
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::available(): IOException " << e.what() << std::endl;
-    return 0;
-  }
+  SERIAL_CATCH(available)
+
+  return 0;
 }
 
 size_t SerialBus::readData(uint8_t* data, size_t size)
@@ -57,11 +94,9 @@ size_t SerialBus::readData(uint8_t* data, size_t size)
   {
     return serial.read(data, size);
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::readData(): IOException " << e.what() << std::endl;
-    return 0;
-  }
+  SERIAL_CATCH(readData)
+
+  return 0;
 }
 
 void SerialBus::flush()
@@ -71,10 +106,7 @@ void SerialBus::flush()
   {
     serial.flush();
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::flush(): IOException " << e.what() << std::endl;
-  }
+  SERIAL_CATCH(flush)
 }
 
 void SerialBus::clearInputBuffer()
@@ -84,12 +116,6 @@ void SerialBus::clearInputBuffer()
   {
     serial.flushInput();
   }
-  catch (serial::IOException e)
-  {
-    std::cerr << "WARNING: SerialBus::clearInputBuffer(): IOException " << e.what() << std::endl;
-  }
-  //        int n = this->available();
-  //        uint8_t dummy[n];
-  //        this->readData(dummy, n);
+  SERIAL_CATCH(clearInputBuffer)
 }
 }  // namespace RhAL
