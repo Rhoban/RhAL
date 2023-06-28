@@ -20,6 +20,8 @@ static float gyroDecode(const data_t* data)
 
 BNO055::BNO055(const std::string& name, id_t id) : Device(name, id), callback([] {})
 {
+  R_world_robot.setIdentity();
+
   quatW = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatW", 0x20, 2, quaternionDecode, 1));
   quatX = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatX", 0x22, 2, quaternionDecode, 1));
   quatY = std::shared_ptr<TypedRegisterFloat>(new TypedRegisterFloat("quatY", 0x24, 2, quaternionDecode, 1));
