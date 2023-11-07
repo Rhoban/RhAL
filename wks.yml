@@ -1,7 +1,6 @@
 deps:
   - rhoban/rhio
   - rhoban/utils
-  - rhobandeps/jsoncpp#cmake_only
   - rhobandeps/serial
   - rhobandeps/tclap
   - rhobandeps/eigen
