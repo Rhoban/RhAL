@@ -289,12 +289,20 @@ void RhIOBinding::specificUpdate(RhIO::IONode* deviceNode, RhAL::Device* device)
     {
       deviceNode->newFloat("x");
       deviceNode->newFloat("y");
-      deviceNode->newFloat("weight");
+      deviceNode->newFloat("force_0");
+      deviceNode->newFloat("force_1");
+      deviceNode->newFloat("force_2");
+      deviceNode->newFloat("force_3");
+      deviceNode->newFloat("force_sum");
 
       std::function<void()> update = [deviceNode, ps] {
         deviceNode->setFloat("x", ps->getX());
         deviceNode->setFloat("y", ps->getY());
-        deviceNode->setFloat("weight", ps->getWeight());
+        deviceNode->setFloat("force_0", ps->getForce(0));
+        deviceNode->setFloat("force_1", ps->getForce(1));
+        deviceNode->setFloat("force_2", ps->getForce(2));
+        deviceNode->setFloat("force_3", ps->getForce(3));
+        deviceNode->setFloat("force_sum", ps->getForcesSum());
       };
       update();
       ps->setCallback(update);
@@ -670,7 +678,8 @@ std::string RhIOBinding::cmdTare(std::vector<std::string> argv)
       {
         for (int g = 0; g < ps->gauges(); g++)
         {
-          zeros[ps][g].push_back(ps->gain(g) * ps->pressure(g));
+          // zeros[ps][g].push_back(ps->gain(g) * ps->pressure(g));
+          zeros[ps][g].push_back(ps->pressure(g));
         }
       }
       _manager->waitNextFlush();

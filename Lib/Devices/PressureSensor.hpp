@@ -25,14 +25,13 @@ public:
   virtual float gain(int index) = 0;
   virtual TypedRegisterInt& pressure(int index) = 0;
   virtual void setZero(int index, double value) = 0;
+  virtual void setGain(int index, double value) = 0;
 
   virtual float getX() = 0;
   virtual float getY() = 0;
-  virtual float getWeight() = 0;
+  virtual float getForce(int index) = 0;
+  virtual float getForcesSum() = 0;
 
-  virtual ReadValueFloat getXValue() = 0;
-  virtual ReadValueFloat getYValue() = 0;
-  virtual ReadValueFloat getWeightValue() = 0;
   virtual double getMinStdDev() = 0;
   virtual double getMaxStdDev() = 0;
 
@@ -74,7 +73,7 @@ public:
                                [i, this](const data_t* data) -> int {
                                  std::lock_guard<std::mutex> lock(this->_mutex);
                                  int value = convDecode_3Bytes_signed(data);
-                                 return ((double)this->_gain[i]->value) * (value - (int)this->_zero[i]->value);
+                                 return (value - (int)this->_zero[i]->value);
                                },
                                1)));
 
@@ -108,25 +107,30 @@ public:
 
   void onSwap() override
   {
-    float total = 0;
     unsigned int n = _zero.size();
     float x_ = 0;
     float y_ = 0;
+
+    float forces_sum_ = 0;
+    std::vector<float> forces_;
     for (unsigned int k = 0; k < n; k++)
     {
-      float weight_ = pressure(k);
-      if (weight_ > 0)
+      float force = gain(k) * pressure(k);
+      if (force > 0)
       {
-        total += weight_;
-        x_ += _x[k]->value * weight_;
-        y_ += _y[k]->value * weight_;
+        forces_sum_ += force;
+        x_ += _x[k]->value * force;
+        y_ += _y[k]->value * force;
       }
+      forces_.push_back(force);
     }
-    weight = total;
-    if (weight > 1e-6)
+    forces = forces_;
+    forces_sum = forces_sum_;
+    
+    if (forces_sum > 1e-6)
     {
-      x = x_ / weight;
-      y = y_ / weight;
+      x = x_ / forces_sum;
+      y = y_ / forces_sum;
     }
     else
     {
@@ -179,30 +183,31 @@ public:
     _zero[index]->value = value;
   }
 
+  void setGain(int index, double value) override
+  {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    _gain[index]->value = value;
+  }
+
   float getX() override
   {
     return x;
   }
+  
   float getY() override
   {
     return y;
   }
-  float getWeight() override
+
+  float getForce(int index) override
   {
-    return weight;
+    return forces[index];
   }
 
-  ReadValueFloat getXValue() override
+  float getForcesSum() override
   {
-    return ReadValueFloat(timestamp, x, isError);
-  }
-  ReadValueFloat getYValue() override
-  {
-    return ReadValueFloat(timestamp, y, isError);
-  }
-  ReadValueFloat getWeightValue() override
-  {
-    return ReadValueFloat(timestamp, weight, isError);
+    return forces_sum;
   }
 
   /**
@@ -236,7 +241,9 @@ protected:
   /**
    * Parameters
    */
-  float x, y, weight;
+  float x, y;
+  std::vector<float> forces = {0., 0., 0., 0.};
+  float forces_sum;
 
   /**
    * Inherit.

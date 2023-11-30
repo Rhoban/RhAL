@@ -38,7 +38,7 @@ public:
    * Update the binding with
    * current Manager state.
    * (Update Devices parameters and
-   * check for new Devices/parameeters)
+   * check for new Devices/parameters)
    */
   void update();
 
