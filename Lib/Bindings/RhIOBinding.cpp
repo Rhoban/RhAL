@@ -678,7 +678,6 @@ std::string RhIOBinding::cmdTare(std::vector<std::string> argv)
       {
         for (int g = 0; g < ps->gauges(); g++)
         {
-          // zeros[ps][g].push_back(ps->gain(g) * ps->pressure(g));
           zeros[ps][g].push_back(ps->pressure(g));
         }
       }
