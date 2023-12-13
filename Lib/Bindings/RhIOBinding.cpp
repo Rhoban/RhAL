@@ -47,8 +47,10 @@ RhIOBinding::RhIOBinding(BaseManager& manager, const std::string& nodeName, bool
                     std::bind(&RhIOBinding::cmdInit, this, std::placeholders::_1));
   _node->newCommand("rhalInitFrozen", "Enable all servos in current position",
                     std::bind(&RhIOBinding::cmdInitFrozen, this, std::placeholders::_1));
-  _node->newCommand("rhalChangeId", "Chaneg the Device id of given id to given id",
+  _node->newCommand("rhalChangeId", "Change the Device id of given id to given id",
                     std::bind(&RhIOBinding::cmdChangeId, this, std::placeholders::_1));
+  _node->newCommand("rhalPSCalib", "Calibrate the gains of all pressure devices",
+                    std::bind(&RhIOBinding::cmdPSCalib, this, std::placeholders::_1));
   _node->newCommand("rhalTare", "Tare all pressure devices",
                     std::bind(&RhIOBinding::cmdTare, this, std::placeholders::_1));
   _node->newCommand("rhalGyroTare", "Tare all gyro devices",
@@ -646,6 +648,7 @@ std::string RhIOBinding::cmdTare(std::vector<std::string> argv)
   (void)argv;
   std::vector<PressureSensorBase*> sensors;
   std::map<PressureSensorBase*, std::vector<std::vector<double>>> zeros;
+
   const auto& allDevices = _manager->devContainer();
   for (const auto& dev : allDevices)
   {
@@ -712,6 +715,87 @@ std::string RhIOBinding::cmdTare(std::vector<std::string> argv)
       ss << "Error: " << err << std::endl;
     }
     ss << "Tare on " << sensors.size() << " devices.";
+    return ss.str();
+  }
+}
+
+
+std::string RhIOBinding::cmdPSCalib(std::vector<std::string> argv)
+{
+  double weight = 0.131;
+  if (argv.size() == 1)
+  {
+    weight = std::stod(argv[0]);
+  }
+
+  std::vector<PressureSensorBase*> sensors;
+  std::map<PressureSensorBase*, std::vector<std::vector<double>>> raw_values;
+
+  const auto& allDevices = _manager->devContainer();
+  for (const auto& dev : allDevices)
+  {
+    PressureSensorBase* ps = dynamic_cast<PressureSensorBase*>(dev.second);
+    if (ps != nullptr)
+    {
+      sensors.push_back(ps);
+      raw_values[ps] = std::vector<std::vector<double>>();
+      for (int g = 0; g < ps->gauges(); g++)
+      {
+        raw_values[ps].push_back(std::vector<double>());
+      }
+    }
+  }
+
+  if (sensors.size() == 0)
+  {
+    return "No pressure devices found";
+  }
+  else
+  {
+    _manager->waitNextFlush();
+    std::stringstream ss;
+    int samples = 1000;
+    for (int k = 0; k < samples; k++)
+    {
+      for (const auto& ps : sensors)
+      {
+        for (int g = 0; g < ps->gauges(); g++)
+        {
+          raw_values[ps][g].push_back(ps->pressure(g));
+        }
+      }
+      _manager->waitNextFlush();
+    }
+    std::vector<std::string> errors;
+    for (const auto& ps : sensors)
+    {
+      ss.precision(30);
+      for (int g = 0; g < ps->gauges(); g++)
+      {
+        double avg;
+        double dev = rhoban_utils::standardDeviation(raw_values[ps][g], &avg);
+        if (dev > ps->getMaxStdDev())
+        {
+          std::stringstream tmp;
+          tmp << "Too high deviation for " << ps->name() << " #" << g << " (" << dev << " > " << ps->getMaxStdDev()
+              << ")";
+          errors.push_back(tmp.str());
+        }
+        if (dev < ps->getMinStdDev())
+        {
+          std::stringstream tmp;
+          tmp << "Too low deviation  for " << ps->name() << " #" << g;
+          errors.push_back(tmp.str());
+        }
+        double gain = 9.81 * weight / avg;
+        ps->setGain(g, gain);
+      }
+    }
+    for (auto& err : errors)
+    {
+      ss << "Error: " << err << std::endl;
+    }
+    ss << "Gains computed on " << sensors.size() << " devices.";
     return ss.str();
   }
 }

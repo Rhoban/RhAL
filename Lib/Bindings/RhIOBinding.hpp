@@ -65,6 +65,7 @@ public:
   std::string cmdEmergencyExit(std::vector<std::string> argv);
   std::string cmdChangeId(std::vector<std::string> argv);
   std::string cmdTare(std::vector<std::string> argv);
+  std::string cmdPSCalib(std::vector<std::string> argv);
   std::string cmdGyroTare(std::vector<std::string> argv);
   std::string cmdImuCalibration(std::vector<std::string> argv);
   /**
